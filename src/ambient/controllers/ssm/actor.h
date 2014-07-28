@@ -26,27 +26,44 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef AMBIENT_CONTROLLERS_SSM_SCOPE
-#define AMBIENT_CONTROLLERS_SSM_SCOPE
+#ifndef AMBIENT_CONTROLLERS_SSM_ACTOR
+#define AMBIENT_CONTROLLERS_SSM_ACTOR
 
 namespace ambient {
 
-    class scope {
+    class actor {
+    protected:
+        typedef models::ssm::model model_type;
+        typedef controllers::ssm::controller controller_type;
+        actor(){}
     public:
-        typedef std::vector<int> container;
-        typedef container::const_iterator const_iterator;
-        static const_iterator balance(int k, int max_k);
-        static const_iterator permute(int k, const std::vector<int>& s, size_t granularity = 1);
-        static bool nested();
-        static bool local();
-        static scope& top();
-        static size_t size();
-        static const_iterator begin();
-        static const_iterator end();
-       ~scope();
-        scope(const_iterator first, const_iterator last);
-        scope(const_iterator first, size_t size);
-        container provision;
+       ~actor();
+        actor(scope::const_iterator it);
+        actor(actor_t type);
+        bool remote() const;
+        bool local()  const;
+        bool common() const;
+        rank_t which()  const;
+        actor_t type;
+        bool dry;
+        int factor;
+        int round;
+        rank_t rank;
+        ambient::locality state;
+        controller_type* controller;
+    };
+
+    class base_actor : public actor {
+    public:
+        typedef typename actor::model_type model_type;
+        base_actor();
+        void set(rank_t r);
+        void set(scope::const_iterator it);
+        void schedule();
+        void intend_read(models::ssm::revision* o);
+        void intend_write(models::ssm::revision* o);
+        mutable std::vector<rank_t> stakeholders;
+        mutable std::vector<int> scores;
     };
 
 }

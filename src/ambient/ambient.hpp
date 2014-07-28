@@ -94,6 +94,7 @@
 #include "ambient/controllers/ssm/get.h"
 #include "ambient/controllers/ssm/set.h"
 #include "ambient/controllers/ssm/scope.h"
+#include "ambient/controllers/ssm/actor.h"
 #include "ambient/controllers/ssm/backbone.h"
 
 #include "ambient/utils/auxiliary.hpp"
@@ -122,6 +123,7 @@
 #include "ambient/controllers/ssm/collector.hpp"
 #include "ambient/controllers/ssm/controller.hpp"
 #include "ambient/controllers/ssm/scope.hpp"
+#include "ambient/controllers/ssm/actor.hpp"
 #include "ambient/controllers/ssm/backbone.hpp"
 
 #include "ambient/interface/typed.hpp"
