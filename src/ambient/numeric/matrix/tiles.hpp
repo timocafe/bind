@@ -385,7 +385,7 @@ namespace ambient { namespace numeric {
         size_type tiley = this->data[0]->num_rows();
         size_type tilex = this->data[0]->num_cols();
         int mb = __a_ceil(rows/tiley);
-        return (*this->data[mb*(int)(j/tilex) + (int)(i/tiley)])(i % tiley, j % tilex);
+        return ambient::load(*this->data[mb*(int)(j/tilex) + (int)(i/tiley)])(i % tiley, j % tilex);
     }
 
     template<class Matrix>
@@ -393,7 +393,7 @@ namespace ambient { namespace numeric {
         size_type tiley = this->data[0]->num_rows();
         size_type tilex = this->data[0]->num_cols();
         int mb = __a_ceil(rows/tiley);
-        return (*this->data[mb*(int)(j/tilex) + (int)(i/tiley)])(i % tiley, j % tilex);
+        return ambient::load(*this->data[mb*(int)(j/tilex) + (int)(i/tiley)])(i % tiley, j % tilex);
     }
 
 } }
