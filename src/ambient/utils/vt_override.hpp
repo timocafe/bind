@@ -25,50 +25,16 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef AMBIENT_CONTAINER_BLOCK
-#define AMBIENT_CONTAINER_BLOCK
+#ifndef AMBIENT_UTILS_VT_OVERRIDE
+#define AMBIENT_UTILS_VT_OVERRIDE
 
 namespace ambient {
-     
-    template<typename T> class block;
-    namespace detail { 
-        template<typename T>
-        void fill_value(unbound< block<T> >& a, T& value){
-            size_t size = get_square_dim(a);
-            T* a_ = a.data();
-            for(size_t i = 0; i < size; ++i) a_[i] = value;
-        }
-    }
 
-    AMBIENT_EXPORT_TEMPLATE(detail::fill_value, fill_value)
-
-    template <class T>
-    class block {
+    class allow_vt_override {
     public:
-        typedef T value_type;
-        block(size_t m, size_t n) : AMBIENT_ALLOC_2D(m, n, sizeof(T)) {}
-        size_t lda() const {
-            return ambient::get_dim(*this).y;
-        }
-        void init(T value){
-            fill_value<T>(*this, value);
-        }
-        value_type& operator()(size_t i, size_t j){
-            return ambient::delegated(*this).data[ j*this->lda() + i ];
-        }
-        const value_type& operator()(size_t i, size_t j) const {
-            return ambient::delegated(*this).data[ j*this->lda() + i ];
-        }
-        value_type* data(){
-            return ambient::delegated(*this).data;
-        }
-        const value_type* data() const {
-            return ambient::delegated(*this).data;
-        }
-    AMBIENT_DELEGATE
-    (
-        value_type data[ AMBIENT_VAR_LENGTH ]; 
-    )};
+        void* operator new (size_t size, void* ptr){ return ptr; }
+        void  operator delete (void*, void*){ /* doesn't throw */ }
+    };
 
 }
 

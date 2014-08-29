@@ -25,51 +25,41 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef AMBIENT_CONTAINER_BLOCK
-#define AMBIENT_CONTAINER_BLOCK
+#ifndef AMBIENT_CONTAINER_VECTOR_DETAIL_HPP
+#define AMBIENT_CONTAINER_VECTOR_DETAIL_HPP
 
 namespace ambient {
      
-    template<typename T> class block;
-    namespace detail { 
-        template<typename T>
-        void fill_value(unbound< block<T> >& a, T& value){
-            size_t size = get_square_dim(a);
-            T* a_ = a.data();
-            for(size_t i = 0; i < size; ++i) a_[i] = value;
+    template<class T, class Allocator> class vector;
+    namespace detail {
+        template<typename T, typename Allocator>
+        void set_size(ambient::vector<T,Allocator>& a, const size_t& size){
+            a.resize(size);
+        }
+        template<typename T, typename Allocator>
+        void measure_size(const ambient::vector<T,Allocator>& a, ambient::future<size_t>& size){
+            size.set(a.size());
+        }
+        template<class T, class Allocator>
+        void init_value_vector(unbound< ambient::vector<T,Allocator> >& a, T& value){
+            a.resize(a.cached_size());
+            for(size_t i = 0; i < a.size(); ++i) a[i] = value;
+        }
+        template<class T, class Allocator, class OtherAllocator = Allocator>
+        void copy_vector(unbound< ambient::vector<T,Allocator> >& dst, const ambient::vector<T,OtherAllocator>& src, const size_t& n){
+            for(size_t i = 0; i < n; ++i) dst[i] = src[i];
+        }
+        template<typename T, typename Allocator>
+        void add(ambient::vector<T,Allocator>& a, const ambient::vector<T,Allocator>& b){
+            for(int i = 0; i < a.size(); ++i) a[i] += b[i];
         }
     }
 
-    AMBIENT_EXPORT_TEMPLATE(detail::fill_value, fill_value)
-
-    template <class T>
-    class block {
-    public:
-        typedef T value_type;
-        block(size_t m, size_t n) : AMBIENT_ALLOC_2D(m, n, sizeof(T)) {}
-        size_t lda() const {
-            return ambient::get_dim(*this).y;
-        }
-        void init(T value){
-            fill_value<T>(*this, value);
-        }
-        value_type& operator()(size_t i, size_t j){
-            return ambient::delegated(*this).data[ j*this->lda() + i ];
-        }
-        const value_type& operator()(size_t i, size_t j) const {
-            return ambient::delegated(*this).data[ j*this->lda() + i ];
-        }
-        value_type* data(){
-            return ambient::delegated(*this).data;
-        }
-        const value_type* data() const {
-            return ambient::delegated(*this).data;
-        }
-    AMBIENT_DELEGATE
-    (
-        value_type data[ AMBIENT_VAR_LENGTH ]; 
-    )};
-
+    AMBIENT_EXPORT_TEMPLATE(detail::set_size,          set_size)
+    AMBIENT_EXPORT_TEMPLATE(detail::measure_size,      measure_size)
+    AMBIENT_EXPORT_TEMPLATE(detail::init_value_vector, init_value_vector)
+    AMBIENT_EXPORT_TEMPLATE(detail::copy_vector,       copy_vector)
+    AMBIENT_EXPORT_TEMPLATE(detail::add,               add)
 }
 
 #endif

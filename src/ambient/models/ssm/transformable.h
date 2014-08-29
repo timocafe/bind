@@ -40,12 +40,15 @@ namespace ambient { namespace models { namespace ssm {
             bool b; 
             double d; 
             std::complex<double> c; 
+            size_t s; 
             operator bool& ();
             operator double& ();
             operator std::complex<double>& ();
+            operator size_t& ();
             void operator = (bool value);
             void operator = (double value);
             void operator = (std::complex<double> value);
+            void operator = (size_t value);
             numeric_union(){ }
         };
         void* operator new  (size_t, void*);

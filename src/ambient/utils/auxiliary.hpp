@@ -88,6 +88,8 @@ namespace ambient {
     template<typename V>
     inline void swap_with(V& left, V& right){
         std::swap(left.ambient_rc.desc, right.ambient_rc.desc);
+        left.ambient_after = left.ambient_rc.desc->current;
+        right.ambient_after = right.ambient_rc.desc->current;
     }
 
     template<typename V>

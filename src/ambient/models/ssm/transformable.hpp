@@ -38,9 +38,11 @@ namespace ambient { namespace models { namespace ssm {
     inline transformable::numeric_union::operator bool& (){ return b; }
     inline transformable::numeric_union::operator double& (){ return d; }
     inline transformable::numeric_union::operator std::complex<double>& (){ return c; }
+    inline transformable::numeric_union::operator size_t& (){ return s; }
     inline void transformable::numeric_union::operator = (bool value) { b = value; }
     inline void transformable::numeric_union::operator = (double value) { d = value; }
     inline void transformable::numeric_union::operator = (std::complex<double> value) { c = value; }
+    inline void transformable::numeric_union::operator = (size_t value) { s = value; }
 
     inline void* transformable::operator new (size_t size, void* placement){ return placement; }
     inline void transformable::operator delete (void*, void*){ /* doesn't throw */ }

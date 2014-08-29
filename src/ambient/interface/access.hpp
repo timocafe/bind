@@ -66,6 +66,11 @@ namespace ambient {
         return *(mapping*)(*obj.ambient_after);
     }
 
+    template <typename T> static void transform(const T& obj){
+        if(!is_polymorphic<T>::value) return;
+        new ((void*)&obj) typename get_async_type<T>::type();
+    }
+
     template <typename T> static void revise(const T& obj){
         revision& c = *obj.ambient_before; if(c.valid()) return;
         c.embed(get_allocator<T>::type::calloc(c.spec));
