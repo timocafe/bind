@@ -72,7 +72,7 @@ namespace ambient {
     }
 
     template <class... L, class... Args>
-    void async(void(*l)(L&...), Args&& ... args){
+    void async(void(*l)(L...), Args&& ... args){
         return async(std::function<decltype(*l)>(l), std::forward<Args>(args)...);
     }
 
