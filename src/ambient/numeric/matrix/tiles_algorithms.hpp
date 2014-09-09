@@ -29,6 +29,7 @@
 #define AMBIENT_NUMERIC_TILES_ALGORITHMS
 
 #include "ambient/numeric/matrix/tiles.h"
+#include "ambient/container/iterator/cross_iterator.hpp"
 #include <utility>
 
 #define value_type      typename tiles<Matrix>::value_type
@@ -38,31 +39,6 @@
 #define allocator_type  typename tiles<Matrix>::allocator_type
 
 namespace ambient { namespace numeric {
-
-    class cross_iterator {
-    public:
-        cross_iterator(size_t first, size_t second, size_t size) 
-        : first(first), second(second), lim(first+size){
-            measure_step();
-        }
-        void operator++ (){
-            first  += step;
-            second += step;
-            measure_step();
-        }
-        bool end(){
-            return (first >= lim);
-        }
-        void measure_step(){
-            step = std::min(std::min((AMBIENT_IB*__a_ceil((first+1)/AMBIENT_IB) - first), 
-                                     (AMBIENT_IB*__a_ceil((second+1)/AMBIENT_IB) - second)),
-                                     (lim-first));
-        }
-        size_t first;
-        size_t second;
-        size_t step;
-        size_t lim;
-    };
 
     template<class Matrix>
     bool is_hermitian(const tiles<Matrix>& a){
@@ -288,8 +264,8 @@ namespace ambient { namespace numeric {
                            tiles<MatrixA>& out, size_t oi, size_t oj, 
                            size_t m, size_t n)
     {
-        for(cross_iterator row(oi,ii,m); !row.end(); ++row)
-        for(cross_iterator col(oj,ij,n); !col.end(); ++col)
+        for(cross_iterator<AMBIENT_IB> row(oi,ii,m); !row.end(); ++row)
+        for(cross_iterator<AMBIENT_IB> col(oj,ij,n); !col.end(); ++col)
         copy_block(in.locate(row.second, col.second), row.second%AMBIENT_IB, col.second%AMBIENT_IB,
                    out.locate(row.first, col.first), row.first%AMBIENT_IB, col.first%AMBIENT_IB, 
                    row.step, col.step);
@@ -303,8 +279,8 @@ namespace ambient { namespace numeric {
     {
         const Matrix& factor = alfa.locate(ai, aj); 
         ai %= AMBIENT_IB; aj %= AMBIENT_IB;
-        for(cross_iterator row(oi,ii,m); !row.end(); ++row)
-        for(cross_iterator col(oj,ij,n); !col.end(); ++col)
+        for(cross_iterator<AMBIENT_IB> row(oi,ii,m); !row.end(); ++row)
+        for(cross_iterator<AMBIENT_IB> col(oj,ij,n); !col.end(); ++col)
         copy_block_s(in.locate(row.second, col.second), row.second%AMBIENT_IB, col.second%AMBIENT_IB,
                      out.locate(row.first, col.first), row.first%AMBIENT_IB, col.first%AMBIENT_IB, 
                      factor, ai, aj, row.step, col.step);
@@ -319,8 +295,8 @@ namespace ambient { namespace numeric {
     {
         const MatrixC& factor = alfa.locate(ai, aj); 
         ai %= AMBIENT_IB; aj %= AMBIENT_IB;
-        for(cross_iterator row(oi,ii,m); !row.end(); ++row)
-        for(cross_iterator col(oj,ij,n); !col.end(); ++col)
+        for(cross_iterator<AMBIENT_IB> row(oi,ii,m); !row.end(); ++row)
+        for(cross_iterator<AMBIENT_IB> col(oj,ij,n); !col.end(); ++col)
         copy_block_sa(in.locate(row.second, col.second), row.second%AMBIENT_IB, col.second%AMBIENT_IB,
                       out.locate(row.first, col.first), row.first%AMBIENT_IB, col.first%AMBIENT_IB, 
                       factor, ai, aj, row.step, col.step, alfa_scale);

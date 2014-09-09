@@ -25,18 +25,49 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef AMBIENT_UTILS_VT_OVERRIDE
-#define AMBIENT_UTILS_VT_OVERRIDE
+#ifndef AMBIENT_CONTAINER_ITERATOR_BLOCK_ITERATOR_HPP
+#define AMBIENT_CONTAINER_ITERATOR_BLOCK_ITERATOR_HPP
 
 namespace ambient {
 
-    template<class T>
-    class allow_vt_override {
+    template<class PartitionedContainer>
+    class block_iterator {
     public:
-        void* operator new (size_t size, void* ptr){ return ptr; }
-        void  operator delete (void*, void*){ /* doesn't throw */ }
-        void* operator new (size_t sz){ return ambient::pool::malloc<ambient::memory::fixed,T>(); }
-        void operator delete (void* ptr){ ambient::pool::free<ambient::memory::fixed,sizeof(T)>(ptr); }
+        typedef typename PartitionedContainer::iterator base_iterator;
+        typedef typename PartitionedContainer::partition_type block_type;
+        static constexpr int ib = PartitionedContainer::ib;
+
+        block_iterator(base_iterator first, base_iterator last) 
+        : base(first) 
+        {
+            position = first-base.get_container().begin();
+            limit = last-base.get_container().begin();
+            measure_step();
+        }
+        void operator++ (){
+            position += step;
+            measure_step();
+        }
+        size_t offset() const {
+            return position - (base - base.get_container().cbegin());
+        }
+        bool operator != (base_iterator it){
+            return (position != it-base.get_container().begin());
+        }
+        block_type& operator* (){
+            return base.get_container().locate(position);
+        }
+        void measure_step(){
+            step = std::min(ib*__a_ceil((position+1)/ib) - position, limit-position);
+            first = position % ib;
+            second = first+step;
+        }
+        size_t first;
+        size_t second;
+        size_t position;
+        size_t limit;
+        size_t step;
+        base_iterator base;
     };
 
 }

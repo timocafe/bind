@@ -25,19 +25,15 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef AMBIENT_UTILS_VT_OVERRIDE
-#define AMBIENT_UTILS_VT_OVERRIDE
+#ifndef AMBIENT_CONTAINER_PARTITIONED_VECTOR_DETAIL_HPP
+#define AMBIENT_CONTAINER_PARTITIONED_VECTOR_DETAIL_HPP
 
 namespace ambient {
+     
+    template<class T, class Allocator> class vector;
+    namespace detail {
 
-    template<class T>
-    class allow_vt_override {
-    public:
-        void* operator new (size_t size, void* ptr){ return ptr; }
-        void  operator delete (void*, void*){ /* doesn't throw */ }
-        void* operator new (size_t sz){ return ambient::pool::malloc<ambient::memory::fixed,T>(); }
-        void operator delete (void* ptr){ ambient::pool::free<ambient::memory::fixed,sizeof(T)>(ptr); }
-    };
+    }
 
 }
 

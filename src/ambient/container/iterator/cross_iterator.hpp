@@ -25,18 +25,35 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef AMBIENT_UTILS_VT_OVERRIDE
-#define AMBIENT_UTILS_VT_OVERRIDE
+#ifndef AMBIENT_CONTAINER_ITERATOR_CROSS_ITERATOR
+#define AMBIENT_CONTAINER_ITERATOR_CROSS_ITERATOR
 
 namespace ambient {
 
-    template<class T>
-    class allow_vt_override {
+    template<int IB = AMBIENT_IB>
+    class cross_iterator {
     public:
-        void* operator new (size_t size, void* ptr){ return ptr; }
-        void  operator delete (void*, void*){ /* doesn't throw */ }
-        void* operator new (size_t sz){ return ambient::pool::malloc<ambient::memory::fixed,T>(); }
-        void operator delete (void* ptr){ ambient::pool::free<ambient::memory::fixed,sizeof(T)>(ptr); }
+        cross_iterator(size_t first, size_t second, size_t size) 
+        : first(first), second(second), lim(first+size){
+            measure_step();
+        }
+        void operator++ (){
+            first  += step;
+            second += step;
+            measure_step();
+        }
+        bool end(){
+            return (first >= lim);
+        }
+        void measure_step(){
+            step = std::min(std::min((IB*__a_ceil((first+1)/IB) - first), 
+                                     (IB*__a_ceil((second+1)/IB) - second)),
+                                     (lim-first));
+        }
+        size_t first;
+        size_t second;
+        size_t step;
+        size_t lim;
     };
 
 }

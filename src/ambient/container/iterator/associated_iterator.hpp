@@ -25,19 +25,51 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef AMBIENT_UTILS_VT_OVERRIDE
-#define AMBIENT_UTILS_VT_OVERRIDE
+#ifndef AMBIENT_CONTAINER_ITERATOR_ASSOCIATED_ITERATOR_HPP
+#define AMBIENT_CONTAINER_ITERATOR_ASSOCIATED_ITERATOR_HPP
 
 namespace ambient {
 
-    template<class T>
-    class allow_vt_override {
+    template<class Container>
+    class associated_iterator {
     public:
-        void* operator new (size_t size, void* ptr){ return ptr; }
-        void  operator delete (void*, void*){ /* doesn't throw */ }
-        void* operator new (size_t sz){ return ambient::pool::malloc<ambient::memory::fixed,T>(); }
-        void operator delete (void* ptr){ ambient::pool::free<ambient::memory::fixed,sizeof(T)>(ptr); }
+        typedef Container container_type;
+        associated_iterator(container_type& owner, size_t p) : container(owner), position(p) {}
+        void operator++ (){
+            position++;
+        }
+        associated_iterator& operator += (size_t offset){
+            position += offset;
+            return *this;
+        }
+        associated_iterator& operator -= (size_t offset){
+            position -= offset;
+            return *this;
+        }
+        container_type& get_container(){
+            return container;
+        }
+        const container_type& get_container() const {
+            return container;
+        }
+        size_t position;
+        container_type& container;
     };
+
+    template <class Container, class OtherContainer> 
+    size_t operator - (const associated_iterator<Container>& lhs, const associated_iterator<OtherContainer>& rhs){ 
+        return lhs.position - rhs.position;
+    }
+
+    template <class Container> 
+    associated_iterator<Container> operator + (associated_iterator<Container> lhs, size_t offset){ 
+        return (lhs += offset);
+    }
+
+    template <class Container> 
+    associated_iterator<Container> operator - (associated_iterator<Container> lhs, size_t offset){ 
+        return (lhs -= offset);
+    }
 
 }
 
