@@ -56,6 +56,11 @@ namespace ambient {
         container_type& container;
     };
 
+    template <class Container> 
+    bool operator == (const associated_iterator<Container>& lhs, const associated_iterator<Container>& rhs){
+        return (lhs.position == rhs.position && &lhs.container == &rhs.container);
+    }
+
     template <class Container, class OtherContainer> 
     size_t operator - (const associated_iterator<Container>& lhs, const associated_iterator<OtherContainer>& rhs){ 
         return lhs.position - rhs.position;
@@ -70,6 +75,26 @@ namespace ambient {
     associated_iterator<Container> operator - (associated_iterator<Container> lhs, size_t offset){ 
         return (lhs -= offset);
     }
+
+    template <class Container> 
+    bool operator < (const associated_iterator<Container>& lhs, const associated_iterator<Container>& rhs){
+        return (lhs.position < rhs.position);
+    }
+
+    template <class Container> 
+    bool operator > (const associated_iterator<Container>& lhs, const associated_iterator<Container>& rhs){
+        return (lhs.position > rhs.position);
+    }
+
+}
+
+namespace std {
+
+    template<class Container>
+    class iterator_traits<ambient::associated_iterator<Container> > {
+    public:
+        typedef typename Container::value_type value_type;
+    };
 
 }
 

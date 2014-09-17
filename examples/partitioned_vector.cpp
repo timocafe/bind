@@ -1,9 +1,9 @@
 #include "ambient/ambient.hpp"
+#include "ambient/container/atomic.hpp"
 #include "ambient/container/vector.hpp"
 #include "ambient/container/partitioned_vector.hpp"
 
 int main(){
-
     ambient::partitioned_vector<ambient::vector<int>, 3> a(10, 13);
     ambient::partitioned_vector<ambient::vector<int>, 4> b(10, 39);
     ambient::partitioned_vector<ambient::vector<int>, 5> c(10, 43);
@@ -18,7 +18,12 @@ int main(){
     ambient::transform(c.begin(), c.end(), b.begin(), [](int i){ return ++i; });
     ambient::replace(b.begin(), b.end(), 40, 87);
 
-    for(int i = 0; i < 10; i++) ambient::cout << "Value is " << b[i] << "\n";
+    ambient::partitioned_vector<ambient::vector<int>, 1024*1024> seq(8*1024*1024);
+    ambient::sequence(seq.begin(), seq.end());
+    ambient::atomic<double> res = ambient::reduce(seq.begin(), seq.end(), (double)0.);
+
+    ambient::sort(seq.begin(), seq.end());
+    ambient::sort(seq.begin(), seq.end(), [](int a, int b){ return a > b; });
 
     ambient::sync();
     return 0;

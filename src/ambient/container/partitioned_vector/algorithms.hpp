@@ -30,6 +30,7 @@
 
 #include "ambient/container/iterator/block_iterator.hpp"
 #include "ambient/container/iterator/block_tuple_iterator.hpp"
+#include "ambient/container/partitioned_vector/bitonic_sort.hpp"
 
 namespace ambient {
 
@@ -139,15 +140,75 @@ namespace ambient {
         }
     }
 
-    /* Waiting list:
-    
-    template< class InputIt, class T>
-    T reduce( InputIt first, InputIt last, T init ){
+    template <class InputIterator, class T>
+    ambient::atomic<T> reduce(InputIterator begin, InputIterator end, T init){
+        typedef block_iterator<typename InputIterator::container_type> iterator;
+        typedef typename iterator::block_type block_type;
+
+        iterator bit(begin,end);
+        block_type reduced(bit.n_blocks());
+
+        for(size_t b = 0; bit != end; ++bit){
+            ambient::async([](const block_type& block, size_t first, size_t second, const block_type& res, size_t idx){
+                               const typename block_type::value_type* array = block.cbegin();
+                               const_cast<block_type&>(res)[idx] = __sec_reduce_add(array[first:second]);
+                           }, *bit, bit.first, bit.second, reduced, b);
+            b++;
+        }
+
+        ambient::atomic<T> res(init);
+        ambient::async([](const block_type& block, ambient::atomic<T>& value){
+                           const typename block_type::value_type* array = block.cbegin();
+                           while(!block.ambient_before->locked_once()) continue;
+                           value.set(value.get()+__sec_reduce_add(array[0:block.size()]));
+                       }, reduced, res);
+        return res; 
     }
 
-    template< class InputIt, class T, class BinaryOperation>
-    T reduce( InputIt first, InputIt last, T init, BinaryOperation op ){
+    template <class InputIterator, class T, class BinaryOperation>
+    ambient::atomic<T> reduce(InputIterator begin, InputIterator end, T init, BinaryOperation op){
+        typedef block_iterator<typename InputIterator::container_type> iterator;
+        typedef typename iterator::block_type block_type;
+
+        iterator bit(begin,end);
+        block_type reduced(bit.n_blocks());
+
+        for(size_t b = 0; bit != end; ++bit){
+            ambient::async([op](const block_type& block, size_t first, size_t second, const block_type& res, size_t idx){
+                               const typename block_type::value_type* array = block.cbegin();
+                               const_cast<block_type&>(res)[idx] = __sec_reduce(0, array[first:second], op);
+                           }, *bit, bit.first, bit.second, reduced, b);
+            b++;
+        }
+
+        ambient::atomic<T> res(init);
+        ambient::async([op](const block_type& block, ambient::atomic<T>& value){
+                           const typename block_type::value_type* array = block.cbegin();
+                           while(!block.ambient_before->locked_once()) continue;
+                           value.set(__sec_reduce(value.get(), array[0:block.size()], op));
+                       }, reduced, res);
+        return res;
     }
+
+
+    template <class RandomAccessIterator, class Compare>
+    void sort(RandomAccessIterator begin, RandomAccessIterator end, Compare comp){
+        detail::bitonic_sort<RandomAccessIterator,Compare>::sort(begin, begin + (1 << __a_ceil(std::log2(end-begin))), end, comp);
+    }
+
+    template <class RandomAccessIterator>
+    void sort(RandomAccessIterator begin, RandomAccessIterator end){
+        struct {
+            typedef typename std::iterator_traits<RandomAccessIterator>::value_type value_type;
+            inline bool operator()(const value_type& a, const value_type& b){
+                return a < b;
+            }
+        } compare;
+        return sort(begin, end, compare);
+    }
+
+
+    /* Waiting list:
 
     template <class ForwardIterator, class T>
     ForwardIterator remove (ForwardIterator first, ForwardIterator last, const T& val){
@@ -159,14 +220,6 @@ namespace ambient {
 
     template <class ForwardIterator, class BinaryPredicate>
     ForwardIterator unique (ForwardIterator first, ForwardIterator last, BinaryPredicate pred){
-    }
-
-    template <class RandomAccessIterator>
-    void sort (RandomAccessIterator first, RandomAccessIterator last){
-    }
-
-    template <class RandomAccessIterator, class Compare>
-    void sort (RandomAccessIterator first, RandomAccessIterator last, Compare comp){
     }
 
     template <class InputIterator, class T>

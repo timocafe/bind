@@ -48,6 +48,12 @@ namespace ambient {
             position += step;
             measure_step();
         }
+        size_t n_blocks(){
+            size_t count = 0;
+            for(size_t pos = position; pos != limit; count++)
+                pos += std::min(ib*__a_ceil((pos+1)/ib) - pos, limit-pos);
+            return count;
+        }
         size_t offset() const {
             return position - (base - base.get_container().cbegin());
         }
@@ -55,7 +61,10 @@ namespace ambient {
             return (position != it-base.get_container().begin());
         }
         block_type& operator* (){
-            return base.get_container().locate(position);
+            return locate(position);
+        }
+        block_type& locate(size_t p){
+            return base.get_container().locate(p);
         }
         void measure_step(){
             step = std::min(ib*__a_ceil((position+1)/ib) - position, limit-position);
