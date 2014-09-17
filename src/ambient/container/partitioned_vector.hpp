@@ -29,7 +29,7 @@
 #define AMBIENT_CONTAINER_PARTITIONED_VECTOR_HPP
 
 #include "ambient/container/partitioned_vector/partitioned_vector.h"
-#include "ambient/container/partitioned_vector/partitioned_vector.hpp"
 #include "ambient/container/partitioned_vector/algorithms.hpp"
+#include "ambient/container/partitioned_vector/partitioned_vector.hpp"
 
 #endif

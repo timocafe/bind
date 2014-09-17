@@ -66,6 +66,7 @@ namespace ambient {
         iterator end();
         const_iterator cbegin() const;
         const_iterator cend() const;
+        void normalize();
     public:
         std::vector<Vector*> data;
         size_type length;

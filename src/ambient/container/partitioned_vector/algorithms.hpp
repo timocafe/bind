@@ -234,17 +234,54 @@ namespace ambient {
         return res;
     }
 
-    /* Waiting list:
+    // NOTE: input vector is denormalized after this operation.
+    // Call "normalize" method or use async sizes of parts that are valid (caution).
+    template <class InputIterator, class T>
+    void remove(InputIterator begin, InputIterator end, const T& val){
+        typedef block_iterator<typename InputIterator::container_type> iterator;
+        typedef typename iterator::block_type block_type;
 
-    template <class ForwardIterator, class T>
-    ForwardIterator remove (ForwardIterator first, ForwardIterator last, const T& val){
+        for(iterator bit(begin,end); bit != end; ++bit){
+            ambient::async([val](block_type& block, size_t first, size_t second){
+                               typename block_type::iterator r_end = std::remove(block.begin()+first, block.begin()+second, val);
+                               if(r_end == block.begin()+second) return;
+                               if(block.begin()+second != block.end())
+                                   std::copy(block.begin()+second, block.end(), r_end);
+                               block.resize(block.size() - ((block.begin()+second)-r_end));
+                           }, *bit, bit.first, bit.second);
+        }
     }
 
-    template <class ForwardIterator>
-    ForwardIterator unique (ForwardIterator first, ForwardIterator last){
+    // NOTE: input vector is denormalized after this operation.
+    // Call "normalize" method or use async sizes of parts that are valid (caution).
+    // Known issue: will not check uniqueness of adjacent blocks boundary elements.
+    template <class InputIterator, class BinaryPredicate>
+    void unique(InputIterator begin, InputIterator end, BinaryPredicate pred){
+        typedef block_iterator<typename InputIterator::container_type> iterator;
+        typedef typename iterator::block_type block_type;
+
+        for(iterator bit(begin,end); bit != end; ++bit){
+            ambient::async([pred](block_type& block, size_t first, size_t second){
+                               typename block_type::iterator r_end = std::unique(block.begin()+first, block.begin()+second, pred);
+                               if(r_end == block.begin()+second) return;
+                               if(block.begin()+second != block.end())
+                                   std::copy(block.begin()+second, block.end(), r_end);
+                               block.resize(block.size() - ((block.begin()+second)-r_end));
+                           }, *bit, bit.first, bit.second);
+        }
     }
 
-    */
+    template <class InputIterator>
+    void unique(InputIterator begin, InputIterator end){
+        struct {
+            typedef typename std::iterator_traits<InputIterator>::value_type value_type;
+            inline bool operator()(const value_type& a, const value_type& b){
+                return a == b;
+            }
+        } compare;
+        return unique(begin, end, compare);
+    }
+
 }
 
 #endif

@@ -177,6 +177,22 @@ namespace ambient {
     typename partitioned_vector<Vector,IB>::const_iterator partitioned_vector<Vector,IB>::cend() const {
         return typename partitioned_vector<Vector,IB>::const_iterator(*this, size());
     }
+     
+    template <class Vector, int IB>
+    void partitioned_vector<Vector,IB>::normalize(){
+        std::vector<size_t> sizes(nt);
+        for(int i = 0; i < nt; i++) sizes[i] = this->data[i]->measure();
+        partitioned_vector r(std::accumulate(sizes.begin(), sizes.end(), 0));
+
+        iterator first = this->begin();
+        iterator result = r.begin();
+        for(int i = 0; i < nt; i++){
+            ambient::copy(first, first+sizes[i], result);
+            result += sizes[i];
+            first += IB;
+        }
+        this->swap(r);
+    }
 
 }
 
