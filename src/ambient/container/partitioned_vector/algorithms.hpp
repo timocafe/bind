@@ -159,7 +159,7 @@ namespace ambient {
         ambient::atomic<T> res(init);
         ambient::async([](const block_type& block, ambient::atomic<T>& value){
                            const typename block_type::value_type* array = block.cbegin();
-                           while(!block.ambient_before->locked_once()) continue;
+                           while(!ambient::locked_once(block)) continue;
                            value.set(value.get()+__sec_reduce_add(array[0:block.size()]));
                        }, reduced, res);
         return res; 
@@ -184,12 +184,11 @@ namespace ambient {
         ambient::atomic<T> res(init);
         ambient::async([op](const block_type& block, ambient::atomic<T>& value){
                            const typename block_type::value_type* array = block.cbegin();
-                           while(!block.ambient_before->locked_once()) continue;
+                           while(!ambient::locked_once(block)) continue;
                            value.set(__sec_reduce(value.get(), array[0:block.size()], op));
                        }, reduced, res);
         return res;
     }
-
 
     template <class RandomAccessIterator, class Compare>
     void sort(RandomAccessIterator begin, RandomAccessIterator end, Compare comp){
@@ -207,6 +206,33 @@ namespace ambient {
         return sort(begin, end, compare);
     }
 
+    template <class InputIterator, class T>
+    ambient::atomic<InputIterator> find(InputIterator begin, InputIterator end, const T& val){
+        typedef block_iterator<typename InputIterator::container_type> iterator;
+        typedef typename iterator::block_type block_type;
+
+        iterator bit(begin,end);
+        ambient::vector<int> positions(bit.n_blocks(), -1);
+
+        for(size_t b = 0; bit != end; ++bit){
+            size_t offset = bit.offset();
+            ambient::async([val,offset](const block_type& block, size_t first, size_t second, const ambient::vector<int>& res, size_t idx){
+                               const typename block_type::value_type* array = block.cbegin();
+                               for(size_t i = first; i < second; i++) if(array[i] == val)
+                                   const_cast<ambient::vector<int>&>(res)[idx] = (int)(offset + i - first);
+                           }, *bit, bit.first, bit.second, positions, b);
+            b++;
+        }
+        ambient::atomic<InputIterator> res(end);
+        ambient::async([val,begin](const ambient::vector<int>& positions, ambient::atomic<InputIterator>& match){
+                           while(!ambient::locked_once(positions)) continue;
+                           for(size_t i = 0; i < positions.size(); i++) if(positions[i] != -1){
+                               match.set(begin+positions[i]);
+                               return;
+                           }
+                       }, positions, res);
+        return res;
+    }
 
     /* Waiting list:
 
@@ -218,15 +244,7 @@ namespace ambient {
     ForwardIterator unique (ForwardIterator first, ForwardIterator last){
     }
 
-    template <class ForwardIterator, class BinaryPredicate>
-    ForwardIterator unique (ForwardIterator first, ForwardIterator last, BinaryPredicate pred){
-    }
-
-    template <class InputIterator, class T>
-    InputIterator find (InputIterator first, InputIterator last, const T& val){
-    }
     */
-
 }
 
 #endif

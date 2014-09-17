@@ -34,7 +34,10 @@ namespace ambient {
     class associated_iterator {
     public:
         typedef Container container_type;
-        associated_iterator(container_type& owner, size_t p) : container(owner), position(p) {}
+        typedef typename Container::value_type value_type;
+
+        associated_iterator() : container(NULL), position(0) {}
+        associated_iterator(container_type& owner, size_t p) : container(&owner), position(p) {}
         void operator++ (){
             position++;
         }
@@ -46,19 +49,25 @@ namespace ambient {
             position -= offset;
             return *this;
         }
+        value_type& operator* (){
+            return (*container)[position];
+        }
+        const value_type& operator* () const {
+            return (*container)[position];
+        }
         container_type& get_container(){
-            return container;
+            return *container;
         }
         const container_type& get_container() const {
-            return container;
+            return *container;
         }
         size_t position;
-        container_type& container;
+        container_type* container;
     };
 
     template <class Container> 
     bool operator == (const associated_iterator<Container>& lhs, const associated_iterator<Container>& rhs){
-        return (lhs.position == rhs.position && &lhs.container == &rhs.container);
+        return (lhs.position == rhs.position && lhs.container == rhs.container);
     }
 
     template <class Container, class OtherContainer> 

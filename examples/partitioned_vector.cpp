@@ -20,10 +20,12 @@ int main(){
 
     ambient::partitioned_vector<ambient::vector<int>, 1024*1024> seq(8*1024*1024);
     ambient::sequence(seq.begin(), seq.end());
-    ambient::atomic<double> res = ambient::reduce(seq.begin(), seq.end(), (double)0.);
+    auto res = ambient::reduce(seq.begin(), seq.end(), (double)0.);
 
     ambient::sort(seq.begin(), seq.end());
     ambient::sort(seq.begin(), seq.end(), [](int a, int b){ return a > b; });
+
+    auto pos = ambient::find(seq.begin(), seq.end(), 8*1024*1024-1);
 
     ambient::sync();
     return 0;
