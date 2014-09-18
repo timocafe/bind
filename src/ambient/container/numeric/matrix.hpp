@@ -25,7 +25,7 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#include "ambient/numeric/matrix/matrix.hpp"
-#include "ambient/numeric/matrix/diagonal_matrix.hpp"
-#include "ambient/numeric/matrix/tiles.hpp"
-#include "ambient/numeric/matrix/utils.hpp"
+#include "ambient/container/numeric/matrix/matrix.hpp"
+#include "ambient/container/numeric/matrix/diagonal_matrix.hpp"
+#include "ambient/container/numeric/matrix/tiles.hpp"
+#include "ambient/container/numeric/matrix/utils.hpp"

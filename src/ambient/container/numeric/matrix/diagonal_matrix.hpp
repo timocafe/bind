@@ -25,9 +25,9 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef AMBIENT_NUMERIC_DIAGONAL_MATRIX_HPP
-#define AMBIENT_NUMERIC_DIAGONAL_MATRIX_HPP
-#include "ambient/numeric/matrix/diagonal_matrix.h" 
+#ifndef AMBIENT_CONTAINER_NUMERIC_DIAGONAL_MATRIX_HPP
+#define AMBIENT_CONTAINER_NUMERIC_DIAGONAL_MATRIX_HPP
+#include "ambient/container/numeric/matrix/diagonal_matrix.h" 
 
 namespace ambient { namespace numeric {
 

@@ -25,11 +25,11 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef AMBIENT_NUMERIC_MATRIX_H
-#define AMBIENT_NUMERIC_MATRIX_H
+#ifndef AMBIENT_CONTAINER_NUMERIC_MATRIX_H
+#define AMBIENT_CONTAINER_NUMERIC_MATRIX_H
 
 #include "ambient/ambient.hpp"
-#include "ambient/numeric/future.hpp"
+#include "ambient/container/future.hpp"
 
 namespace ambient { namespace numeric {
 

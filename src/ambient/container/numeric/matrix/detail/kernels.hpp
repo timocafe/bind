@@ -25,13 +25,13 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef AMBIENT_NUMERIC_MATRIX_KERNELS
-#define AMBIENT_NUMERIC_MATRIX_KERNELS
+#ifndef AMBIENT_CONTAINER_NUMERIC_MATRIX_DETAIL_KERNELS
+#define AMBIENT_CONTAINER_NUMERIC_MATRIX_DETAIL_KERNELS
 
-#include "ambient/numeric/kernels/math.hpp"
-#include "ambient/numeric/kernels/utils.hpp"
-#include "ambient/numeric/traits.hpp"
-#include "ambient/numeric/boost_bindings.hpp"
+#include "ambient/container/numeric/matrix/detail/math.hpp"
+#include "ambient/container/numeric/matrix/detail/utils.hpp"
+#include "ambient/container/numeric/traits.hpp"
+#include "ambient/container/numeric/boost_bindings.hpp"
 
 namespace ambient { namespace numeric { namespace kernels {
     namespace detail {

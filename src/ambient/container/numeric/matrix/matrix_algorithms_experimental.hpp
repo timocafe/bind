@@ -25,13 +25,13 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef AMBIENT_NUMERIC_MATRIX_ALGORITHMS_EXPERIMENTAL
-#define AMBIENT_NUMERIC_MATRIX_ALGORITHMS_EXPERIMENTAL
+#ifndef AMBIENT_CONTAINER_NUMERIC_MATRIX_ALGORITHMS_EXPERIMENTAL
+#define AMBIENT_CONTAINER_NUMERIC_MATRIX_ALGORITHMS_EXPERIMENTAL
 
-#include "ambient/numeric/matrix/matrix.h"
-#include "ambient/numeric/kernels/kernels.hpp"
-#include "ambient/numeric/kernels/experimental.hpp"
-#include "ambient/numeric/matrix/diagonal_matrix.hpp"
+#include "ambient/container/numeric/matrix/matrix.h"
+#include "ambient/container/numeric/matrix/detail/kernels.hpp"
+#include "ambient/container/numeric/matrix/detail/experimental.hpp"
+#include "ambient/container/numeric/matrix/diagonal_matrix.hpp"
 
 #define size_type       typename matrix<T,A>::size_type
 #define real_type       typename matrix<T,A>::real_type

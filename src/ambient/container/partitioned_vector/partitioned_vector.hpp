@@ -29,7 +29,7 @@
 #define AMBIENT_CONTAINER_PARTITIONED_VECTOR_PARTITIONED_VECTOR_HPP
 
 #include "ambient/container/partitioned_vector/partitioned_vector.h"
-#include "ambient/numeric/future.hpp"
+#include "ambient/container/future.hpp"
 #include "ambient/container/partitioned_vector/detail.hpp"
 
 namespace ambient {

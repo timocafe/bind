@@ -25,10 +25,10 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef AMBIENT_NUMERIC_TILES_ALGORITHMS
-#define AMBIENT_NUMERIC_TILES_ALGORITHMS
+#ifndef AMBIENT_CONTAINER_NUMERIC_TILES_ALGORITHMS
+#define AMBIENT_CONTAINER_NUMERIC_TILES_ALGORITHMS
 
-#include "ambient/numeric/matrix/tiles.h"
+#include "ambient/container/numeric/matrix/tiles.h"
 #include "ambient/container/iterator/cross_iterator.hpp"
 #include <utility>
 

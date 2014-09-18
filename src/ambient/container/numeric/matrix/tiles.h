@@ -25,10 +25,10 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef AMBIENT_NUMERIC_TILES_H
-#define AMBIENT_NUMERIC_TILES_H
+#ifndef AMBIENT_CONTAINER_NUMERIC_TILES_H
+#define AMBIENT_CONTAINER_NUMERIC_TILES_H
 
-#include "ambient/numeric/traits.hpp"
+#include "ambient/container/numeric/traits.hpp"
 
 #ifdef AMBIENT_ALPS_HDF5
 #include <alps/hdf5.hpp>

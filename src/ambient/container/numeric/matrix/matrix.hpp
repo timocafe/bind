@@ -25,13 +25,13 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef AMBIENT_NUMERIC_MATRIX_HPP
-#define AMBIENT_NUMERIC_MATRIX_HPP
+#ifndef AMBIENT_CONTAINER_NUMERIC_MATRIX_HPP
+#define AMBIENT_CONTAINER_NUMERIC_MATRIX_HPP
 
-#include "ambient/numeric/matrix/matrix.h"
-#include "ambient/numeric/matrix/matrix_algorithms.hpp"
+#include "ambient/container/numeric/matrix/matrix.h"
+#include "ambient/container/numeric/matrix/matrix_algorithms.hpp"
 #ifdef AMBIENT_NUMERIC_EXPERIMENTAL
-#include "ambient/numeric/matrix/matrix_algorithms_experimental.hpp"
+#include "ambient/container/numeric/matrix/matrix_algorithms_experimental.hpp"
 #endif
 
 

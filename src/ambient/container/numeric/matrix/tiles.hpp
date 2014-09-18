@@ -25,13 +25,13 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef AMBIENT_NUMERIC_TILES_HPP
-#define AMBIENT_NUMERIC_TILES_HPP
+#ifndef AMBIENT_CONTAINER_NUMERIC_TILES_HPP
+#define AMBIENT_CONTAINER_NUMERIC_TILES_HPP
 
-#include "ambient/numeric/matrix/tiles.h"
-#include "ambient/numeric/matrix/tiles_algorithms.hpp"
+#include "ambient/container/numeric/matrix/tiles.h"
+#include "ambient/container/numeric/matrix/tiles_algorithms.hpp"
 #ifdef AMBIENT_NUMERIC_EXPERIMENTAL
-#include "ambient/numeric/matrix/tiles_algorithms_experimental.hpp"
+#include "ambient/container/numeric/matrix/tiles_algorithms_experimental.hpp"
 #endif
 
 // {{{ tiles< subset_view<Matrix> >

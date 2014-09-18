@@ -25,8 +25,8 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef AMBIENT_NUMERIC_TRAITS
-#define AMBIENT_NUMERIC_TRAITS
+#ifndef AMBIENT_CONTAINER_NUMERIC_TRAITS
+#define AMBIENT_CONTAINER_NUMERIC_TRAITS
 
 namespace ambient { namespace numeric { namespace traits {
 

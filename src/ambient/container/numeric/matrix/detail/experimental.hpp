@@ -25,11 +25,11 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef AMBIENT_NUMERIC_MATRIX_KERNELS_EXPERIMENTAL
-#define AMBIENT_NUMERIC_MATRIX_KERNELS_EXPERIMENTAL
+#ifndef AMBIENT_CONTAINER_NUMERIC_MATRIX_DETAIL_EXPERIMENTAL
+#define AMBIENT_CONTAINER_NUMERIC_MATRIX_DETAIL_EXPERIMENTAL
 
-#include "ambient/numeric/kernels/math.hpp"
-#include "ambient/numeric/kernels/utils.hpp"
+#include "ambient/container/numeric/matrix/detail/math.hpp"
+#include "ambient/container/numeric/matrix/detail/utils.hpp"
 
 namespace ambient { namespace numeric { namespace kernels {
 

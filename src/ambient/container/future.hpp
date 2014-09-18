@@ -25,8 +25,8 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef AMBIENT_NUMERIC_FUTURE
-#define AMBIENT_NUMERIC_FUTURE
+#ifndef AMBIENT_CONTAINER_FUTURE_HPP
+#define AMBIENT_CONTAINER_FUTURE_HPP
 
 namespace ambient { namespace numeric {
 

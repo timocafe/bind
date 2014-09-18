@@ -25,8 +25,8 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef AMBIENT_NUMERIC_BINDINGS
-#define AMBIENT_NUMERIC_BINDINGS
+#ifndef AMBIENT_CONTAINER_NUMERIC_BINDINGS
+#define AMBIENT_CONTAINER_NUMERIC_BINDINGS
 
 namespace ambient { namespace numeric { namespace bindings {
 

@@ -1,5 +1,5 @@
 #include "ambient/ambient.hpp"
-#include "ambient/numeric/matrix.hpp"
+#include "ambient/container/numeric/matrix.hpp"
 
 int main(){
     using namespace ambient;
