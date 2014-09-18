@@ -25,19 +25,15 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef AMBIENT_UTILS_ENABLE_OMP
-#define AMBIENT_UTILS_ENABLE_OMP
+#ifndef AMBIENT_UTILS_THREADS_SERIAL
+#define AMBIENT_UTILS_THREADS_SERIAL
 
-#include <omp.h>
-#define AMBIENT_THREADING_TAGLINE "using openmp"
-#define AMBIENT_THREAD_ID omp_get_thread_num()
-#define AMBIENT_PRAGMA(a) _Pragma( #a )
-#define AMBIENT_THREAD AMBIENT_PRAGMA(omp task untied)
-#define AMBIENT_PARALLEL_FOR(...) AMBIENT_PRAGMA(omp parallel for schedule(dynamic, 1)) for(__VA_ARGS__)
-#define AMBIENT_SMP_ENABLE AMBIENT_PRAGMA(omp parallel) { AMBIENT_PRAGMA(omp single nowait)
-#define AMBIENT_SMP_DISABLE }
-#define AMBIENT_NUM_THREADS [&]()->int{ int n; AMBIENT_SMP_ENABLE \
-                            { n = omp_get_num_threads(); } \
-                            AMBIENT_SMP_DISABLE return n; }()
+#define AMBIENT_PARALLEL_FOR(...) for(__VA_ARGS__)
+#define AMBIENT_THREADING_TAGLINE "no threading"
+#define AMBIENT_NUM_THREADS 1
+#define AMBIENT_THREAD_ID   0
+#define AMBIENT_THREAD
+#define AMBIENT_SMP_ENABLE
+#define AMBIENT_SMP_DISABLE
 
 #endif

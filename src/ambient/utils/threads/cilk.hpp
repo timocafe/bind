@@ -25,31 +25,17 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef AMBIENT_UTILS_ENABLE_THREADING
-#define AMBIENT_UTILS_ENABLE_THREADING
+#ifndef AMBIENT_UTILS_THREADS_CILK
+#define AMBIENT_UTILS_THREADS_CILK
 
-// default: select threading if icc/gcc
-#if !defined(AMBIENT_CILK) && !defined(AMBIENT_OMP) && !defined(AMBIENT_SERIAL)
-#if defined __INTEL_COMPILER
-#define AMBIENT_CILK
-#elif defined __GNUC__
-#define AMBIENT_OMP
-#endif
-#endif
-
-#ifdef AMBIENT_CILK
-#include "ambient/utils/enable_cilk.hpp"
-#elif defined(AMBIENT_OMP)
-#include "ambient/utils/enable_omp.hpp"
-#else
-#include "ambient/utils/enable_serial.hpp"
-#endif
-
-namespace ambient {
-    inline int num_threads(){
-        static int n = AMBIENT_NUM_THREADS; return n;
-    }
-}
+#include <cilk/cilk.h>
+#include <cilk/cilk_api.h>
+#define AMBIENT_THREADING_TAGLINE "using cilk"
+#define AMBIENT_NUM_THREADS __cilkrts_get_nworkers()
+#define AMBIENT_THREAD_ID __cilkrts_get_worker_number()
+#define AMBIENT_THREAD cilk_spawn
+#define AMBIENT_SMP_ENABLE
+#define AMBIENT_SMP_DISABLE cilk_sync;
+#define AMBIENT_PARALLEL_FOR(...) cilk_for(__VA_ARGS__)
 
 #endif
-

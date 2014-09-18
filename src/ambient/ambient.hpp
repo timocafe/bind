@@ -64,7 +64,7 @@
 #include "ambient/utils/enums.h"
 #include "ambient/utils/tree.hpp"
 #include "ambient/utils/fence.hpp"
-#include "ambient/utils/enable_threading.hpp"
+#include "ambient/utils/threads.hpp"
 #include "ambient/utils/math.hpp"
 #include "ambient/utils/rank_t.hpp"
 

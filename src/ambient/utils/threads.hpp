@@ -25,15 +25,31 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef AMBIENT_UTILS_ENABLE_SERIAL
-#define AMBIENT_UTILS_ENABLE_SERIAL
+#ifndef AMBIENT_UTILS_THREADS
+#define AMBIENT_UTILS_THREADS
 
-#define AMBIENT_PARALLEL_FOR(...) for(__VA_ARGS__)
-#define AMBIENT_THREADING_TAGLINE "no threading"
-#define AMBIENT_NUM_THREADS 1
-#define AMBIENT_THREAD_ID   0
-#define AMBIENT_THREAD
-#define AMBIENT_SMP_ENABLE
-#define AMBIENT_SMP_DISABLE
+// default: select threading if icc/gcc
+#if !defined(AMBIENT_CILK) && !defined(AMBIENT_OMP) && !defined(AMBIENT_SERIAL)
+#if defined __INTEL_COMPILER
+#define AMBIENT_CILK
+#elif defined __GNUC__
+#define AMBIENT_OMP
+#endif
+#endif
+
+#ifdef AMBIENT_CILK
+#include "ambient/utils/threads/cilk.hpp"
+#elif defined(AMBIENT_OMP)
+#include "ambient/utils/threads/openmp.hpp"
+#else
+#include "ambient/utils/threads/serial.hpp"
+#endif
+
+namespace ambient {
+    inline int num_threads(){
+        static int n = AMBIENT_NUM_THREADS; return n;
+    }
+}
 
 #endif
+
