@@ -1,5 +1,5 @@
 #include "params.hpp"
-#include "ambient/numeric/traits.hpp"
+#include "ambient/container/numeric/traits.hpp"
 
 BOOST_AUTO_TEST_CASE_TEMPLATE( GEMM_DIAGONAL, T, test_types)
 {

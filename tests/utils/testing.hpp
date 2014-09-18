@@ -12,8 +12,8 @@
 #include "alps/numeric/matrix.hpp"
 #include "alps/numeric/diagonal_matrix.hpp"
 #include "alps/numeric/matrix/algorithms.hpp"
-#include "ambient/numeric/matrix.hpp"
-#include "ambient/numeric/alps_bindings.hpp"
+#include "ambient/container/numeric/matrix.hpp"
+#include "ambient/container/numeric/alps_bindings.hpp"
 
 #define BOOST_CLOSE (double)1/0xF4240
 
