@@ -30,6 +30,7 @@
 
 #include "ambient/container/numeric/matrix/tiles.h"
 #include "ambient/container/iterator/cross_iterator.hpp"
+#include "ambient/utils/reduce.hpp"
 #include <utility>
 
 #define value_type      typename tiles<Matrix>::value_type

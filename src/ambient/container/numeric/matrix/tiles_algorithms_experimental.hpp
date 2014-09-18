@@ -35,6 +35,7 @@
 #define difference_type typename tiles<Matrix>::difference_type
 
 #define PI_VALUE 3.14159265359 
+#include "ambient/utils/reduce.hpp"
 
 namespace ambient { namespace numeric {
 

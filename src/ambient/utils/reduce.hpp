@@ -25,25 +25,10 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef AMBIENT_INTERFACE_ALGORITHMS
-#define AMBIENT_INTERFACE_ALGORITHMS
+#ifndef AMBIENT_UTILS_REDUCE
+#define AMBIENT_UTILS_REDUCE
 
 namespace ambient {
-
-    template<class T> auto dereference(T a) -> decltype(*a){ return *a; }
-    inline int dereference(int a){ return a; }
-
-    // caution: dependencies intersection isn't thread-safe
-    template<class InputIterator, class Function>
-    void threaded_for_each(InputIterator first, InputIterator last, Function fn){
-        ambient::sid_t::divergence_guard g;
-        int dist = last-first;
-        AMBIENT_PARALLEL_FOR(int i = 0; i < dist; i++){
-            ambient::selector.get_thread_context().sid.offset(i, dist);
-            fn(dereference(first+i));
-            ambient::selector.get_thread_context().sid.maximize();
-        }
-    }
 
     template<typename T>
     inline void reduce(std::vector<T*>& seq){
@@ -66,5 +51,3 @@ namespace ambient {
 }
 
 #endif
-
-
