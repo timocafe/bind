@@ -7,8 +7,8 @@
 namespace ambient { namespace numeric {
 
     int where(int i, int j){
-        static int nq = std::max((size_t)1,ambient::scope::size()/2);
-        static int np = std::max((size_t)1,ambient::scope::size()/2);
+        static int nq = ambient::scope::size();
+        static int np = 1;
         return (i % np) * nq + j % nq;
     }
 
