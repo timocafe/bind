@@ -61,6 +61,16 @@ namespace ambient { namespace numeric {
         return t;
     }
 
+    template <class Matrix>
+    inline size_t transpose_view<Matrix>::num_rows() const {
+        return ((Matrix*)this)->num_cols();
+    }
+
+    template <class Matrix>
+    inline size_t transpose_view<Matrix>::num_cols() const {
+        return ((Matrix*)this)->num_rows();
+    }
+
     template<class Matrix>
     template<class M> 
     size_t transpose_view<Matrix>::inc(const M& a){ 

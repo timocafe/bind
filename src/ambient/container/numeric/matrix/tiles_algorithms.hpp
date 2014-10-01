@@ -303,16 +303,45 @@ namespace ambient { namespace numeric {
                       factor, ai, aj, row.step, col.step, alfa_scale);
     }
 
-    template<class MatrixA, class MatrixB, class MatrixC>
-    inline void gemm(const tiles<MatrixA>& a, const tiles<MatrixB>& b, tiles<MatrixC>& c){
+    template<class MatrixA, class MatrixB, class Matrix>
+    inline void gemm(const tiles<MatrixA>& a, const tiles<MatrixB>& b, tiles<Matrix>& c){
+        size_t a_nt = std::min(a.num_rows(), a.num_cols())/AMBIENT_IB;
+        size_t b_nt = std::min(b.num_rows(), b.num_cols())/AMBIENT_IB;
+        size_t nt = 1 << (int)std::log2( std::min(a_nt, b_nt) );
+
+        gemm_strassen(a.subset(0, 0, nt, nt),
+                      b.subset(0, 0, nt, nt),
+                      c.subset(0, 0, nt, nt));
+
+        for(int i = 0; i < c.mt; i++)
+        for(int j = 0; j < c.nt; j++){
+            std::vector<Matrix*> ctree(1, &c.tile(i,j));
+            size_t rows = c.tile(i,j).num_rows();
+            size_t cols = c.tile(i,j).num_cols();
+
+            if(i >= nt || j >= nt)
+                gemm(a.tile(i, 0), b.tile(0, j), *ctree.back());
+            for(int k = 1; k < a.nt; k++)
+            if(i >= nt || j >= nt || k >= nt){
+                ctree.push_back(new Matrix(rows, cols));
+                gemm(a.tile(i, k), b.tile(k, j), *ctree.back());
+            }
+
+            if(ctree.size() > 1) ambient::reduce(ctree);
+            for(int k = 1; k < ctree.size(); k++) delete ctree[k];
+        }
+    }
+
+    template<class MatrixA, class MatrixB, class Matrix>
+    void gemm_classic(tiles<MatrixA>&& a, tiles<MatrixB>&& b, tiles<Matrix>&& c){
         for(int i = 0; i < c.mt; i++){
             for(int j = 0; j < c.nt; j++){
-                std::vector<MatrixC*> ctree; ctree.reserve(a.nt);
+                std::vector<Matrix*> ctree; ctree.reserve(a.nt);
                 ctree.push_back(&c.tile(i,j));
                 size_t rows = c.tile(i,j).num_rows();
                 size_t cols = c.tile(i,j).num_cols();
                 for(int k = 1; k < a.nt; k++) 
-                    ctree.push_back(new MatrixC(rows, cols));
+                    ctree.push_back(new Matrix(rows, cols));
                 for(int k = 0; k < a.nt; k++){
                     const MatrixA& ab = a.tile(i, k);
                     const MatrixB& bb = b.tile(k, j);
@@ -325,8 +354,64 @@ namespace ambient { namespace numeric {
         }
     }
 
-    template<class MatrixA, class MatrixC, typename T>
-    inline void gemm(const tiles<MatrixA>& a, const tiles<diagonal_matrix<T> >& b, tiles<MatrixC>& c){
+    template<class MatrixA, class MatrixB, class Matrix>
+    void gemm_strassen(tiles<MatrixA>&& a, tiles<MatrixB>&& b, tiles<Matrix>&& c){
+        size_t n  = c.cols/2;
+        size_t nt = c.nt/2;
+        if(nt){
+            tiles<matrix<value_type,allocator_type> > m1(n, n);
+            tiles<matrix<value_type,allocator_type> > m2(n, n);
+            tiles<matrix<value_type,allocator_type> > m3(n, n);
+            tiles<matrix<value_type,allocator_type> > m4(n, n); m4 = a.subset(0, 0, nt, nt);
+            tiles<matrix<value_type,allocator_type> > m5(n, n); m5 = b.subset(0, 0, nt, nt);
+            tiles<matrix<value_type,allocator_type> > d(n*2, n*2); d = a;
+            tiles<matrix<value_type,allocator_type> > e(n*2, n*2); e = b;
+
+            d.subset(0,  0,  nt, nt) += a.subset(0,  nt, nt, nt);  e.subset(0,  0,  nt, nt) += b.subset(0,  nt, nt, nt);
+            d.subset(0,  nt, nt, nt) -= a.subset(nt, nt, nt, nt);  e.subset(0,  nt, nt, nt) -= b.subset(nt, nt, nt, nt);
+            d.subset(nt, nt, nt, nt) += a.subset(nt, 0,  nt, nt);  e.subset(nt, nt, nt, nt) += b.subset(nt, 0,  nt, nt);
+            d.subset(nt, 0,  nt, nt) -= a.subset(0,  0,  nt, nt);  e.subset(nt, 0,  nt, nt) -= b.subset(0,  0,  nt, nt);
+
+            m4 += a.subset(nt, nt, nt, nt);  m5 += b.subset(nt, nt, nt, nt);
+           
+            gemm_strassen(d.subset(0,  nt, nt, nt),
+                          e.subset(nt, nt, nt, nt),
+                          c.subset(0,  0,  nt, nt));
+            gemm_strassen(a.subset(0,  0,  nt, nt),
+                          e.subset(0,  nt, nt, nt),
+                          c.subset(0,  nt, nt, nt));
+            gemm_strassen(d.subset(nt, nt, nt, nt),
+                          b.subset(0,  0,  nt, nt),
+                          c.subset(nt, 0,  nt, nt));
+            gemm_strassen(d.subset(nt, 0,  nt, nt),
+                          e.subset(0,  0,  nt, nt),
+                          c.subset(nt, nt, nt, nt));
+
+            gemm_strassen(std::move(m4), std::move(m5),
+                          std::move(m1));
+            gemm_strassen(d.subset(0,  0,  nt, nt),
+                          b.subset(nt, nt, nt, nt),
+                          std::move(m2));
+            gemm_strassen(a.subset(nt, nt, nt, nt),
+                          e.subset(nt, 0,  nt, nt),
+                          std::move(m3));
+
+            c.subset(nt, nt, nt, nt) += c.subset(0,  nt, nt, nt);
+            c.subset(nt, nt, nt, nt) -= c.subset(nt, 0,  nt, nt);
+
+            c.subset(0,  0,  nt, nt) += m1;
+            c.subset(nt, nt, nt, nt) += m1;
+            c.subset(0,  nt, nt, nt) += m2;
+            c.subset(0,  0,  nt, nt) -= m2;
+            c.subset(0,  0,  nt, nt) += m3;
+            c.subset(nt, 0,  nt, nt) += m3;
+        }else{
+            gemm(a[0], b[0], c[0]);
+        }
+    }
+
+    template<class MatrixA, class Matrix, typename T>
+    inline void gemm(const tiles<MatrixA>& a, const tiles<diagonal_matrix<T> >& b, tiles<Matrix>& c){
         for(int i = 0; i < c.mt; i++){
             for(int j = 0; j < c.nt; j++){
                 gemm(a.tile(i,j), b[j], c.tile(i,j));
@@ -334,8 +419,8 @@ namespace ambient { namespace numeric {
         }
     }
 
-    template<class MatrixB, class MatrixC, typename T>
-    inline void gemm(const tiles<diagonal_matrix<T> >& a, const tiles<MatrixB>& b, tiles<MatrixC>& c){
+    template<class MatrixB, class Matrix, typename T>
+    inline void gemm(const tiles<diagonal_matrix<T> >& a, const tiles<MatrixB>& b, tiles<Matrix>& c){
         for(int i = 0; i < c.mt; i++){
             for(int j = 0; j < c.nt; j++){
                 gemm(a[i], b.tile(i,j), c.tile(i,j));
@@ -835,62 +920,6 @@ namespace ambient { namespace numeric {
 
     template<class Matrix> inline size_type num_cols(const tiles<Matrix>& a){
         return a.num_cols();
-    }
-
-    template<class MatrixA, class MatrixB, class Matrix>
-    void gemm_strassen(tiles<MatrixA>&& a, tiles<MatrixB>&& b, tiles<Matrix>&& c){
-        size_t n  = c.cols/2;
-        size_t nt = c.nt/2;
-        if(nt){
-            tiles<matrix<value_type,allocator_type> > m1(n, n);
-            tiles<matrix<value_type,allocator_type> > m2(n, n);
-            tiles<matrix<value_type,allocator_type> > m3(n, n);
-            tiles<matrix<value_type,allocator_type> > m4(n, n); m4 = a.subset(0, 0, nt, nt);
-            tiles<matrix<value_type,allocator_type> > m5(n, n); m5 = b.subset(0, 0, nt, nt);
-            tiles<matrix<value_type,allocator_type> > d(n*2, n*2); d = a;
-            tiles<matrix<value_type,allocator_type> > e(n*2, n*2); e = b;
-
-            d.subset(0,  0,  nt, nt) += a.subset(0,  nt, nt, nt);  e.subset(0,  0,  nt, nt) += b.subset(0,  nt, nt, nt);
-            d.subset(0,  nt, nt, nt) -= a.subset(nt, nt, nt, nt);  e.subset(0,  nt, nt, nt) -= b.subset(nt, nt, nt, nt);
-            d.subset(nt, nt, nt, nt) += a.subset(nt, 0,  nt, nt);  e.subset(nt, nt, nt, nt) += b.subset(nt, 0,  nt, nt);
-            d.subset(nt, 0,  nt, nt) -= a.subset(0,  0,  nt, nt);  e.subset(nt, 0,  nt, nt) -= b.subset(0,  0,  nt, nt);
-
-            m4 += a.subset(nt, nt, nt, nt);  m5 += b.subset(nt, nt, nt, nt);
-           
-            gemm_strassen(d.subset(0,  nt, nt, nt),
-                          e.subset(nt, nt, nt, nt),
-                          c.subset(0,  0,  nt, nt));
-            gemm_strassen(a.subset(0,  0,  nt, nt),
-                          e.subset(0,  nt, nt, nt),
-                          c.subset(0,  nt, nt, nt));
-            gemm_strassen(d.subset(nt, nt, nt, nt),
-                          b.subset(0,  0,  nt, nt),
-                          c.subset(nt, 0,  nt, nt));
-            gemm_strassen(d.subset(nt, 0,  nt, nt),
-                          e.subset(0,  0,  nt, nt),
-                          c.subset(nt, nt, nt, nt));
-
-            gemm_strassen(std::move(m4), std::move(m5),
-                          std::move(m1));
-            gemm_strassen(d.subset(0,  0,  nt, nt),
-                          b.subset(nt, nt, nt, nt),
-                          std::move(m2));
-            gemm_strassen(a.subset(nt, nt, nt, nt),
-                          e.subset(nt, 0,  nt, nt),
-                          std::move(m3));
-
-            c.subset(nt, nt, nt, nt) += c.subset(0,  nt, nt, nt);
-            c.subset(nt, nt, nt, nt) -= c.subset(nt, 0,  nt, nt);
-
-            c.subset(0,  0,  nt, nt) += m1;
-            c.subset(nt, nt, nt, nt) += m1;
-            c.subset(0,  nt, nt, nt) += m2;
-            c.subset(0,  0,  nt, nt) -= m2;
-            c.subset(0,  0,  nt, nt) += m3;
-            c.subset(nt, 0,  nt, nt) += m3;
-        }else{
-            gemm(a[0], b[0], c[0]);
-        }
     }
 
 } }

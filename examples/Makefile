@@ -20,7 +20,7 @@ CXXFLAGS?= $(COMMON) $(CHANNEL) -Wfatal-errors -gcc-name=/opt/local/bin/gcc-mp-4
 .DEFAULT: all
 .PHONY: all
 
-all: libambient.a diffusion partitioned_vector vector atomic matrix groups
+all: libambient.a diffusion partitioned_vector vector atomic matrix mp_gemm groups
 
 diffusion: libambient.a diffusion.cpp
 	$(CXX) diffusion.cpp -o diffusion $(CXXFLAGS) -lambient -L$(AMBIENT_LIB_PATH) -I$(AMBIENT_INCLUDE_PATH)
@@ -36,6 +36,9 @@ atomic: libambient.a atomic.cpp
 
 matrix: libambient.a matrix.cpp
 	$(CXX) matrix.cpp -o matrix $(CXXFLAGS) -lambient -L$(AMBIENT_LIB_PATH) -I$(AMBIENT_INCLUDE_PATH) -mkl -I$(BOOST_INCLUDE_PATH)
+
+mp_gemm: libambient.a mp_gemm.cpp
+	$(CXX) mp_gemm.cpp -o mp_gemm $(CXXFLAGS) -lambient -L$(AMBIENT_LIB_PATH) -I$(AMBIENT_INCLUDE_PATH) -mkl -I$(BOOST_INCLUDE_PATH)
 
 groups: libambient.a groups.cpp
 	$(CXX) groups.cpp -o groups $(CXXFLAGS) -lambient -L$(AMBIENT_LIB_PATH) -I$(AMBIENT_INCLUDE_PATH) -mkl -I$(BOOST_INCLUDE_PATH)
@@ -53,4 +56,5 @@ clean:
 	-rm -f vector
 	-rm -f atomic
 	-rm -f matrix
+	-rm -f mp_gemm
 	-rm -f groups

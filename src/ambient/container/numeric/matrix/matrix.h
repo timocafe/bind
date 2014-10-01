@@ -109,6 +109,8 @@ namespace ambient { namespace numeric {
         const transpose_view& locate(size_type i, size_type j) const;
         size_t addr(size_type i, size_type j) const;
         operator Matrix () const;
+        size_t num_rows() const;
+        size_t num_cols() const;
         template<class M> static size_t inc (const M& a); 
         template<class M> static size_t rows(const M& a); 
         template<class M> static size_t cols(const M& a);
