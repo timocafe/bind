@@ -13,12 +13,12 @@ namespace ambient { namespace numeric {
     }
 
     template<int G, class Matrix>
-    void distribute(const tiles<Matrix>& a){
+    void mp_generate(tiles<Matrix>& a){
         for(int i = 0; i < a.mt/G; i++)
         for(int j = 0; j < a.nt/G; j++){
             ambient::actor proc(ambient::scope::begin() + where(i,j));
             auto tile = a.subset(i*G, j*G, G, G);
-            for(int k = 0; k < G*G; k++) migrate(tile[k]);
+            for(int k = 0; k < G*G; k++) fill_random(tile[k]);
         }
     }
 
@@ -59,8 +59,8 @@ int main(){
     using namespace ambient::numeric;
     typedef tiles<matrix<double> > mtx;
 
-    mtx pA(N,N); generate(pA); distribute<GRAN>(pA);
-    mtx pB(N,N); generate(pB); distribute<GRAN>(pB);
+    mtx pA(N,N); mp_generate<GRAN>(pA);
+    mtx pB(N,N); mp_generate<GRAN>(pB);
     mtx pC(N,N);
 
     ambient::timer t1("gemm_strassen"); t1.begin();
