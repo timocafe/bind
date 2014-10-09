@@ -63,7 +63,7 @@ int main(){
     mtx pB(N,N); mp_generate<GRAN>(pB);
     mtx pC(N,N);
 
-    ambient::timer t1("gemm_strassen"); t1.begin();
+    ambient::timer t1("gemm"); t1.begin();
     cout << "distributed gemm... (dim " << N << ")\n";
 
     mp_gemm<GRAN>(pA, pB, pC);

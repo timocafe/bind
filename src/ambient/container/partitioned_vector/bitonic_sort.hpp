@@ -101,14 +101,9 @@ namespace ambient { namespace detail {
             if(middle > end) return;
 
             for(blocked_tuple_iterator bit(first,middle,end-middle); bit != first+(end-middle); ++bit)
-                if(&bit.template locate<0>() == &bit.template locate<1>())
-                    ambient::async([comp](block_type& block, size_t first1, size_t second1, size_t first2){
-                                       compare_impl(block.begin()+first1, block.begin()+second1, block.begin()+first2, comp);
-                                   }, bit.template locate<0>(), bit.first[0], bit.second[0], bit.first[1]);
-                else
-                    ambient::async([comp](block_type& block1, size_t first1, size_t second1, block_type& block2, size_t first2){
-                                       compare_impl(block1.begin()+first1, block1.begin()+second1, block2.begin()+first2, comp);
-                                   }, bit.template locate<0>(), bit.first[0], bit.second[0], bit.template locate<1>(), bit.first[1]);
+                ambient::async([comp](block_type& block1, size_t first1, size_t second1, block_type& block2, size_t first2){
+                                   compare_impl(block1.begin()+first1, block1.begin()+second1, block2.begin()+first2, comp);
+                               }, bit.template locate<0>(), bit.first[0], bit.second[0], bit.template locate<1>(), bit.first[1]);
         }
         static void compare_crossover(InputIterator first, InputIterator last, InputIterator end, Compare comp){
             InputIterator middle = first+(last-first)/2;
@@ -132,14 +127,9 @@ namespace ambient { namespace detail {
                 block_type& top = first.get_container().locate(position_top);
                 block_type& bottom = first.get_container().locate(position_bottom);
                 
-                if(&top == &bottom)
-                    ambient::async([comp](block_type& block, size_t first1, size_t second1, size_t first2){
-                                       compare_crossover_impl(block.begin()+first1, block.begin()+second1, block.begin()+first2, comp);
-                                   }, bottom, bottom_first, bottom_second, top_first);
-                else
-                    ambient::async([comp](block_type& block1, size_t first1, size_t second1, block_type& block2, size_t first2){
-                                       compare_crossover_impl(block1.begin()+first1, block1.begin()+second1, block2.begin()+first2, comp);
-                                   }, bottom, bottom_first, bottom_second, top, top_first);
+                ambient::async([comp](block_type& block1, size_t first1, size_t second1, block_type& block2, size_t first2){
+                                   compare_crossover_impl(block1.begin()+first1, block1.begin()+second1, block2.begin()+first2, comp);
+                               }, bottom, bottom_first, bottom_second, top, top_first);
 
                 position_bottom += step;
                 position_top -= step;

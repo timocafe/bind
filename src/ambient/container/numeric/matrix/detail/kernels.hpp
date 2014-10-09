@@ -141,6 +141,25 @@ namespace ambient { namespace numeric { namespace kernels {
         }
        
         template<class ViewA, class ViewB, class ViewC, typename T>
+        void gemm_fma(const matrix<T,typename ViewA::allocator_type>& a, 
+                      const matrix<T,typename ViewB::allocator_type>& b, 
+                            matrix<T,typename ViewC::allocator_type>& c){
+            if(!a.ambient_before->valid() || !b.ambient_before->valid()) return;
+            const T* ad = a.data();
+            const T* bd = b.data();
+            T* cd = c.data();
+            int m = ViewA::rows(a);
+            int k = ViewA::cols(a);
+            int n = ViewB::cols(b);
+            int lda = a.num_rows();
+            int ldb = b.num_rows();
+            int ldc = c.num_rows();
+            static const double alfa(1.0); 
+            static const double beta(1.0);
+            helper_blas<T>::gemm(ViewA::code(), ViewB::code(), &m, &n, &k, &alfa, ad, &lda, bd, &ldb, &beta, cd, &ldc);
+        }
+       
+        template<class ViewA, class ViewB, class ViewC, typename T>
         void gemm(const matrix<T,typename ViewA::allocator_type>& a, 
                   const matrix<T,typename ViewB::allocator_type>& b, 
                   unbound< matrix<T,typename ViewC::allocator_type> >& c){
@@ -663,6 +682,7 @@ namespace ambient { namespace numeric { namespace kernels {
     AMBIENT_EXPORT_TEMPLATE(detail::tslqt, tslqt)
     AMBIENT_EXPORT_TEMPLATE(detail::tsmlq, tsmlq)
     AMBIENT_EXPORT_TEMPLATE(detail::gemm,  gemm)
+    AMBIENT_EXPORT_TEMPLATE(detail::gemm_fma, gemm_fma)
     AMBIENT_EXPORT_TEMPLATE(detail::gemm_diagonal_lhs, gemm_diagonal_lhs)
     AMBIENT_EXPORT_TEMPLATE(detail::gemm_diagonal_rhs, gemm_diagonal_rhs)
     AMBIENT_EXPORT_TEMPLATE(detail::trace, trace)

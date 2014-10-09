@@ -98,6 +98,12 @@ namespace ambient { namespace numeric {
     }
 
     template<class MatrixViewA, class MatrixViewB, typename T, class A>
+    inline void gemm_fma(const MatrixViewA& a, const MatrixViewB& b, matrix<T,A>& c){
+        if(ambient::weak(a) || ambient::weak(b)) return;
+        kernels::template gemm_fma<MatrixViewA,MatrixViewB,matrix<T,A>,T>(a, b, c); 
+    }
+
+    template<class MatrixViewA, class MatrixViewB, typename T, class A>
     inline void gemm(const MatrixViewA& a, const MatrixViewB& b, matrix<T,A>& c){
         if(ambient::weak(a) || ambient::weak(b)) return;
         kernels::template gemm<MatrixViewA,MatrixViewB,matrix<T,A>,T>(a, b, c); 
