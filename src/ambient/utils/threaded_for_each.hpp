@@ -33,15 +33,13 @@ namespace ambient {
     template<class T> auto dereference(T a) -> decltype(*a){ return *a; }
     inline int dereference(int a){ return a; }
 
-    // caution: dependencies intersection isn't thread-safe
     template<class InputIterator, class Function>
     void threaded_for_each(InputIterator first, InputIterator last, Function fn){
-        ambient::sid_t::divergence_guard g;
         int dist = last-first;
+        ambient::backbone_type::divergence_guard g(dist);
         AMBIENT_PARALLEL_FOR(int i = 0; i < dist; i++){
-            ambient::selector.get_thread_context().sid.offset(i, dist);
+            ambient::selector.diverge(i);
             fn(dereference(first+i));
-            ambient::selector.get_thread_context().sid.maximize();
         }
     }
 

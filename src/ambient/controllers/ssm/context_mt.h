@@ -25,46 +25,41 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef AMBIENT_CONTROLLERS_SSM_ACTOR
-#define AMBIENT_CONTROLLERS_SSM_ACTOR
+#ifndef AMBIENT_CONTROLLERS_SSM_CONTEXT_MT
+#define AMBIENT_CONTROLLERS_SSM_CONTEXT_MT
 
-namespace ambient {
+namespace ambient { 
 
-    class actor {
-    protected:
-        typedef models::ssm::model model_type;
+    struct context_mt {
         typedef controllers::ssm::controller controller_type;
-        actor(){}
-    public:
-       ~actor();
-        actor(scope::const_iterator it);
-        actor(actor_t type);
-        bool remote() const;
-        bool local()  const;
-        bool common() const;
-        rank_t which()  const;
-        actor_t type;
-        bool dry;
-        int factor;
-        int round;
-        rank_t rank;
-        ambient::locality state;
-        controller_type* controller;
-    };
 
-    class actor_auto : public actor {
-    public:
-        typedef typename actor::model_type model_type;
-        actor_auto();
-        void set(rank_t r);
-        void set(scope::const_iterator it);
-        void schedule();
-        void intend_read(models::ssm::revision* o);
-        void intend_write(models::ssm::revision* o);
-        mutable std::vector<rank_t> stakeholders;
-        mutable std::vector<int> scores;
-    };
+        struct thread_context {
+            controller_type controller;
+            std::stack<actor*, std::vector<actor*> > actors;
+            std::stack<scope*, std::vector<scope*> > scopes;
+            int offset;
+        };
+        
+        struct divergence_guard {
+           ~divergence_guard();
+            divergence_guard(size_t length);
+            std::vector< std::vector<controllers::ssm::meta*> > transfers;
+        };
 
+        context_mt();
+        thread_context& get();
+        const thread_context& get() const;
+        void delay_transfer(controllers::ssm::meta* m);
+        bool threaded() const;
+        void init(actor*);
+        void sync();
+        void fork(divergence_guard*);
+        void join();
+        void diverge(int o);
+
+        std::vector<thread_context> thread_context_lane;
+        divergence_guard* threaded_region;
+    };
 }
 
 #endif

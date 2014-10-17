@@ -38,7 +38,7 @@ namespace ambient { namespace memory {
     }
 
     inline data_bulk::data_bulk(){
-        this->limit = ambient::isset("AMBIENT_BULK_LIMIT") ? ambient::getint("AMBIENT_BULK_LIMIT") : AMBIENT_MAX_SID;
+        this->limit = ambient::isset("AMBIENT_BULK_LIMIT") ? ambient::getint("AMBIENT_BULK_LIMIT") : AMBIENT_MAX_INT;
         this->reuse_enabled = ambient::isset("AMBIENT_BULK_REUSE") ? true : false; 
         this->reset_enabled = ambient::isset("AMBIENT_FORCE_BULK_DEALLOCATION") ? true : false; 
     }

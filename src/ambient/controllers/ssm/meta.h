@@ -25,46 +25,23 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef AMBIENT_CONTROLLERS_SSM_ACTOR
-#define AMBIENT_CONTROLLERS_SSM_ACTOR
+#ifndef AMBIENT_CONTROLLERS_SSM_META
+#define AMBIENT_CONTROLLERS_SSM_META
 
-namespace ambient {
+namespace ambient { namespace controllers { namespace ssm {
 
-    class actor {
-    protected:
-        typedef models::ssm::model model_type;
-        typedef controllers::ssm::controller controller_type;
-        actor(){}
+    class meta : public functor, public memory::use_bulk_new<meta> {
     public:
-       ~actor();
-        actor(scope::const_iterator it);
-        actor(actor_t type);
-        bool remote() const;
-        bool local()  const;
-        bool common() const;
-        rank_t which()  const;
-        actor_t type;
-        bool dry;
-        int factor;
-        int round;
-        rank_t rank;
-        ambient::locality state;
-        controller_type* controller;
+        enum class type { get, set };
+        static void spawn(revision& r, type t);
+        meta(revision& r, rank_t w, type t);
+        virtual void invoke();
+        virtual bool ready();
+        revision& r;
+        rank_t which;
+        type t;
     };
 
-    class actor_auto : public actor {
-    public:
-        typedef typename actor::model_type model_type;
-        actor_auto();
-        void set(rank_t r);
-        void set(scope::const_iterator it);
-        void schedule();
-        void intend_read(models::ssm::revision* o);
-        void intend_write(models::ssm::revision* o);
-        mutable std::vector<rank_t> stakeholders;
-        mutable std::vector<int> scores;
-    };
-
-}
+} } }
 
 #endif

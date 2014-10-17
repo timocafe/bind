@@ -25,46 +25,27 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef AMBIENT_CONTROLLERS_SSM_ACTOR
-#define AMBIENT_CONTROLLERS_SSM_ACTOR
+#ifndef AMBIENT_CONTROLLERS_SSM_CONTEXT_SERIAL
+#define AMBIENT_CONTROLLERS_SSM_CONTEXT_SERIAL
 
-namespace ambient {
+namespace ambient { 
 
-    class actor {
-    protected:
-        typedef models::ssm::model model_type;
+    struct context_serial {
         typedef controllers::ssm::controller controller_type;
-        actor(){}
-    public:
-       ~actor();
-        actor(scope::const_iterator it);
-        actor(actor_t type);
-        bool remote() const;
-        bool local()  const;
-        bool common() const;
-        rank_t which()  const;
-        actor_t type;
-        bool dry;
-        int factor;
-        int round;
-        rank_t rank;
-        ambient::locality state;
-        controller_type* controller;
-    };
 
-    class actor_auto : public actor {
-    public:
-        typedef typename actor::model_type model_type;
-        actor_auto();
-        void set(rank_t r);
-        void set(scope::const_iterator it);
-        void schedule();
-        void intend_read(models::ssm::revision* o);
-        void intend_write(models::ssm::revision* o);
-        mutable std::vector<rank_t> stakeholders;
-        mutable std::vector<int> scores;
-    };
+        controller_type controller;
+        std::stack<actor*, std::vector<actor*> > actors;
+        std::stack<scope*, std::vector<scope*> > scopes;
 
+        context_serial& get();
+        void delay_transfer(controllers::ssm::meta* m);
+        bool threaded() const;
+        void init(actor*);
+        void sync();
+        void fork(void*);
+        void join();
+        void diverge(int);
+    };
 }
 
 #endif

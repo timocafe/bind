@@ -25,46 +25,21 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef AMBIENT_CONTROLLERS_SSM_ACTOR
-#define AMBIENT_CONTROLLERS_SSM_ACTOR
+namespace ambient { namespace controllers { namespace ssm {
 
-namespace ambient {
+    inline void meta::spawn(revision& r, type t){
+        meta* m = new meta(r, ambient::which(), t);
+        if(t == type::get) r.generator = m;
+        ambient::selector.delay_transfer(m);
+    }
+    inline meta::meta(revision& r, rank_t w, type t)
+    : r(r), which(w), t(t)
+    {
+    }
+    inline bool meta::ready(){
+        return false;
+    }
+    inline void meta::invoke(){
+    }
 
-    class actor {
-    protected:
-        typedef models::ssm::model model_type;
-        typedef controllers::ssm::controller controller_type;
-        actor(){}
-    public:
-       ~actor();
-        actor(scope::const_iterator it);
-        actor(actor_t type);
-        bool remote() const;
-        bool local()  const;
-        bool common() const;
-        rank_t which()  const;
-        actor_t type;
-        bool dry;
-        int factor;
-        int round;
-        rank_t rank;
-        ambient::locality state;
-        controller_type* controller;
-    };
-
-    class actor_auto : public actor {
-    public:
-        typedef typename actor::model_type model_type;
-        actor_auto();
-        void set(rank_t r);
-        void set(scope::const_iterator it);
-        void schedule();
-        void intend_read(models::ssm::revision* o);
-        void intend_write(models::ssm::revision* o);
-        mutable std::vector<rank_t> stakeholders;
-        mutable std::vector<int> scores;
-    };
-
-}
-
-#endif
+} } }

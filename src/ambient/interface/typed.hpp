@@ -154,7 +154,7 @@ namespace ambient {
             EXTRACT(o);
             revision& r = *o->ambient_before;
             if(r.generator != NULL && r.generator != m){
-                ((functor*)r.generator)->queue(m);
+                ((functor*)r.generator.load())->queue(m);
                 return true;
             }
             return false;
@@ -215,7 +215,7 @@ namespace ambient {
             revision& r = *o->ambient_before;
             if(r.generator != NULL){
                 ambient::guard<ambient::mutex> g(selector.get_mutex());
-                ((functor*)r.generator)->queue(m);
+                ((functor*)r.generator.load())->queue(m);
                 return true;
             }
             return false;
