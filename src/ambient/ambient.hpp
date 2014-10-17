@@ -81,7 +81,6 @@
 
 #ifdef MPI_VERSION
 #include "ambient/channels/mpi/group.h"
-#include "ambient/channels/mpi/multirank.h"
 #include "ambient/channels/mpi/channel.h"
 #include "ambient/channels/mpi/request.h"
 #include "ambient/channels/mpi/collective.h"
@@ -116,7 +115,6 @@
 
 #ifdef MPI_VERSION
 #include "ambient/channels/mpi/group.hpp"
-#include "ambient/channels/mpi/multirank.hpp"
 #include "ambient/channels/mpi/channel.hpp"
 #include "ambient/channels/mpi/request.hpp"
 #include "ambient/channels/mpi/collective.hpp"
