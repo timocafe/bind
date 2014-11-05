@@ -22,7 +22,7 @@ Ambient
   [60]
                                             
 - AMBIENT_BULK_REUSE  
-  setting this variable will enable bulk garbage collection
+  setting this variable will enable bulk garbage collection  
   [not set]
                                             
 - AMBIENT_FORCE_BULK_DEALLOCATION  
@@ -54,7 +54,7 @@ Ambient
                                             
 - AMBIENT_THREADED_COLLECTION  
   enable to use ambient::threaded_loop_for (operations logging is parallel then, execution is intact)  
-  [defined]
+  [set]
                                             
 - AMBIENT_MEMPTF_CHECK_BOUNDARIES  
   checks memory boundaries overflow in every memptf call (used for 2D memory copies)  
