@@ -2,7 +2,7 @@ Ambient
 =======
 **Dataflow C++ framework for distributed computations**
 
-## Ambient environment variables
+### Ambient environment variables
 
 - AMBIENT_VERBOSE  
   print-out Ambient configuration prior to running  
@@ -30,7 +30,7 @@ Ambient
   [not set]
 
 
-## Ambient compilation defines
+### Ambient compilation defines
 
 - [AMBIENT_CILK, AMBIENT_OMP, AMBIENT_SERIAL]  
   manually set the desired threading implementation  
@@ -65,7 +65,7 @@ Ambient
   [not set]
 
 
-## Ambient implementation caveats
+### Ambient implementation caveats
 
 - *Direct element access is slow and should be used only for debugging.*
 
