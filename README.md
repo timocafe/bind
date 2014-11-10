@@ -52,9 +52,9 @@ Ambient
   size (bytes) of memory chunks for communications and temporary objects (> size of corresponding tiles)  
   [64MB]
                                             
-- AMBIENT_THREADED_COLLECTION  
-  enable to use ambient::threaded_loop_for (operations logging is parallel then, execution is intact)  
-  [set]
+- AMBIENT_SERIAL_COLLECTION  
+  enable to make operations collection not thread-safe
+  [not set]
                                             
 - AMBIENT_MEMPTF_CHECK_BOUNDARIES  
   checks memory boundaries overflow in every memptf call (used for 2D memory copies)  
