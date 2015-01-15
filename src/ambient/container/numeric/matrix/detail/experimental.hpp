@@ -88,7 +88,7 @@ namespace ambient { namespace numeric { namespace kernels {
             sayd[i+i*ldsay] = 1.000;
         }
         
-        template<typename T>
+        template<typename T, typename IB>
         void labrd_reduce_col(matrix<T>& say, const matrix<T>& sax, matrix<T>& sy, const matrix<T>& sx, const int& i){
             static const double mone = -1.;
             static const double one = 1.;
@@ -99,7 +99,7 @@ namespace ambient { namespace numeric { namespace kernels {
             int n  = num_cols(sax);
             int ri = m-i;
             int rj = n-i-1;
-            int ari = AMBIENT_IB-i-1;
+            int ari = IB::value-i-1;
         
             T* sayd = say.data(); int ldsay = say.num_rows();
       const T* saxd = sax.data(); int ldsax = sax.num_rows();
@@ -148,7 +148,7 @@ namespace ambient { namespace numeric { namespace kernels {
             saxd[i + (i+1)*ldsax] = 1.000;
         }
         
-        template<typename T>
+        template<typename T, typename IB>
         void labrd_reduce_row(const matrix<T>& say, matrix<T>& sax, const matrix<T>& sy, matrix<T>& sx, const int& i){
             static const double mone = -1.;
             static const double one = 1.;
@@ -161,7 +161,7 @@ namespace ambient { namespace numeric { namespace kernels {
             int rj  = n-i-1;
             int rij = m-i-1;
             int r3  = i+1;
-            int ari = AMBIENT_IB-i-1;
+            int ari = IB::value-i-1;
         
       const T* sayd = say.data(); int ldsay = say.num_rows();
             T* saxd = sax.data(); int ldsax = sax.num_rows();
@@ -308,14 +308,14 @@ namespace ambient { namespace numeric { namespace kernels {
             // LAPACKE_dbdsdc(102, 'U', 'N', n, d.data(), e.data(),  u.data(), one, v.data(), one, NULL, NULL);
         }
         
-        template<typename T, typename UL>
+        template<typename T, typename UL, typename IB>
         void copy_band(const matrix<T>& src, matrix<T>& dst, const size_t& dj){
       const T* sd = src.data();
             T* dd = dst.data();
             size_t ldd = dst.num_rows();
             size_t m = src.num_rows();
             size_t n = src.num_cols();
-            size_t offset = std::min(ldd-1,(size_t)AMBIENT_IB);
+            size_t offset = std::min(ldd-1,(size_t)IB::value);
         
             dd += dj*ldd;
             if(UL::value == PlasmaUpper){

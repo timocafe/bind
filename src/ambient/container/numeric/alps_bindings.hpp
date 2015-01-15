@@ -31,8 +31,8 @@
 namespace ambient { namespace numeric { namespace bindings {
 
     // {{{ overloaded convertion functions
-    template <typename T, typename D>
-    void convert(ambient::numeric::tiles<ambient::numeric::diagonal_matrix<T> >& pm, const ambient::numeric::tiles<ambient::numeric::diagonal_matrix<D> >& m){
+    template <typename T, typename D, int IB>
+    void convert(ambient::numeric::tiles<ambient::numeric::diagonal_matrix<T>, IB>& pm, const ambient::numeric::tiles<ambient::numeric::diagonal_matrix<D>, IB>& m){
         for(size_t k = 0; k < m.data.size(); ++k)
             ambient::numeric::kernels::template cast_double_complex<T,D>(pm[k],m[k]);
     } 
@@ -93,8 +93,8 @@ namespace ambient { namespace numeric { namespace bindings {
         ambient::sync();
     }
 
-    template <typename T, typename S, template<class M, class SS> class C>
-    void convert(std::vector< std::vector<T> >& set, const C<ambient::numeric::tiles<ambient::numeric::diagonal_matrix<T> >, S>& m){
+    template <typename T, int IB, typename S, template<class M, class SS> class C>
+    void convert(std::vector< std::vector<T> >& set, const C<ambient::numeric::tiles<ambient::numeric::diagonal_matrix<T>, IB>, S>& m){
         for(size_t k = 0; k < m.n_blocks(); ++k) 
             set.push_back(std::vector<T>(m[k].num_rows()));
         size_t num_cols(1);
@@ -110,15 +110,15 @@ namespace ambient { namespace numeric { namespace bindings {
         ambient::sync();
     }
 
-    template <typename T, class A>
-    void convert(ambient::numeric::tiles<ambient::numeric::matrix<T,A> >& pm, const alps::numeric::matrix<T>& m){
+    template <typename T, class A, int IB>
+    void convert(ambient::numeric::tiles<ambient::numeric::matrix<T,A>, IB>& pm, const alps::numeric::matrix<T>& m){
         size_t num_rows = m.num_rows();
         size_t num_cols = m.num_cols();
         size_t lda = m.stride2();
         const std::vector<typename alps::numeric::matrix<T>::value_type>* v_ptr = &m.get_values();
 
         for(size_t j = 0; j < pm.nt; ++j){
-            size_t offset = j*lda*AMBIENT_IB;
+            size_t offset = j*lda*IB;
             for(size_t i = 0; i < pm.mt; ++i){
                 ambient::numeric::matrix<T,A>& tile = pm.tile(i,j);
                 size_t rows = tile.num_rows();
@@ -131,15 +131,15 @@ namespace ambient { namespace numeric { namespace bindings {
         ambient::sync();
     }
 
-    template <typename T2, typename T1, class A>
-    void convert(ambient::numeric::tiles<ambient::numeric::matrix<T2,A> >& pm, const alps::numeric::matrix<T1>& m){
+    template <typename T2, typename T1, class A, int IB>
+    void convert(ambient::numeric::tiles<ambient::numeric::matrix<T2,A>, IB>& pm, const alps::numeric::matrix<T1>& m){
         size_t num_rows = m.num_rows();
         size_t num_cols = m.num_cols();
         size_t lda = m.stride2();
         const std::vector<typename alps::numeric::matrix<T1>::value_type>* v_ptr = &m.get_values();
 
         for(size_t j = 0; j < pm.nt; ++j){
-            size_t offset = j*lda*AMBIENT_IB;
+            size_t offset = j*lda*IB;
             for(size_t i = 0; i < pm.mt; ++i){
                 ambient::numeric::matrix<T2,A>& tile = pm.tile(i,j);
                 size_t rows = tile.num_rows();
@@ -152,14 +152,14 @@ namespace ambient { namespace numeric { namespace bindings {
         ambient::sync();
     }
 
-    template <typename T, class A>
-    void convert(alps::numeric::matrix<T>& m, const ambient::numeric::tiles<ambient::numeric::matrix<T,A> >& pm){
+    template <typename T, class A, int IB>
+    void convert(alps::numeric::matrix<T>& m, const ambient::numeric::tiles<ambient::numeric::matrix<T,A>, IB>& pm){
         size_t num_rows = pm.num_rows();
         size_t num_cols = pm.num_cols();
         std::vector<typename alps::numeric::matrix<T>::value_type>* v_ptr = &m.get_values();
         size_t lda = m.stride2();
         for(size_t j = 0; j < pm.nt; ++j){
-            size_t offset = j*lda*AMBIENT_IB;
+            size_t offset = j*lda*IB;
             for(size_t i = 0; i < pm.mt; ++i){
                 const ambient::numeric::matrix<T,A>& tile = pm.tile(i,j);
                 size_t rows = tile.num_rows();
@@ -172,8 +172,8 @@ namespace ambient { namespace numeric { namespace bindings {
         ambient::sync();
     }
 
-    template <typename T>
-    void convert(ambient::numeric::tiles<ambient::numeric::diagonal_matrix<T> >& pm, const alps::numeric::diagonal_matrix<T>& m){
+    template <typename T, int IB>
+    void convert(ambient::numeric::tiles<ambient::numeric::diagonal_matrix<T>, IB>& pm, const alps::numeric::diagonal_matrix<T>& m){
         size_t num_rows = m.num_rows();
         size_t num_cols(1);
         const std::vector<typename alps::numeric::diagonal_matrix<T>::value_type>* v_ptr = &m.get_values();
@@ -189,8 +189,8 @@ namespace ambient { namespace numeric { namespace bindings {
         ambient::sync();
     }
 
-    template <typename T>
-    void convert(alps::numeric::diagonal_matrix<T>& m, const ambient::numeric::tiles<ambient::numeric::diagonal_matrix<T> >& pm){
+    template <typename T, int IB>
+    void convert(alps::numeric::diagonal_matrix<T>& m, const ambient::numeric::tiles<ambient::numeric::diagonal_matrix<T>, IB>& pm){
         size_t num_rows = pm.num_rows();
         size_t num_cols(1);
         size_t offset(0);
@@ -212,10 +212,10 @@ namespace ambient { namespace numeric { namespace bindings {
        return adaptor<O,I>::convert(input);
     }
 
-    template <typename T, typename D>
-    struct adaptor< ambient::numeric::tiles<ambient::numeric::diagonal_matrix<T> >, ambient::numeric::tiles<ambient::numeric::diagonal_matrix<D> > >{
-        static ambient::numeric::tiles<ambient::numeric::diagonal_matrix<T> > convert(const ambient::numeric::tiles<ambient::numeric::diagonal_matrix<D> >& m){
-            ambient::numeric::tiles<ambient::numeric::diagonal_matrix<T> > pm(num_rows(m), num_cols(m));
+    template <typename T, typename D, int IB>
+    struct adaptor< ambient::numeric::tiles<ambient::numeric::diagonal_matrix<T>, IB>, ambient::numeric::tiles<ambient::numeric::diagonal_matrix<D>, IB> >{
+        static ambient::numeric::tiles<ambient::numeric::diagonal_matrix<T>, IB> convert(const ambient::numeric::tiles<ambient::numeric::diagonal_matrix<D>, IB>& m){
+            ambient::numeric::tiles<ambient::numeric::diagonal_matrix<T>, IB> pm(num_rows(m), num_cols(m));
             ambient::numeric::bindings::template convert<T,D>(pm, m);
             return pm;
         }
@@ -273,54 +273,54 @@ namespace ambient { namespace numeric { namespace bindings {
         }
     };
 
-    template <typename T, typename S, template<class M, class SS> class C>
-    struct adaptor< std::vector< std::vector<T> >, C<ambient::numeric::tiles<ambient::numeric::diagonal_matrix<T> >, S> > {
-        static std::vector< std::vector<T> > convert(const C<ambient::numeric::tiles<ambient::numeric::diagonal_matrix<T> >, S>& m){
+    template <typename T, int IB, typename S, template<class M, class SS> class C>
+    struct adaptor< std::vector< std::vector<T> >, C<ambient::numeric::tiles<ambient::numeric::diagonal_matrix<T>, IB>, S> > {
+        static std::vector< std::vector<T> > convert(const C<ambient::numeric::tiles<ambient::numeric::diagonal_matrix<T>, IB>, S>& m){
             std::vector< std::vector<T> > set;
             ambient::numeric::bindings::convert(set, m);
             return set;
         }
     };
 
-    template <typename T, class A>
-    struct adaptor< ambient::numeric::tiles<ambient::numeric::matrix<T,A> >, alps::numeric::matrix<T> > {
-        static ambient::numeric::tiles<ambient::numeric::matrix<T,A> > convert(const alps::numeric::matrix<T>& m){
-            ambient::numeric::tiles<ambient::numeric::matrix<T,A> > pm(num_rows(m), num_cols(m));    
+    template <typename T, class A, int IB>
+    struct adaptor< ambient::numeric::tiles<ambient::numeric::matrix<T,A>, IB>, alps::numeric::matrix<T> > {
+        static ambient::numeric::tiles<ambient::numeric::matrix<T,A>, IB> convert(const alps::numeric::matrix<T>& m){
+            ambient::numeric::tiles<ambient::numeric::matrix<T,A>, IB> pm(num_rows(m), num_cols(m));    
             ambient::numeric::bindings::convert(pm, m);
             return pm;
         }
     };
 
-    template <typename T2, typename T1, class A>
-    struct adaptor< ambient::numeric::tiles<ambient::numeric::matrix<T2,A> >, alps::numeric::matrix<T1> > {
-        static ambient::numeric::tiles<ambient::numeric::matrix<T2,A> > convert(const alps::numeric::matrix<T1>& m){
-            ambient::numeric::tiles<ambient::numeric::matrix<T2,A> > pm(num_rows(m), num_cols(m));    
+    template <typename T2, typename T1, class A, int IB>
+    struct adaptor< ambient::numeric::tiles<ambient::numeric::matrix<T2,A>, IB>, alps::numeric::matrix<T1> > {
+        static ambient::numeric::tiles<ambient::numeric::matrix<T2,A>, IB> convert(const alps::numeric::matrix<T1>& m){
+            ambient::numeric::tiles<ambient::numeric::matrix<T2,A>, IB> pm(num_rows(m), num_cols(m));    
             ambient::numeric::bindings::convert(pm, m);
             return pm;
         }
     };
 
-    template <typename T, class A>
-    struct adaptor< alps::numeric::matrix<T>, ambient::numeric::tiles<ambient::numeric::matrix<T,A> > > {
-        static alps::numeric::matrix<T> convert(const ambient::numeric::tiles<ambient::numeric::matrix<T,A> >& pm){
+    template <typename T, class A, int IB>
+    struct adaptor< alps::numeric::matrix<T>, ambient::numeric::tiles<ambient::numeric::matrix<T,A>, IB> > {
+        static alps::numeric::matrix<T> convert(const ambient::numeric::tiles<ambient::numeric::matrix<T,A>, IB>& pm){
             alps::numeric::matrix<T> m(num_rows(pm), num_cols(pm));    
             ambient::numeric::bindings::convert(m, pm);
             return m;
         }
     };
 
-    template <typename T>
-    struct adaptor< ambient::numeric::tiles<ambient::numeric::diagonal_matrix<T> >, alps::numeric::diagonal_matrix<T> > {
-        static ambient::numeric::tiles<ambient::numeric::diagonal_matrix<T> > convert(const alps::numeric::diagonal_matrix<T>& m){
-            ambient::numeric::tiles<ambient::numeric::diagonal_matrix<T> > pm(num_rows(m),num_cols(m));
+    template <typename T, int IB>
+    struct adaptor< ambient::numeric::tiles<ambient::numeric::diagonal_matrix<T>, IB>, alps::numeric::diagonal_matrix<T> > {
+        static ambient::numeric::tiles<ambient::numeric::diagonal_matrix<T>, IB> convert(const alps::numeric::diagonal_matrix<T>& m){
+            ambient::numeric::tiles<ambient::numeric::diagonal_matrix<T>, IB> pm(num_rows(m),num_cols(m));
             ambient::numeric::bindings::convert(pm, m);
             return pm;
         }
     };
 
-    template <typename T>
-    struct adaptor< alps::numeric::diagonal_matrix<T>, ambient::numeric::tiles<ambient::numeric::diagonal_matrix<T> > > {
-        static alps::numeric::diagonal_matrix<T> convert(const ambient::numeric::tiles<ambient::numeric::diagonal_matrix<T> >& pm){
+    template <typename T, int IB>
+    struct adaptor< alps::numeric::diagonal_matrix<T>, ambient::numeric::tiles<ambient::numeric::diagonal_matrix<T>, IB> > {
+        static alps::numeric::diagonal_matrix<T> convert(const ambient::numeric::tiles<ambient::numeric::diagonal_matrix<T>, IB>& pm){
             alps::numeric::diagonal_matrix<T> m(num_rows(pm));    
             ambient::numeric::bindings::convert(m, pm);
             return m;
@@ -337,17 +337,17 @@ template<typename T>
 bool operator == (alps::numeric::diagonal_matrix<T> const & m, ambient::numeric::diagonal_matrix<T> const & pm){
     return (ambient::numeric::bindings::cast<ambient::numeric::diagonal_matrix<T> >(m) == pm);
 }
-template<typename T, class A>
-bool operator == (alps::numeric::matrix<T> const & m, ambient::numeric::tiles<ambient::numeric::matrix<T,A> > const & pm){
-    return (ambient::numeric::bindings::cast<ambient::numeric::tiles<ambient::numeric::matrix<T,A> > >(m) == pm);
+template<typename T, class A, int IB>
+bool operator == (alps::numeric::matrix<T> const & m, ambient::numeric::tiles<ambient::numeric::matrix<T,A>, IB> const & pm){
+    return (ambient::numeric::bindings::cast<ambient::numeric::tiles<ambient::numeric::matrix<T,A>, IB> >(m) == pm);
 }
-template<typename T>
-bool operator == (alps::numeric::diagonal_matrix<T> const & m, ambient::numeric::tiles<ambient::numeric::diagonal_matrix<T> > const & pm){
-    return (ambient::numeric::bindings::cast<ambient::numeric::tiles<ambient::numeric::diagonal_matrix<T> > >(m) == pm);
+template<typename T, int IB>
+bool operator == (alps::numeric::diagonal_matrix<T> const & m, ambient::numeric::tiles<ambient::numeric::diagonal_matrix<T>, IB> const & pm){
+    return (ambient::numeric::bindings::cast<ambient::numeric::tiles<ambient::numeric::diagonal_matrix<T>, IB> >(m) == pm);
 }
 template<typename T, class A> bool operator == (ambient::numeric::matrix<T,A> const & pm, alps::numeric::matrix<T> const & m){ return (m == pm); }
 template<typename T> bool operator == (ambient::numeric::diagonal_matrix<T> const & pm, alps::numeric::diagonal_matrix<T> const & m){ return (m == pm); }
-template<typename T, class A> bool operator == (ambient::numeric::tiles<ambient::numeric::matrix<T,A> > const & pm, alps::numeric::matrix<T> const & m){ return (m == pm); }
-template<typename T> bool operator == (ambient::numeric::tiles<ambient::numeric::diagonal_matrix<T> > const & pm, alps::numeric::diagonal_matrix<T> const & m){ return (m == pm); }
+template<typename T, class A, int IB> bool operator == (ambient::numeric::tiles<ambient::numeric::matrix<T,A>, IB> const & pm, alps::numeric::matrix<T> const & m){ return (m == pm); }
+template<typename T, int IB> bool operator == (ambient::numeric::tiles<ambient::numeric::diagonal_matrix<T>, IB> const & pm, alps::numeric::diagonal_matrix<T> const & m){ return (m == pm); }
 
 #endif

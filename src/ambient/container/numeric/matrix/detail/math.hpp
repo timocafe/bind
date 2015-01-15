@@ -43,27 +43,27 @@
 typedef int PLASMA_enum;
 
 template <PLASMA_enum TR>
-struct trans_type{
+struct trans_type {
     const static int value = TR;
 };
 
 template <PLASMA_enum UL>
-struct ul_type{
+struct ul_type {
     const static int value = UL;
 };
 
 template <int I>
-struct int_type{
+struct int_type {
     const static int value = I;
 };
 
 template <class T>
-struct trans_helper{
+struct trans_helper {
     const static int PlasmaTransValue = PlasmaTrans; 
 };
 
 template <class T>
-struct trans_helper<std::complex<T> >{
+struct trans_helper<std::complex<T> > {
     const static int PlasmaTransValue = PlasmaConjTrans;
 };
 

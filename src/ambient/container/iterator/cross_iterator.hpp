@@ -30,7 +30,7 @@
 
 namespace ambient {
 
-    template<int IB = AMBIENT_IB>
+    template<int IB>
     class cross_iterator {
     public:
         cross_iterator(size_t first, size_t second, size_t size) 
