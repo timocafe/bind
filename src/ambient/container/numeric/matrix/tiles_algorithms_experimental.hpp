@@ -409,9 +409,9 @@ namespace ambient { namespace numeric {
         std::cout << " JE SUIS LA ALEX SVD " << std::endl; // Tim
         if(m == 0 || n == 0) return;
 
-        for(cross_iterator<IB> row(ai,ci,m); !row.end(); ++row){
+        for(block_pair_iterator<IB> row(ai,ci,m); !row.end(); ++row){
             std::vector<MatrixC*> ctree;
-            for(cross_iterator<IB> col(aj,bi,n); !col.end(); ++col){
+            for(block_pair_iterator<IB> col(aj,bi,n); !col.end(); ++col){
                 MatrixC* part = new MatrixC(row.step, 1);
                 gemv<alfa,0>(a.locate(row.first,col.first), a.addr(row.first, col.first),
                              b.locate(col.second,bj), b.addr(col.second, bj),
@@ -434,9 +434,9 @@ namespace ambient { namespace numeric {
         std::cout << " JE SUIS LA TIM SVD " << std::endl; // for Tim SVD only
         if(m == 0 || n == 0) return;
 
-        for(cross_iterator<IB> row(ai,ci,m); !row.end(); ++row){
+        for(block_pair_iterator<IB> row(ai,ci,m); !row.end(); ++row){
             std::vector<Matrix*> ctree;
-            for(cross_iterator<IB> col(aj,bi,n); !col.end(); ++col){
+            for(block_pair_iterator<IB> col(aj,bi,n); !col.end(); ++col){
                 Matrix* part = new Matrix(row.step, 1);
                 gemv<alfa,0>(a.locate(row.first,col.first), a.addr(row.first, col.first),
                              b.locate(col.second,bj), b.addr(col.second, bj),

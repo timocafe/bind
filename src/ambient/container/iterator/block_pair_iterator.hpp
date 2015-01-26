@@ -25,15 +25,15 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef AMBIENT_CONTAINER_ITERATOR_CROSS_ITERATOR
-#define AMBIENT_CONTAINER_ITERATOR_CROSS_ITERATOR
+#ifndef AMBIENT_CONTAINER_ITERATOR_BLOCK_PAIR_ITERATOR
+#define AMBIENT_CONTAINER_ITERATOR_BLOCK_PAIR_ITERATOR
 
 namespace ambient {
 
     template<int IB>
-    class cross_iterator {
+    class block_pair_iterator {
     public:
-        cross_iterator(size_t first, size_t second, size_t size) 
+        block_pair_iterator(size_t first, size_t second, size_t size) 
         : first(first), second(second), lim(first+size){
             measure_step();
         }

@@ -29,7 +29,7 @@
 #define AMBIENT_CONTAINER_NUMERIC_TILES_ALGORITHMS
 
 #include "ambient/container/numeric/matrix/tiles.h"
-#include "ambient/container/iterator/cross_iterator.hpp"
+#include "ambient/container/iterator/block_pair_iterator.hpp"
 #include "ambient/utils/reduce.hpp"
 #include <utility>
 
@@ -265,8 +265,8 @@ namespace ambient { namespace numeric {
                            tiles<MatrixA, IB>& out, size_t oi, size_t oj, 
                            size_t m, size_t n)
     {
-        for(cross_iterator<IB> row(oi,ii,m); !row.end(); ++row)
-        for(cross_iterator<IB> col(oj,ij,n); !col.end(); ++col)
+        for(block_pair_iterator<IB> row(oi,ii,m); !row.end(); ++row)
+        for(block_pair_iterator<IB> col(oj,ij,n); !col.end(); ++col)
         copy_block(in.locate(row.second, col.second), row.second % IB, col.second % IB,
                    out.locate(row.first, col.first), row.first % IB, col.first % IB,
                    row.step, col.step);
@@ -280,8 +280,8 @@ namespace ambient { namespace numeric {
     {
         const Matrix& factor = alfa.locate(ai, aj); 
         ai %= IB; aj %= IB;
-        for(cross_iterator<IB> row(oi,ii,m); !row.end(); ++row)
-        for(cross_iterator<IB> col(oj,ij,n); !col.end(); ++col)
+        for(block_pair_iterator<IB> row(oi,ii,m); !row.end(); ++row)
+        for(block_pair_iterator<IB> col(oj,ij,n); !col.end(); ++col)
         copy_block_s(in.locate(row.second, col.second), row.second % IB, col.second % IB,
                      out.locate(row.first, col.first), row.first % IB, col.first % IB,
                      factor, ai, aj, row.step, col.step);
@@ -296,8 +296,8 @@ namespace ambient { namespace numeric {
     {
         const MatrixC& factor = alfa.locate(ai, aj); 
         ai %= IB; aj %= IB;
-        for(cross_iterator<IB> row(oi,ii,m); !row.end(); ++row)
-        for(cross_iterator<IB> col(oj,ij,n); !col.end(); ++col)
+        for(block_pair_iterator<IB> row(oi,ii,m); !row.end(); ++row)
+        for(block_pair_iterator<IB> col(oj,ij,n); !col.end(); ++col)
         copy_block_sa(in.locate(row.second, col.second), row.second % IB, col.second % IB,
                       out.locate(row.first, col.first), row.first % IB, col.first % IB,
                       factor, ai, aj, row.step, col.step, alfa_scale);
