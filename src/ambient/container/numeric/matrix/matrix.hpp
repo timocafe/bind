@@ -30,10 +30,6 @@
 
 #include "ambient/container/numeric/matrix/matrix.h"
 #include "ambient/container/numeric/matrix/matrix_algorithms.hpp"
-#ifdef AMBIENT_NUMERIC_EXPERIMENTAL
-#include "ambient/container/numeric/matrix/matrix_algorithms_experimental.hpp"
-#endif
-
 
 namespace ambient { namespace numeric {
 

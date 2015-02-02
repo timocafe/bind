@@ -190,23 +190,8 @@ namespace ambient { namespace numeric { namespace kernels {
            assert( *info == 0 );
        }
 
-       static void gebrd(const int* m, const int* n, T* a, const int* lda, T* d, T* e, T* tauq, T* taup, T* work, const int* lwork, int* info){
-           dgebrd_(m, n, a, lda, d, e, tauq, taup, work, lwork, info);  
-           assert( *info == 0 );
-       }
-
        static void orgbr(const char* vect, const int* m, const int* n, const int* k, T* a, const int* lda, const T* tau, T* work, const int* lwork, int* info){
            dorgbr_(vect, m, n, k, a, lda, tau, work, lwork, info);
-           assert( *info == 0 );
-       }
-
-       static void gbbrd (const char* vect, const int* m, const int* n, const int* ncc, const int* kl, const int* ku, T* ab, const int* ldab, T* d, T* e, T* q, const int* ldq, T* pt, const int* ldpt, T* c, const int* ldc, T* work, int* info ){
-           dggbrd(vect, m, n, ncc, kl, ku, ab, ldab, d, e, q, ldq, pt, ldpt, c, ldc, work, info);
-           assert( *info == 0 );
-       }
- 
-       static void bdsqr(const char* uplo, const int* n, const int* ncvt, const int* nru, const int* ncc, T* d, T* e, T* vt, const int* ldvt, T* u, const int* ldu, T* c, const int* ldc, T* work, int* info ){
-           dbdsqr(uplo, n, ncvt, nru, ncc, d, e, vt, ldvt, u, ldu, c, ldc, work, info);
            assert( *info == 0 );
        }
     };
@@ -278,25 +263,8 @@ namespace ambient { namespace numeric { namespace kernels {
            assert( *info == 0 );
        }
 
-       static void gebrd (const int* m, const int* n, T* a, const int* lda, T * d, T* e, T* tauq, T* taup, T* work,
-                        //  typename T::value_type * d, typename T::value_type* e, T* tauq, T* taup, T* work, <------ the good one
-                          const int* lwork, int* info){
-           throw std::runtime_error("Error: fix the signature and the mix double/complex for TE");
-           //zgebrd_(m, n, a, lda, d, e, tauq, taup, work, lwork, info);  
-       }
-
        static void orgbr(const char* vect, const int* m, const int* n, const int* k, T* a, const int* lda, const T* tau, T* work, const int* lwork, int* info){
            zungbr_(vect, m, n, k, a, lda, tau, work, lwork, info); // double signature != complex signature
-       }
-
-       static void gbbrd (const char* vect, const int* m, const int* n, const int* ncc, const int* kl, const int* ku, T* ab, const int* ldab, T* d, T* e, T* q, const int* ldq, T* pt, const int* ldpt, T* c, const int* ldc, T* work, int* info ){
-           throw std::runtime_error("Error: fix I need one more buffer for complex");
-           //zggbrd(vect, m, n, ncc, kl, ku, ab, ldab, d, e, q, ldq, pt, ldpt, c, ldc, work, info);
-       }
-
-       static void bdsqr(const char* uplo, const int* n, const int* ncvt, const int* nru, const int* ncc, T* d, T* e, T* vt, const int* ldvt, T* u, const int* ldu, T* c, const int* ldc, T* work, int* info ){
-           throw std::runtime_error("Error: fix the signature and the mix double/complex for TE");
-           //zdsqr(uplo, n, ncvt, nru, ncc, d, e, vt, ldvt, u, ldu, c, ldc, work, info);
        }
     };
 
