@@ -619,6 +619,18 @@ namespace ambient { namespace numeric { namespace kernels {
         }
        
         template<typename T>
+        void inverse(matrix<T> & a){
+            int info;
+            int m = a.num_rows();
+            int n = a.num_cols();
+            T* ad = a.data(); 
+            int* ipivd = new int[n];
+            helper_lapack<T>::getrf(&m, &n, ad, &m, ipivd, &info);
+            helper_lapack<T>::getri(&n, ad, &n, ipivd, &info);
+            delete [] ipivd;
+        }
+       
+        template<typename T>
         void geev(const matrix<T>& a, unbound< matrix<T> >& lv, unbound< matrix<T> >& rv, unbound< matrix<T> >& s){
             int n = a.num_cols();
             int info;
@@ -632,18 +644,6 @@ namespace ambient { namespace numeric { namespace kernels {
         }
        
         template<typename T>
-        void inverse(matrix<T> & a){
-            int info;
-            int m = a.num_rows();
-            int n = a.num_cols();
-            T* ad = a.data(); 
-            int* ipivd = new int[n];
-            helper_lapack<T>::getrf(&m, &n, ad, &m, ipivd, &info);
-            helper_lapack<T>::getri(&n, ad, &n, ipivd, &info);
-            delete [] ipivd;
-        }
-       
-        template<typename T>
         void heev(matrix<T>& a, matrix<typename real_type<T>::type>& w){
             int m = a.num_rows();
             int info, lwork = -1;
@@ -652,7 +652,7 @@ namespace ambient { namespace numeric { namespace kernels {
             T* ad = a.data();
             typename real_type<T>::type* wd = w.data();
        
-            helper_lapack<T>::syev("V","U",&m,ad,&m,wd,&wkopt,&lwork,&info);
+            helper_lapack<T>::heev("V","U",&m,ad,&m,wd,&wkopt,&lwork,&info);
        
             typename real_type<T>::type s;
             for(int i = 0; i < (int)(m/2); i++){
@@ -709,8 +709,8 @@ namespace ambient { namespace numeric { namespace kernels {
     AMBIENT_EXPORT_TEMPLATE(detail::migrate, migrate)
     AMBIENT_EXPORT_TEMPLATE(detail::hint, hint)
     AMBIENT_EXPORT_TEMPLATE(detail::svd, svd)
-    AMBIENT_EXPORT_TEMPLATE(detail::geev, geev)
     AMBIENT_EXPORT_TEMPLATE(detail::inverse, inverse)
+    AMBIENT_EXPORT_TEMPLATE(detail::geev, geev)
     AMBIENT_EXPORT_TEMPLATE(detail::heev, heev)
     AMBIENT_EXPORT_TEMPLATE(detail::copy_rt, copy_rt)
     AMBIENT_EXPORT_TEMPLATE(detail::copy_lt, copy_lt)

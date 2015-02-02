@@ -152,7 +152,7 @@ namespace ambient { namespace numeric { namespace kernels {
            std::free(work);
        } 
 
-       static void syev(const char* jobz, const char* uplo, const int* n, T* a, const int* lda, T* w, T* wkopt, int* lwork, int* info ){
+       static void heev(const char* jobz, const char* uplo, const int* n, T* a, const int* lda, T* w, T* wkopt, int* lwork, int* info ){
            T* work;
            dsyev_(jobz, uplo, n, a, lda, w, wkopt, lwork, info);
            assert( *info == 0 );
@@ -226,7 +226,7 @@ namespace ambient { namespace numeric { namespace kernels {
            delete [] rwork;
        } 
 
-       static void syev(const char* jobz, const char* uplo, const int* n, T* a, const int* lda, typename T::value_type* w, T* wkopt, int* lwork, int* info ){
+       static void heev(const char* jobz, const char* uplo, const int* n, T* a, const int* lda, typename T::value_type* w, T* wkopt, int* lwork, int* info ){
            typename T::value_type* rwork = new typename T::value_type[std::max(1,3*(*n)-2)]; // from intel lapack doc
            T* work;
            zheev_(jobz, uplo, n, a, lda, w, wkopt, lwork, rwork, info);

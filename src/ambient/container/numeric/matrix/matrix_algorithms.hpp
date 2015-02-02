@@ -146,11 +146,6 @@ namespace ambient { namespace numeric {
         evecs.swap(a);
     }
 
-    template<typename T, class A>
-    inline void syev(matrix<T,A>& a, matrix<T,A>& evecs, diagonal_matrix<double>& evals){
-        heev(a, evecs, evals); // should it be syev instead?
-    }
-
     template<int IB, typename T, class A>
     inline void geqrt(matrix<T,A>& a, matrix<T,A>& t){
         kernels::template geqrt<T, int_type<IB> >(a, t);

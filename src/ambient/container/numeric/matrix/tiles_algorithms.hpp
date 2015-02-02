@@ -136,12 +136,21 @@ namespace ambient { namespace numeric {
 
     template <class MatrixA, class MatrixB, int IB>
     inline void mul_inplace(tiles<MatrixA, IB>& a, const tiles<MatrixB, IB>& rhs){
-        throw std::runtime_error("Error: not tested mul inplace");
+        tiles<MatrixA, IB> orig(a);
+        gemm(orig, rhs, a);
     }
 
     template <class Matrix, int IB>
     inline tiles<Matrix, IB> kron(const tiles<Matrix, IB>& M1, const tiles<Matrix, IB>& M2){
-        throw std::runtime_error("Error: not tested kron");
+        tiles<Matrix, IB> MM(num_rows(M1)*num_rows(M2), num_cols(M1)*num_cols(M2));
+
+        for(int i1 = 0; i1 < num_rows(M1); ++i1)
+        for(int j1 = 0; j1 < num_cols(M1); ++j1)
+        copy_block_s(M2, 0, 0,
+                     MM, i1*num_rows(M2), j1*num_cols(M2),
+                     M1, i1, j1,
+                     num_rows(M2), num_cols(M2));
+        return MM;
     }
  
     template<class Matrix, int IB>
@@ -159,8 +168,7 @@ namespace ambient { namespace numeric {
 
     template<class Matrix, int IB>
     inline void split(const tiles<transpose_view<Matrix>, IB>& a){
-        printf("SPLIT OF TRANSPOSE VIEW!\n\n\n");
-        if(a.data.size() == 1 && (__a_ceil(a.rows/IB) != 1 || __a_ceil(a.cols/IB) != 1)) printf("We have to split but we don't :(\n");
+        throw std::runtime_error("Error: split of transpose_view");
     }
 
     // {{{ normal merge / split
@@ -278,7 +286,7 @@ namespace ambient { namespace numeric {
                              const tiles<Matrix, IB>& alfa, size_t ai, size_t aj,
                              size_t m, size_t n)
     {
-        const Matrix& factor = alfa.locate(ai, aj); 
+        const Matrix& factor = alfa.locate(ai, aj);
         ai %= IB; aj %= IB;
         for(block_pair_iterator<IB> row(oi,ii,m); !row.end(); ++row)
         for(block_pair_iterator<IB> col(oj,ij,n); !col.end(); ++col)
@@ -461,13 +469,6 @@ namespace ambient { namespace numeric {
         heev(a[0], evecs[0], evals[0]);
     }
 
-    template<class Matrix, class DiagonalMatrix, int IB>
-    inline void syev(tiles<Matrix, IB> a, tiles<Matrix, IB>& evecs, tiles<DiagonalMatrix, IB>& evals){
-        merge(a); merge(evecs); merge(evals);
-        heev(a[0], evecs[0], evals[0]);
-        split(evecs); split(evals);
-    }
-                
     template<class Matrix, int IB>
     void orgqr(const tiles<Matrix, IB>&& a, tiles<Matrix, IB>&& q, const tiles<Matrix, IB>&& t){
         int k, m, n;
@@ -814,11 +815,6 @@ namespace ambient { namespace numeric {
         return b;
     }
 
-    template<class Matrix, int IB, class G>
-    inline void generate(tiles<Matrix, IB>& a, G g){
-        generate(a);
-    }
-
     template<class Matrix, int IB>
     inline void generate(tiles<Matrix, IB>& a){
         int size = a.data.size();
@@ -858,9 +854,6 @@ namespace ambient { namespace numeric {
 
     template <class Matrix, int IB>
     inline void mul_inplace(tiles<Matrix, IB>& a, const scalar_type& rhs) {
-        #ifdef AMBIENT_LOOSE_FUTURE
-        if(!rhs.valid) rhs.load();
-        #endif
         if((value_type)rhs == 1.) return; // gcc debug knob + early out
         int size = a.data.size();
         for(int i = 0; i < size; i++){
@@ -870,9 +863,6 @@ namespace ambient { namespace numeric {
 
     template <class Matrix, int IB>
     inline void div_inplace(tiles<Matrix, IB>& a, const scalar_type& rhs){
-        #ifdef AMBIENT_LOOSE_FUTURE
-        if(!rhs.valid) rhs.load();
-        #endif
         if((value_type)rhs == 1.) return; // gcc debug knob + early out
         int size = a.data.size();
         for(int i = 0; i < size; i++)
