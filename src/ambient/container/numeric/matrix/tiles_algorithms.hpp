@@ -70,7 +70,7 @@ namespace ambient { namespace numeric {
 
     template<class Matrix, int IB>
     inline tiles<Matrix, IB> exp(tiles<Matrix, IB> a, const value_type& alfa = 1.){
-        assert(boost::is_complex<value_type>::value); // exp(complex), exp_hermitian(double and complex) : dummy name
+        assert((std::is_same<value_type, std::complex<double> >::value) == true);
         assert(num_rows(a) == num_cols(a));
         std::size_t n = num_cols(a);
 
