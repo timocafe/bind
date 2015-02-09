@@ -1,6 +1,6 @@
 # Makefile
 SHELL := /bin/bash
-AMBIENT_INCLUDE?= -I../src
+AMBIENT_INCLUDE?=../src
 AMBIENT_LIB_PATH?=.
 CXXFLAGS?= -std=c++11 -O3 -DNDEBUG -DAMBIENT_DISABLE_MPI
 
