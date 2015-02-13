@@ -1,6 +1,4 @@
 compile_with_ambient()
-include_directories("${CMAKE_CURRENT_SOURCE_DIR}")
-include_directories("${AMBIENT_SOURCES_DIR}")
 
 add_executable( transpose   transpose.cpp )
 add_executable( resize      resize.cpp    )
@@ -39,6 +37,6 @@ foreach( functional_test
          adjoint
          hermitian
        )
-    target_link_libraries (${functional_test} ${AMBIENT_LIBRARIES}) 
+    target_link_libraries (${functional_test} ${AMBIENT_LIBRARIES})
     add_test(${functional_test} ${functional_test})
 endforeach(functional_test)
