@@ -2,25 +2,20 @@ cmake_minimum_required (VERSION 2.8.5)
 
 ########################################################################
 #
-# Project and version information
+# Project information
 #
 ########################################################################
 
-if(MACHINE_CONFIG)
-  if(EXISTS ${MACHINE_CONFIG})
-    message(STATUS "Loading config in " ${MACHINE_CONFIG})
-    include(${MACHINE_CONFIG})
-  else(EXISTS ${MACHINE_CONFIG})
-    message(ERROR " Machine config not found!")
-  endif(EXISTS ${MACHINE_CONFIG})
-endif(MACHINE_CONFIG)
-
 project (ambient)
-list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/config)
 
 if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
   set(CMAKE_INSTALL_PREFIX "/opt/ambient" CACHE PATH "Ambient install prefix" FORCE)
 endif(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+
+if(NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Type of build" FORCE)
+endif(NOT CMAKE_BUILD_TYPE)
+message(STATUS "Build type: " ${CMAKE_BUILD_TYPE})
 
 set(AMBIENT_SOURCES_DIR "${PROJECT_SOURCE_DIR}/src")
 
@@ -38,13 +33,7 @@ set(PLASMA_LIBRARIES "-lplasma -lcoreblas -llapacke -lquark" CACHE STRINGS "PLAS
 set(AMBIENT_CXX_FLAGS "-std=c++11" CACHE STRINGS "C++11 support is required, e.g. -std=c++11 and -gcc-name=XX")
 
 option(AMBIENT_DISABLE_MPI "Disable MPI support (shared memory only)" ON)
-option(FUNCTIONAL_REGRESSION_TESTS  "Build functional regression tests" OFF)
-option(PERFORMANCE_REGRESSION_TESTS "Build performance regression tests" OFF)
-
-if(NOT CMAKE_BUILD_TYPE)
-  set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Type of build" FORCE)
-endif(NOT CMAKE_BUILD_TYPE)
-message(STATUS "Build type: " ${CMAKE_BUILD_TYPE})
+option(REGRESSION_TESTS "Build regression tests" OFF)
 
 ########################################################################
 #
@@ -108,8 +97,7 @@ add_subdirectory(src/ambient)
 #
 ########################################################################
 
-if(FUNCTIONAL_REGRESSION_TESTS OR PERFORMANCE_REGRESSION_TESTS)
-
+if(REGRESSION_TESTS)
   message(STATUS "Math lib dirs: ${MKL_LIB_DIR} ${PLASMA_LIB_DIR}")
   message(STATUS "Math libs:     ${MKL_LIBRARIES} ${PLASMA_LIBRARIES}")
   list(APPEND AMBIENT_LIBRARY_DIRS ${MKL_LIB_DIR} ${PLASMA_LIB_DIR})
@@ -125,20 +113,13 @@ if(FUNCTIONAL_REGRESSION_TESTS OR PERFORMANCE_REGRESSION_TESTS)
   include(CTest)
   enable_testing() 
   include_directories(${PROJECT_SOURCE_DIR}/tests)
-
-  if(FUNCTIONAL_REGRESSION_TESTS)
-    add_subdirectory(tests/functional)
-  endif(FUNCTIONAL_REGRESSION_TESTS)
-
-  if(PERFORMANCE_REGRESSION_TESTS)
-    add_subdirectory(tests/performance)
-  endif(PERFORMANCE_REGRESSION_TESTS)
-
-endif(FUNCTIONAL_REGRESSION_TESTS OR PERFORMANCE_REGRESSION_TESTS)
+  add_subdirectory(tests/functional)
+  add_subdirectory(tests/performance)
+endif(REGRESSION_TESTS)
 
 ########################################################################
 #
-# Configure files
+# Configuration dump
 #
 ########################################################################
 
