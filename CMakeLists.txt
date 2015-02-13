@@ -30,7 +30,6 @@ set(AMBIENT_SOURCES_DIR "${PROJECT_SOURCE_DIR}/src")
 #
 ########################################################################
 
-
 set(AMBIENT_THREADING "auto" CACHE STRINGS "Ambient threading backend: cilk, openmp, serial or auto.")
 set(MKL_LIB_DIR "/usr/local/lib" CACHE PATH "Location of BLAS/LAPACK libraries.")
 set(MKL_LIBRARIES "" CACHE STRINGS "BLAS/LAPACK libraries")
@@ -70,6 +69,7 @@ endif()
 message(STATUS "Ambient threading: ${AMBIENT_THREADING}")
 
 if(AMBIENT_DISABLE_MPI)
+  message(STATUS "MPI is disabled")
   set(AMBIENT_CXX_FLAGS "${AMBIENT_CXX_FLAGS} -DAMBIENT_DISABLE_MPI")
 else(AMBIENT_DISABLE_MPI)
   if(NOT MPI_CXX_FOUND)
