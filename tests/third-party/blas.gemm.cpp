@@ -32,7 +32,7 @@ TEST_CASE( "Matrix multiplication performance measured", "[blas::gemm]" )
         bd[i] = ambient::utils::Rd();
     }
        
-    measurement::timer time("blas");
+    measurement::timer time("gemm");
     time.begin();
     ambient::numeric::mkl::blas<double>::gemm("N","N", &m, &n, &k, &alpha, ad, &lda, bd, &ldb, &beta, cd, &ldc);
     time.end();

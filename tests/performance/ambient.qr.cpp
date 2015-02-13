@@ -10,24 +10,15 @@ TEST_CASE( "Matrix QR factorization performance measured", "[ambient::qr]" )
     matrix<double> Q(x, y);
     matrix<double> R(x, y);
 
-    matrix_<double> A_(x, y);
-    matrix_<double> Q_(x, y);
-    matrix_<double> R_(x, y);
-
     generate(A);
-    A_ = cast<matrix_<double> >(A);
     ambient::sync();
 
-    qr(A_, Q_, R_);
     qr(A,  Q,  R); 
 
-    measurement::timer time("ambient"); time.begin();
+    measurement::timer time("qr"); time.begin();
     ambient::sync();
     time.end();
 
     params.report(gflops::gemm, time.get_time());
-
-    REQUIRE((Q_ == Q));
-    REQUIRE((R_ == R));
 }
 

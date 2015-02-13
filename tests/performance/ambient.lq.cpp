@@ -15,7 +15,7 @@ TEST_CASE( "Matrix LQ factorization performance measured", "[ambient::lq]" )
 
     lq(A, L, Q); 
 
-    measurement::timer time("ambient"); time.begin();
+    measurement::timer time("lq"); time.begin();
     ambient::sync();
     time.end();
 

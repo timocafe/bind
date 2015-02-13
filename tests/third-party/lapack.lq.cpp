@@ -1,7 +1,7 @@
 #define AMBIENT_OMP
 #include "utils/testing.hpp"
 
-TEST_CASE( "Matrix QR factorization performance measured", "[lapack::qr]" )
+TEST_CASE( "Matrix LQ factorization performance measured", "[lapack::lq]" )
 {
     measurement params;
 
@@ -10,15 +10,15 @@ TEST_CASE( "Matrix QR factorization performance measured", "[lapack::qr]" )
 
     matrix<double>  A (x, y);
     matrix_<double> A_(x, y);
+    matrix_<double> L_(x, y);
     matrix_<double> Q_(x, y);
-    matrix_<double> R_(x, y);
 
     generate(A);
     A_ = cast<matrix_<double> >(A);
     ambient::sync();
 
-    measurement::timer time("ambient"); time.begin();
-    qr(A_, Q_, R_); 
+    measurement::timer time("lq"); time.begin();
+    lq(A_, L_, Q_);
     time.end();
 
     params.report(gflops::gemm, time.get_time());

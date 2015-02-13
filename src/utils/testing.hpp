@@ -3,11 +3,14 @@
 
 #define AMBIENT_GLOBALS
 #include "ambient/ambient.hpp"
+#include "ambient/container/numeric/matrix.hpp"
+#ifdef AMBIENT_ALPS
 #include "alps/numeric/matrix.hpp"
 #include "alps/numeric/diagonal_matrix.hpp"
 #include "alps/numeric/matrix/algorithms.hpp"
-#include "ambient/container/numeric/matrix.hpp"
 #include "ambient/container/numeric/bindings/alps.hpp"
+#endif
+#include "ambient/container/numeric/bindings/types.hpp"
 
 #define CATCH_CONFIG_MAIN
 #include "utils/catch.hpp"
@@ -84,11 +87,13 @@ namespace ambient { namespace utils {
 } }
 
 
-template<class T> using matrix  = ambient::numeric::tiles<ambient::numeric::matrix<T> >;
-template<class T> using matrix_ = alps::numeric::matrix<T>;
+template<class T> using matrix = ambient::numeric::tiles<ambient::numeric::matrix<T> >;
+template<class T> using diagonal = ambient::numeric::tiles<ambient::numeric::diagonal_matrix<T> >;
 
-template<class T> using diagonal  = ambient::numeric::tiles<ambient::numeric::diagonal_matrix<T> >;
+#ifdef AMBIENT_ALPS
+template<class T> using matrix_ = alps::numeric::matrix<T>;
 template<class T> using diagonal_ = alps::numeric::diagonal_matrix<T>;
+#endif
 
 using namespace ambient::numeric::bindings;
 using ambient::utils::measurement;

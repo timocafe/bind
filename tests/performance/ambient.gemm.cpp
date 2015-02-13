@@ -13,14 +13,8 @@ TEST_CASE( "Matrix multiplication performance measured", "[ambient::gemm]" )
     matrix<double> C(x, y);
     matrix<double> C_orig(x, y);
 
-    matrix_<double> A_(x, y);
-    matrix_<double> B_(x, y);
-
     generate(A);
     generate(B);
-
-    A_ = cast<matrix_<double> >(A);
-    B_ = cast<matrix_<double> >(B);
     ambient::sync();
 
     printf("ambient::gemm strassen...\n");

@@ -44,7 +44,7 @@ TEST_CASE( "Matrix multiplication performance measured", "[pblas::gemm]" )
         BB[i*N + j] = rand();
         CC[i*N + j] = -1;
      }
-   measurement::timer time("time");
+   measurement::timer time("gemm");
    time.begin();
    Cblacs_pinfo( &myrank_mpi, &nprocs_mpi) ;
 
