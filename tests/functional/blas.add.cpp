@@ -1,51 +1,29 @@
-#include "params.hpp"
+#include "utils/testing.hpp"
 
-BOOST_AUTO_TEST_CASE_TEMPLATE( ADD, T, test_types)
+TEST_CASE( "Matrix sum is computed", "[add]" )
 {
-    typedef alps::numeric::matrix<typename T::value_type> sMatrix;
-    typedef ambient::numeric::tiles<ambient::numeric::matrix<typename T::value_type> > pMatrix;
+    matrix<double> A(TEST_M,TEST_N);
+    matrix<double> B(TEST_M,TEST_N);
+    matrix<double> C(TEST_M,TEST_N);
 
-    pMatrix pA(T::valuex,T::valuey);
-    pMatrix pB(T::valuex,T::valuey);
-    pMatrix pC(T::valuex,T::valuey);
+    matrix_<double> A_(TEST_M,TEST_N);
+    matrix_<double> B_(TEST_M,TEST_N);
+    matrix_<double> C_(TEST_M,TEST_N);
 
-    sMatrix sA(T::valuex,T::valuey);
-    sMatrix sB(T::valuex,T::valuey);
-    sMatrix sC(T::valuex,T::valuey);
+    generate(A);
+    generate(B);
 
-    generate(pA);
-    generate(pB);
+    A_ = cast<matrix_<double> >(A);
+    B_ = cast<matrix_<double> >(B);
+    C_ = cast<matrix_<double> >(C);
 
-    sA = cast<sMatrix>(pA);
-    sB = cast<sMatrix>(pB);
-    sC = cast<sMatrix>(pC);
+    C  = A  + B; 
+    C_ = A_ + B_;
 
-    sC = sA + sB;
-    pC = pA + pB; 
+    REQUIRE((C == C_));
 
-    BOOST_CHECK(pC == sC);
+    C  += B;
+    C_ += B_;
+
+    REQUIRE((C == C_));
 }
-
-BOOST_AUTO_TEST_CASE_TEMPLATE( ADD_ASSIGN, T, test_types)
-{
-    typedef alps::numeric::matrix<typename T::value_type> sMatrix;
-    typedef ambient::numeric::tiles<ambient::numeric::matrix<typename T::value_type> > pMatrix;
-
-    pMatrix pA(T::valuex,T::valuey);
-    pMatrix pB(T::valuex,T::valuey);
-
-    sMatrix sA(T::valuex,T::valuey);
-    sMatrix sB(T::valuex,T::valuey);
-
-    generate(pA);
-    generate(pB);
-
-    sA = cast<sMatrix>(pA);
-    sB = cast<sMatrix>(pB);
- 
-    sA += sB; 
-    pA += pB; 
-
-    BOOST_CHECK(pA == sA);
-}
-

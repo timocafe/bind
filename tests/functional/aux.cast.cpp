@@ -1,69 +1,59 @@
-#include "params.hpp"
+#include "utils/testing.hpp"
 
-BOOST_AUTO_TEST_CASE_TEMPLATE( CAST_P2S, T, test_types)
+TEST_CASE( "Casting tiles to alps::matrix", "[cast_to_alps]" )
 {
-    typedef alps::numeric::matrix<typename T::value_type> sMatrix;
-    typedef ambient::numeric::tiles<ambient::numeric::matrix<typename T::value_type> > pMatrix;
+    matrix<double>  A (TEST_M,TEST_N);
+    matrix_<double> A_(TEST_M,TEST_N);
 
-    pMatrix pA(T::valuex,T::valuey);
-    sMatrix sA(T::valuex,T::valuey);
-    generate(pA);
-    sA = cast<sMatrix>(pA);
-    BOOST_CHECK(pA==sA);
+    generate(A);
+    A_ = cast<matrix_<double> >(A);
+
+    REQUIRE((A == A_));
 }
 
-BOOST_AUTO_TEST_CASE_TEMPLATE( CAST_S2P, T, test_types)
+TEST_CASE( "Casting alps::matrix to tiles", "[cast_from_alps]" )
 {
-    typedef alps::numeric::matrix<typename T::value_type> sMatrix;
-    typedef ambient::numeric::tiles<ambient::numeric::matrix<typename T::value_type> > pMatrix;
+    matrix<double>  A (TEST_M,TEST_N);
+    matrix_<double> A_(TEST_M,TEST_N);
 
-    pMatrix pA(T::valuex,T::valuey);
-    sMatrix sA(T::valuex,T::valuey);
-    generate(sA,Rd); // Rd is rand generator static variable inside utilities
-    pA = cast<pMatrix>(sA);
-    BOOST_CHECK(sA==pA);
+    generate(A_, ambient::utils::Rd);
+    A = cast<matrix<double> >(A_);
+
+    REQUIRE((A_ == A));
 }
 
-BOOST_AUTO_TEST_CASE_TEMPLATE( CAST_C2D, T, test_types) //complex to double only for TE into exp function heev
+TEST_CASE( "Casting tiles to alps::diagonal", "[cast_to_alps_diag]" )
 {
-    typedef ambient::numeric::tiles<ambient::numeric::diagonal_matrix<double> > pDiagMatrixDouble;
-    typedef ambient::numeric::tiles<ambient::numeric::diagonal_matrix< std::complex<double> > > pDiagMatrixComplex;
+    diagonal<double>  A (TEST_M,TEST_M);
+    diagonal_<double> A_((std::size_t)TEST_M);
 
-    pDiagMatrixDouble pAd(T::valuex,T::valuex);
-    pDiagMatrixDouble pBd(T::valuex,T::valuex);
-    pDiagMatrixComplex pAc(T::valuex,T::valuex);
+    generate(A);
+    A_ = cast<diagonal_<double> >(A);
 
-    generate(pAd);
-    pAc = cast<pDiagMatrixComplex,pDiagMatrixDouble>(pAd);
-    pBd = cast<pDiagMatrixDouble,pDiagMatrixComplex>(pAc);
-    BOOST_CHECK(pAd==pBd);
+    REQUIRE((A == A_));
 }
 
-BOOST_AUTO_TEST_CASE_TEMPLATE( CAST_P2S_DIAG, T, test_types)
+TEST_CASE( "Casting alps::diagonal to tiles", "[cast_from_alps_diag]" )
 {
-    typedef alps::numeric::diagonal_matrix<typename T::value_type> sDiagMatrix;
-    typedef ambient::numeric::tiles<ambient::numeric::diagonal_matrix<typename T::value_type> > pDiagMatrix;
-
-    pDiagMatrix pA(T::valuex,T::valuex);
-    sDiagMatrix sA((std::size_t)T::valuex);
-
-    generate(pA);
-    sA = cast<sDiagMatrix>(pA);
-    BOOST_CHECK(pA==sA);
-}
-
-BOOST_AUTO_TEST_CASE_TEMPLATE( CAST_S2P_DIAG, T, test_types)
-{
-    typedef alps::numeric::diagonal_matrix<typename T::value_type> sDiagMatrix;
-    typedef ambient::numeric::tiles<ambient::numeric::diagonal_matrix<typename T::value_type> > pDiagMatrix;
-
-    pDiagMatrix pH(T::valuex,T::valuex);
-    pDiagMatrix pA(T::valuex,T::valuex);
-    sDiagMatrix sA((std::size_t)T::valuex);
+    diagonal<double>  H (TEST_M,TEST_M);
+    diagonal<double>  A (TEST_M,TEST_M);
+    diagonal_<double> A_((std::size_t)TEST_M);
    
-    generate(pH);
-    sA = cast<sDiagMatrix>(pH);
+    generate(H);
+    A_ = cast<diagonal_<double> >(H);
+    A  = cast<diagonal<double> >(A_);
 
-    pA = cast<pDiagMatrix>(sA);
-    BOOST_CHECK(sA==pA);
+    REQUIRE((A_ == A));
+}
+
+TEST_CASE( "Casting complex matrix to real matrix", "[cast_complex_double]" )
+{
+    diagonal<double> A(TEST_M,TEST_M);
+    diagonal<double> B(TEST_M,TEST_M);
+    diagonal<std::complex<double> > Ac(TEST_M,TEST_M);
+
+    generate(A);
+    Ac = cast<diagonal<std::complex<double> >, diagonal<double> >(A);
+    B = cast<diagonal<double>, diagonal<std::complex<double> > >(Ac);
+    REQUIRE((A == B));
 }

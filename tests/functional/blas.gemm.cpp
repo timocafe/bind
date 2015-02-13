@@ -1,27 +1,24 @@
-#include "params.hpp"
+#include "utils/testing.hpp"
 
-BOOST_AUTO_TEST_CASE_TEMPLATE( GEMM_NORMAL, T, test_types)
+TEST_CASE( "Matrix multiplication is computed", "[gemm_normal]" )
 {
-    typedef alps::numeric::matrix<typename T::value_type> sMatrix;
-    typedef ambient::numeric::tiles<ambient::numeric::matrix<typename T::value_type> > pMatrix;
+    matrix<double> A(TEST_M,TEST_M);
+    matrix<double> B(TEST_M,TEST_M);
+    matrix<double> C(TEST_M,TEST_M);
 
-    pMatrix pA(T::valuex,T::valuex);
-    pMatrix pB(T::valuex,T::valuex);
-    pMatrix pC(T::valuex,T::valuex);
+    matrix_<double> A_(TEST_M,TEST_M);
+    matrix_<double> B_(TEST_M,TEST_M);
+    matrix_<double> C_(TEST_M,TEST_M);
 
-    sMatrix sA(T::valuex,T::valuex);
-    sMatrix sB(T::valuex,T::valuex);
-    sMatrix sC(T::valuex,T::valuex);
+    generate(A);
+    generate(B);
 
-    generate(pA);
-    generate(pB);
+    A_ = cast<matrix_<double> >(A);
+    B_ = cast<matrix_<double> >(B);
 
-    sA = cast<sMatrix>(pA);
-    sB = cast<sMatrix>(pB);
+    gemm(A,  B,  C);
+    gemm(A_, B_, C_);
 
-    ambient::numeric::gemm(pA,pB,pC);
-    ambient::sync();
-    gemm(sA,sB,sC);
-    BOOST_CHECK(pC==sC);
+    REQUIRE((C == C_));
 }
 

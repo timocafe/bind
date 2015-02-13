@@ -1,51 +1,50 @@
-#include "params.hpp"
+#include "utils/testing.hpp"
 
-BOOST_AUTO_TEST_CASE_TEMPLATE( EXP, T, test_types)
-{
-    typedef alps::numeric::diagonal_matrix<typename T::value_type> sDiagMatrix;
-    typedef ambient::numeric::tiles<ambient::numeric::diagonal_matrix<typename T::value_type> > pDiagMatrix;
+template<class T>
+struct test {
+    static std::pair<matrix<T>, matrix_<T> > exponent(T alfa){
+        matrix<T>  A (TEST_M, TEST_M), B (TEST_M, TEST_M);
+        matrix_<T> A_(TEST_M, TEST_M), B_(TEST_M, TEST_M);
+       
+        generate_hermitian(A);
+        A_ = cast<matrix_<T> >(A);
+        
+        B_ = exp_hermitian(A_, alfa);
+        B  = exp_hermitian(A , alfa);
 
-    pDiagMatrix pA(T::valuex, T::valuex);
-    sDiagMatrix sA((std::size_t)T::valuex);
-
-    generate(pA);
-    sA = cast<sDiagMatrix>(pA);
-
-    sA = exp(sA);
-    ambient::numeric::exp_inplace(pA);
-
-    BOOST_CHECK(pA==sA);
-}
-
-template<typename T>
-struct random_helper{
-    static void randomize(T& a){
-        a = drand48();
-    }
-
-    static void randomize(std::complex<T>& a){
-        a.real(drand48());
-        a.imag(drand48());
+        return std::make_pair(B, B_);
     }
 };
 
-
-BOOST_AUTO_TEST_CASE_TEMPLATE( EXP_SCAL, T, test_types)
+TEST_CASE( "Exponent (hermitian) is computed", "[exp_hermitian]" )
 {
-    typedef alps::numeric::diagonal_matrix<typename T::value_type> sDiagMatrix;
-    typedef ambient::numeric::tiles<ambient::numeric::diagonal_matrix<typename T::value_type> > pDiagMatrix;
+    double alfa;
+    ambient::numeric::kernels::detail::randomize(alfa);
+    const auto& pair = test<double>::exponent(alfa);
+    REQUIRE((pair.first == pair.second));
+}
 
-    typename T::value_type a; 
-    random_helper<typename T::value_type>::randomize(a);
+TEST_CASE( "Exponent (hermitian, complex) is computed", "[exp_hermitian_complex]" )
+{
+    std::complex<double> alfa;
+    ambient::numeric::kernels::detail::randomize(alfa);
+    const auto& pair = test<std::complex<double> >::exponent(alfa);
+    REQUIRE((pair.first == pair.second));
+}
 
-    pDiagMatrix pA(T::valuex, T::valuex);
-    sDiagMatrix sA((std::size_t)T::valuex);
-
-    generate(pA);
-    sA = cast<sDiagMatrix>(pA);
-
-    sA = exp(sA*a);
-    pA = expi(pA,a);
-
-    BOOST_CHECK(pA==sA);
+TEST_CASE( "Exponent is computed", "[exp]" )
+{
+    std::complex<double> a; 
+    ambient::numeric::kernels::detail::randomize(a);
+    
+    matrix<std::complex<double> >  A (TEST_M, TEST_M), B (TEST_M, TEST_M);
+    matrix_<std::complex<double> > A_(TEST_M, TEST_M), B_(TEST_M, TEST_M);
+    
+    generate(A);
+    A_ = cast<matrix_<std::complex<double> > >(A);
+    
+    B_ = exp(A_, a);
+    B  = exp(A , a);
+    
+    REQUIRE((B == B_));
 }

@@ -1,66 +1,56 @@
-#include "params.hpp"
+#include "utils/testing.hpp"
 #include "ambient/container/numeric/traits.hpp"
 
-BOOST_AUTO_TEST_CASE_TEMPLATE( GEMM_DIAGONAL, T, test_types)
+TEST_CASE( "Matrix multiplication (with diagonal rhs) is computed", "[gemm_diagonal]" )
 {
-    typedef alps::numeric::matrix<typename T::value_type> sMatrix;
-    typedef ambient::numeric::tiles<ambient::numeric::matrix<typename T::value_type> > pMatrix;
-    typedef alps::numeric::diagonal_matrix<typename T::value_type> sDiagMatrix;
-    typedef ambient::numeric::tiles<ambient::numeric::diagonal_matrix<typename T::value_type> > pDiagMatrix;
+    matrix<double> A(TEST_M,TEST_M);
+    matrix<double> B(TEST_M,TEST_M);
+    diagonal<double> C(TEST_M,TEST_M);
 
-    pMatrix pA(T::valuex,T::valuex);
-    pMatrix pB(T::valuex,T::valuex);
-    pDiagMatrix pC(T::valuex,T::valuex);
+    matrix_<double> A_(TEST_M,TEST_M);
+    matrix_<double> B_(TEST_M,TEST_M);
+    diagonal_<double> C_((std::size_t)TEST_M);
 
-    sMatrix sA(T::valuex,T::valuex);
-    sMatrix sB(T::valuex,T::valuex);
-    sDiagMatrix sC((std::size_t)T::valuex);
+    generate(B);
+    generate(C);
 
-    generate(pB);
-    generate(pC);
+    B_ = cast<matrix_<double> >(B);
+    C_ = cast<diagonal_<double> >(C);
 
-    sB = cast<sMatrix>(pB);
-    sC = cast<sDiagMatrix>(pC);
+    gemm(C,  B,  A);
+    gemm(C_, B_, A_);
 
-    ambient::numeric::gemm(pC,pB,pA);
-    gemm(sC,sB,sA);
+    REQUIRE((A == A_));
 
-    BOOST_CHECK(pA==sA);
+    gemm(B,  C,  A);
+    gemm(B_, C_, A_);
 
-    ambient::numeric::gemm(pB,pC,pA);
-    gemm(sB,sC,sA);
-    BOOST_CHECK(pA==sA);
-
+    REQUIRE((A == A_));
 }
 
-BOOST_AUTO_TEST_CASE_TEMPLATE( GEMM_DIAGONAL_COMPLEX_DOUBLE, T, test_types)
+TEST_CASE( "Matrix (complex) multiplication (with diagonal rhs) is computed", "[gemm_diagonal_complex]" )
 {
-    typedef alps::numeric::matrix<typename T::value_type> sMatrix;
-    typedef ambient::numeric::tiles<ambient::numeric::matrix<typename T::value_type > > pMatrix;
+    matrix<std::complex<double> > A(TEST_M,TEST_M);
+    matrix<std::complex<double> > B(TEST_M,TEST_M);
+    diagonal<double> C(TEST_M,TEST_M);
 
-    typedef alps::numeric::diagonal_matrix< typename ambient::numeric::traits::real_type<T>::type  > sDiagMatrix;
-    typedef ambient::numeric::tiles<ambient::numeric::diagonal_matrix<typename ambient::numeric::traits::real_type<T>::type > > pDiagMatrix;
+    matrix_<std::complex<double> > A_(TEST_M,TEST_M);
+    matrix_<std::complex<double> > B_(TEST_M,TEST_M);
+    diagonal_<double> C_((std::size_t)TEST_M);
 
-    pMatrix pA(T::valuex,T::valuex);
-    pMatrix pB(T::valuex,T::valuex);
-    pDiagMatrix pC(T::valuex,T::valuex);
+    generate(B);
+    generate(C);
 
-    sMatrix sA(T::valuex,T::valuex);
-    sMatrix sB(T::valuex,T::valuex);
-    sDiagMatrix sC((std::size_t)T::valuex);
+    B_ = cast<matrix_<std::complex<double> > >(B);
+    C_ = cast<diagonal_<double> >(C);
 
-    generate(pB);
-    generate(pC);
+    gemm(C,  B,  A);
+    gemm(C_, B_, A_);
 
-    sB = cast<sMatrix>(pB);
-    sC = cast<sDiagMatrix>(pC);
+    REQUIRE((A == A_));
 
-    ambient::numeric::gemm(pC,pB,pA);
-    gemm(sC,sB,sA);
+    gemm(B,  C,  A);
+    gemm(B_, C_, A_);
 
-    BOOST_CHECK(pA==sA);
-
-    ambient::numeric::gemm(pB,pC,pA);
-    gemm(sB,sC,sA);
-    BOOST_CHECK(pA==sA);
+    REQUIRE((A == A_));
 }

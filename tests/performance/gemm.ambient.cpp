@@ -1,49 +1,45 @@
-#include "params.hpp"
+#include "utils/testing.hpp"
 
-BOOST_AUTO_TEST_CASE_TEMPLATE( test, T, test_types){
+TEST_CASE( "Matrix multiplication performance measured", "[ambient::gemm]" )
+{
+    measurement::timer gtime("total"); gtime.begin();
+    measurement params;
 
-    ambient::async_timer gtime("total"); gtime.begin();
+    size_t x = params.num_cols();
+    size_t y = params.num_rows();
 
-    typedef ambient::dim2 dim;
-    typedef alps::numeric::matrix<typename T::value_type> sMatrix;
-    typedef ambient::numeric::tiles<ambient::numeric::matrix<typename T::value_type> > pMatrix;
+    matrix<double> A(x, y);
+    matrix<double> B(x, y);
+    matrix<double> C(x, y);
+    matrix<double> C_orig(x, y);
 
-    size_t x = get_input_x<T>();
-    size_t y = get_input_y<T>();
-    size_t nthreads = get_input_threads<T>();
+    matrix_<double> A_(x, y);
+    matrix_<double> B_(x, y);
 
-    pMatrix pA(x, y);
-    pMatrix pB(x, y);
-    pMatrix pC(x, y);
-    pMatrix pC_orig(x, y);
+    generate(A);
+    generate(B);
 
-    sMatrix sA(x, y);
-    sMatrix sB(x, y);
-
-    generate(pA);
-    generate(pB);
-
-    sA = cast<sMatrix>(pA);
-    sB = cast<sMatrix>(pB);
+    A_ = cast<matrix_<double> >(A);
+    B_ = cast<matrix_<double> >(B);
     ambient::sync();
 
     printf("ambient::gemm strassen...\n");
-    ambient::numeric::gemm_strassen(std::move(pA), std::move(pB), std::move(pC)); 
-    ambient::async_timer time("ambient::gemm_strassen"); time.begin();
+    ambient::numeric::gemm_strassen(std::move(A), std::move(B), std::move(C)); 
+    measurement::timer time("ambient::gemm_strassen"); time.begin();
     ambient::sync();
     time.end();
 
     printf("ambient::gemm...\n");
-    ambient::numeric::gemm(pA, pB, pC_orig); 
-    ambient::async_timer time_orig("ambient::gemm"); time_orig.begin();
+    ambient::numeric::gemm(A, B, C_orig); 
+    measurement::timer time_orig("ambient::gemm"); time_orig.begin();
     ambient::sync();
     time_orig.end();
 
-    report(time_orig, GFlopsGemm, x, y, nthreads);
-    report(time, GFlopsGemm, x, y, nthreads);
+    params.report(gflops::gemm, time_orig.get_time());
+    params.report(gflops::gemm, time.get_time());
 
     gtime.end();
     std::cout << "Global time: " << gtime.get_time() << "\n";
-    BOOST_CHECK(pC==pC_orig);
-}
 
+    REQUIRE((C == C_orig));
+}

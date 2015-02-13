@@ -1,17 +1,15 @@
-#include "params.hpp"
+#include "utils/testing.hpp"
 
-BOOST_AUTO_TEST_CASE_TEMPLATE( QR_COMPARISON, T, test_types)
+TEST_CASE( "Matrix QR factorization is computed", "[qr]" )
 {
-    typedef ambient::numeric::tiles<ambient::numeric::matrix<typename T::value_type> > pMatrix;
-
-    pMatrix A(T::valuex,T::valuex);
-    pMatrix Q(T::valuex,T::valuex);
-    pMatrix R(T::valuex,T::valuex);
-    pMatrix C(T::valuex,T::valuex);
+    matrix<double> A(TEST_M,TEST_M);
+    matrix<double> Q(TEST_M,TEST_M);
+    matrix<double> R(TEST_M,TEST_M);
+    matrix<double> C(TEST_M,TEST_M);
 
     generate(A);
-    qr(A,Q,R);
-    gemm(Q,R,C);
+    qr(A, Q, R);
+    gemm(Q, R, C);
 
-    BOOST_CHECK(C == A);
+    REQUIRE((C == A));
 }

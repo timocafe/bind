@@ -1,7 +1,7 @@
-#include "params.hpp"
+#include "utils/testing.hpp"
 
-#define AA(i,j) AA[(i)*M+(j)]
-#define BB(i,j) BB[(i)*M+(j)]
+#define AA(i,j) AA[(i)*N+(j)]
+#define BB(i,j) BB[(i)*N+(j)]
 
 extern "C" void Cblacs_pinfo( int* mypnum, int* nprocs); 
 extern "C" void Cblacs_gridinfo( int nContxt, int* nRows, int* nCols, int* nMyRow, int* nMyCol);
@@ -18,36 +18,34 @@ extern "C" void pdgemm_(char *jobu, char *jobvt,
 		double *beta , double * c, int *ic, int *jc, int *descc);
 
 
-BOOST_AUTO_TEST_CASE_TEMPLATE( test, T, test_types)
-{ 
-   size_t x = get_input_x<T>();
-   size_t y = get_input_y<T>(); // not used (square only)
+TEST_CASE( "Matrix multiplication performance measured", "[pblas::gemm]" )
+{
+   measurement params;
+   int N = params.num_cols();
    int argc=0;
    char ** argv;
-   int M(x);
    srand(3);
    int i, j, k;
-   int minusone(-1);
+   int minusone = -1;
    int myrank_mpi, nprocs_mpi;
    int ictxt, nprow, npcol, myrow, mycol,nb;
 
    int info,itemp;
-   int zero=0,one=1;
- // ok it is too large ...
-   double* AA = (double*)malloc(M*M*sizeof(double));
-   double* BB = (double*)malloc(M*M*sizeof(double));
-   double* CC = (double*)malloc(M*M*sizeof(double));
+   int zero = 0, one = 1;
+
+   double* AA = (double*)malloc(N*N*sizeof(double));
+   double* BB = (double*)malloc(N*N*sizeof(double));
+   double* CC = (double*)malloc(N*N*sizeof(double));
 
    int descA[9],descB[9],descC[9];
-   for(i=0;i<M;i++ )
-     for(j=0;j<M;j++){
-        AA[i*M+j]=rand();
-        BB[i*M+j]=rand();
-        CC[i*M+j]=-1;
+   for(i = 0; i < N; i++)
+     for(j = 0; j < N; j++){
+        AA[i*N + j] = rand();
+        BB[i*N + j] = rand();
+        CC[i*N + j] = -1;
      }
-   ambient::async_timer time("time");
+   measurement::timer time("time");
    time.begin();
-/************  BLACS ***************************/
    Cblacs_pinfo( &myrank_mpi, &nprocs_mpi) ;
 
    nprow = 1; // 1-d = one row
@@ -58,23 +56,23 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( test, T, test_types)
    Cblacs_gridinit( &ictxt, "C", nprow, npcol );
    Cblacs_gridinfo( ictxt, &nprow, &npcol, &myrow, &mycol );
 
-   int mA = numroc_( &M, &nb, &mycol, &zero, &npcol);
-   int mB = numroc_( &M, &nb, &mycol, &zero, &npcol);
-   int mC = numroc_( &M, &nb, &mycol, &zero, &npcol);
+   int mA = numroc_( &N, &nb, &mycol, &zero, &npcol);
+   int mB = numroc_( &N, &nb, &mycol, &zero, &npcol);
+   int mC = numroc_( &N, &nb, &mycol, &zero, &npcol);
 
-   //arg 3 = M  number of row of the block issue from the block cyclic decomposition
+   //arg 3 = N  number of row of the block issue from the block cyclic decomposition
    //arg 4 = nb number of col of the block issue from the block cyclic decomposition
    //arg 8 = lda issue from numroc here use less because 1d distribution 
  
-   descinit_(descA, &M,   &M,   &nb,  &nb,  &zero, &zero, &ictxt, &M,  &info);
-   descinit_(descB, &M,   &M,   &nb,  &nb,  &zero, &zero, &ictxt, &M,  &info);
-   descinit_(descC, &M,   &M,   &nb,  &nb,  &zero, &zero, &ictxt, &M,  &info);
+   descinit_(descA, &N, &N, &nb, &nb, &zero, &zero, &ictxt, &N, &info);
+   descinit_(descB, &N, &N, &nb, &nb, &zero, &zero, &ictxt, &N, &info);
+   descinit_(descC, &N, &N, &nb, &nb, &zero, &zero, &ictxt, &N, &info);
 
    double alpha = 1.0; double beta = 0.0;
-   pdgemm_("N","N",&M,&M,&M,&alpha,AA,&one,&one,descA,BB,&one,&one,descB,&beta,CC,&one,&one,descC);
+   pdgemm_("N","N",&N,&N,&N,&alpha,AA,&one,&one,descA,BB,&one,&one,descB,&beta,CC,&one,&one,descC);
    time.end();
 
-   if(myrank_mpi == 0) report(time, GFlopsGemm, x, x, nprocs_mpi);
+   if(myrank_mpi == 0) params.report(gflops::gemm, time.get_time());
    MPI_Barrier(MPI_COMM_WORLD);
    Cblacs_exit(0);
 }

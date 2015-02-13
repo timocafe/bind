@@ -1,26 +1,19 @@
-#include "params.hpp"
+#include "utils/testing.hpp"
 
-#include <boost/numeric/bindings/lapack/driver/geev.hpp>
-
-// this function call geqrf and geqri so lapack test
-BOOST_AUTO_TEST_CASE_TEMPLATE( INVERSE_COMPARISON, T, test_types)
+TEST_CASE( "Matrix inverse is computed", "[inverse]" )
 {
-    typedef alps::numeric::matrix<typename T::value_type> sMatrix;
-    typedef ambient::numeric::tiles<ambient::numeric::matrix<typename T::value_type> > pMatrix;
+    matrix<double>  A(TEST_M, TEST_M);
+    matrix<double>  C(TEST_M, TEST_M);
+    matrix<double>  I(TEST_M, TEST_M);
+    matrix_<double> A_(TEST_M, TEST_M);
+    matrix_<double> C_(TEST_M, TEST_M);
+    matrix_<double> I_(TEST_M, TEST_M);
     
-    int size = T::valuex;
- 
-    pMatrix  pA(size, size);
-    pMatrix  pC(size, size);
-    pMatrix  pAinv(size, size);
-    sMatrix  sA(size, size);
-    sMatrix  sC(size, size);
-    sMatrix  sAinv(size, size);
+    generate(A);
+    A_ = cast<matrix_<double> >(A);
+
+    I  = inverse(A);
+    I_ = inverse(A_);
     
-    generate(pA);
-    sA = cast<sMatrix>(pA);
-    pAinv = inverse(pA);
-    sAinv = inverse(sA);
-    
-    BOOST_CHECK(pAinv == sAinv);
+    REQUIRE((I == I_));
 }

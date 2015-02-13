@@ -1,38 +1,32 @@
-#include "params.hpp"
+#include "utils/testing.hpp"
 
-BOOST_AUTO_TEST_CASE_TEMPLATE(ADJOINT_INPLACE, T, test_types)
+TEST_CASE( "Matrix adjoint is computed (inplace)", "[adjoint_inplace]" )
 {
-    typedef alps::numeric::matrix<typename T::value_type> sMatrix;
-    typedef ambient::numeric::tiles<ambient::numeric::matrix<typename T::value_type> > pMatrix;
+    matrix<std::complex<double> >  A (TEST_M, TEST_N);
+    matrix_<std::complex<double> > A_(TEST_M, TEST_N);
 
-    pMatrix pA(T::valuex, T::valuey);
-    sMatrix sA(T::valuex, T::valuey);
+    generate(A);
+    A_ = cast<matrix_<std::complex<double> > >(A);
 
-    generate(pA);
-    sA = cast<sMatrix>(pA);
+    adjoint_inplace(A_);
+    adjoint_inplace(A);
 
-    adjoint_inplace(sA);
-    adjoint_inplace(pA);
-
-    BOOST_CHECK(pA==sA);
+    REQUIRE((A == A_));
 }
 
-BOOST_AUTO_TEST_CASE_TEMPLATE(ADJOINT, T, test_types)
+TEST_CASE( "Matrix adjoint is computed", "[adjoint]" )
 {
-    typedef alps::numeric::matrix<typename T::value_type> sMatrix;
-    typedef ambient::numeric::tiles<ambient::numeric::matrix<typename T::value_type> > pMatrix;
+    matrix<std::complex<double> >  A (TEST_M, TEST_N);
+    matrix_<std::complex<double> > A_(TEST_M, TEST_N);
+    matrix<std::complex<double> >  B (TEST_M, TEST_N);
+    matrix_<std::complex<double> > B_(TEST_M, TEST_N);
 
-    pMatrix pA(T::valuex, T::valuey);
-    pMatrix pB(T::valuex, T::valuey);
-    sMatrix sA(T::valuex, T::valuey);
-    sMatrix sB(T::valuex, T::valuey);
+    generate(A);
+    A_ = cast<matrix_<std::complex<double> > >(A);
 
-    generate(pA);
-    sA = cast<sMatrix>(pA);
+    B_ = adjoint(A_);
+    B  = adjoint(A);
 
-    sB = adjoint(sA);
-    pB = adjoint(pA);
-
-    BOOST_CHECK(pA==sA);
-    BOOST_CHECK(pB==sB);
+    REQUIRE((A==A_));
+    REQUIRE((B==B_));
 }

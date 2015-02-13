@@ -1,31 +1,25 @@
-#include "params.hpp"
+#define AMBIENT_OMP
+#include "utils/testing.hpp"
 
-BOOST_AUTO_TEST_CASE_TEMPLATE( test, T, test_types){
-    typedef ambient::dim2 dim;
-    typedef alps::numeric::matrix<typename T::value_type> sMatrix;
-    typedef ambient::numeric::tiles<ambient::numeric::matrix<typename T::value_type> > pMatrix;
+TEST_CASE( "Matrix LQ factorization performance measured", "[lapack::lq]" )
+{
+    measurement params;
 
-    size_t x = get_input_x<T>();
-    size_t y = get_input_y<T>();
-    size_t nthreads = get_input_threads<T>();
+    size_t x = params.num_cols();
+    size_t y = params.num_rows();
 
-    omp_set_num_threads(nthreads);
-    pMatrix pA(x, y);
-    pMatrix pL(x, y);
-    pMatrix pQ(x, y);
+    matrix<double>  A (x, y);
+    matrix_<double> A_(x, y);
+    matrix_<double> L_(x, y);
+    matrix_<double> Q_(x, y);
 
-    sMatrix sA(x, y);
-    sMatrix sL(x, y);
-    sMatrix sQ(x, y);
-
-    generate(pA);
-    sA = cast<sMatrix>(pA);
-
+    generate(A);
+    A_ = cast<matrix_<double> >(A);
     ambient::sync();
-    ambient::async_timer time("ambient");
-    time.begin();
-    lq(sA, sL, sQ); 
+
+    measurement::timer time("ambient"); time.begin();
+    lq(A_, L_, Q_);
     time.end();
 
-    report(time, GFlopsGemm, x, y, nthreads);
+    params.report(gflops::gemm, time.get_time());
 }

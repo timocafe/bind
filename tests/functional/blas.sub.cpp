@@ -1,54 +1,29 @@
-#include "params.hpp"
+#include "utils/testing.hpp"
 
-BOOST_AUTO_TEST_CASE_TEMPLATE( SUB, T, test_types)
+TEST_CASE( "Matrix difference is computed", "[sub]" )
 {
-    typedef alps::numeric::matrix<typename T::value_type> sMatrix;
-    typedef ambient::numeric::tiles<ambient::numeric::matrix<typename T::value_type> > pMatrix;
+    matrix<double> A(TEST_M,TEST_N);
+    matrix<double> B(TEST_M,TEST_N);
+    matrix<double> C(TEST_M,TEST_N);
 
-    pMatrix pA(T::valuex,T::valuey);
-    pMatrix pB(T::valuex,T::valuey);
-    pMatrix pC(T::valuex,T::valuey);
+    matrix_<double> A_(TEST_M,TEST_N);
+    matrix_<double> B_(TEST_M,TEST_N);
+    matrix_<double> C_(TEST_M,TEST_N);
 
-    sMatrix sA(T::valuex,T::valuey);
-    sMatrix sB(T::valuex,T::valuey);
-    sMatrix sC(T::valuex,T::valuey);
+    generate(A);
+    generate(B);
 
-    generate(pA);
-    generate(pB);
-
-    sA = cast<sMatrix>(pA);
-    sB = cast<sMatrix>(pB);
-    sC = cast<sMatrix>(pC);
+    A_ = cast<matrix_<double> >(A);
+    B_ = cast<matrix_<double> >(B);
+    C_ = cast<matrix_<double> >(C);
  
-    sC = sA - sB; 
-    pC = pA - pB; 
+    C_ = A_ - B_; 
+    C  = A  - B; 
 
-    BOOST_CHECK(pC == sC);
+    REQUIRE((C == C_));
+
+    A_ -= B_; 
+    A  -= B; 
+
+    REQUIRE((A == A_));
 }
-
-BOOST_AUTO_TEST_CASE_TEMPLATE( SUB_ASSIGN, T, test_types)
-{
-    typedef alps::numeric::matrix<typename T::value_type> sMatrix;
-    typedef ambient::numeric::tiles<ambient::numeric::matrix<typename T::value_type> > pMatrix;
-
-    pMatrix pA(T::valuex,T::valuey);
-    pMatrix pB(T::valuex,T::valuey);
-    pMatrix pC(T::valuex,T::valuey);
-
-    sMatrix sA(T::valuex,T::valuey);
-    sMatrix sB(T::valuex,T::valuey);
-    sMatrix sC(T::valuex,T::valuey);
-
-    generate(pA);
-    generate(pB);
-
-    sA = cast<sMatrix>(pA);
-    sB = cast<sMatrix>(pB);
-    sC = cast<sMatrix>(pC);
- 
-    sA -= sB; 
-    pA -= pB; 
-
-    BOOST_CHECK(pA == sA);
-}
-

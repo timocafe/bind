@@ -1,38 +1,33 @@
-#include "params.hpp"
+#include "utils/testing.hpp"
 
-BOOST_AUTO_TEST_CASE_TEMPLATE( test, T, test_types){
-    typedef ambient::dim2 dim;
-    typedef alps::numeric::matrix<typename T::value_type> sMatrix;
-    typedef ambient::numeric::tiles<ambient::numeric::matrix<typename T::value_type> > pMatrix;
+TEST_CASE( "Matrix QR factorization performance measured", "[ambient::qr]" )
+{
+    measurement params;
+    size_t x = params.num_cols();
+    size_t y = params.num_rows();
 
-    size_t x = get_input_x<T>();
-    size_t y = get_input_y<T>();
-    size_t nthreads = get_input_threads<T>();
+    matrix<double> A(x, y);
+    matrix<double> Q(x, y);
+    matrix<double> R(x, y);
 
-    pMatrix pA(x, y);
-    pMatrix pQ(x, y);
-    pMatrix pR(x, y);
+    matrix_<double> A_(x, y);
+    matrix_<double> Q_(x, y);
+    matrix_<double> R_(x, y);
 
-    sMatrix sA(x, y);
-    sMatrix sQ(x, y);
-    sMatrix sR(x, y);
-
-    generate(pA);
-    sA = cast<sMatrix>(pA);
-
+    generate(A);
+    A_ = cast<matrix_<double> >(A);
     ambient::sync();
-    qr(sA, sQ, sR);
-    qr(pA, pQ, pR); 
 
-    ambient::async_timer time("ambient");
-    time.begin();
+    qr(A_, Q_, R_);
+    qr(A,  Q,  R); 
+
+    measurement::timer time("ambient"); time.begin();
     ambient::sync();
     time.end();
 
-    report(time, GFlopsGemm, x, y, nthreads);
-    ambient::sync();
+    params.report(gflops::gemm, time.get_time());
 
-    BOOST_CHECK(sQ == pQ);
-    BOOST_CHECK(sR == pR);
+    REQUIRE((Q_ == Q));
+    REQUIRE((R_ == R));
 }
 

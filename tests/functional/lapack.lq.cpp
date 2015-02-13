@@ -1,24 +1,21 @@
-#include "params.hpp"
+#include "utils/testing.hpp"
 
-BOOST_AUTO_TEST_CASE_TEMPLATE( LQ_COMPARISON, T, test_types)
+TEST_CASE( "Matrix LQ factorization is computed", "[lq]" )
 {
-    typedef alps::numeric::matrix<typename T::value_type> sMatrix;
-    typedef ambient::numeric::tiles<ambient::numeric::matrix<typename T::value_type> > pMatrix;
+    matrix<double> A(TEST_M,TEST_N);
+    matrix<double> L(TEST_M,TEST_N);
+    matrix<double> Q(TEST_M,TEST_N);
 
-    pMatrix pA(T::valuex,T::valuey);
-    pMatrix pL(T::valuex,T::valuey);
-    pMatrix pQ(T::valuex,T::valuey);
+    matrix_<double> A_(TEST_M,TEST_N);
+    matrix_<double> L_(TEST_M,TEST_N);
+    matrix_<double> Q_(TEST_M,TEST_N);
 
-    sMatrix sA(T::valuex,T::valuey);
-    sMatrix sL(T::valuex,T::valuey);
-    sMatrix sQ(T::valuex,T::valuey);
-
-    generate(pA);
-    sA = cast<sMatrix>(pA);
+    generate(A);
+    A_ = cast<matrix_<double> >(A);
  
-    lq(pA,pL,pQ);
-    lq(sA,sL,sQ);
+    lq(A,  L,  Q);
+    lq(A_, L_, Q_);
 
-    BOOST_CHECK(sL == pL);
-    BOOST_CHECK(sQ == pQ);
+    REQUIRE((L_ == L));
+    REQUIRE((Q_ == Q));
 }

@@ -1,19 +1,16 @@
-#include "params.hpp"
+#include "utils/testing.hpp"
 
-BOOST_AUTO_TEST_CASE_TEMPLATE( TRANSPOSE, T, test_types)
+TEST_CASE( "Matrix transpose (inplace) is computed", "[transpose_inplace]" )
 {
-    typedef alps::numeric::matrix<typename T::value_type> sMatrix;
-    typedef ambient::numeric::tiles<ambient::numeric::matrix<typename T::value_type> > pMatrix;
+    matrix<double>  A (TEST_M,TEST_N);
+    matrix_<double> A_(TEST_M,TEST_N);
 
-    pMatrix pA(T::valuex,T::valuey);
-    sMatrix sA(T::valuex,T::valuey);
+    generate(A);
+    A_ = cast<matrix_<double> >(A);
 
-    generate(pA);
-    sA = cast<sMatrix>(pA);
+    transpose_inplace(A); 
+    transpose_inplace(A_); 
 
-    transpose_inplace(pA); 
-    transpose_inplace(sA); 
-
-    BOOST_CHECK(pA==sA);
+    REQUIRE((A == A_));
 }
 

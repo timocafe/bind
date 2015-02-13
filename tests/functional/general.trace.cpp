@@ -1,21 +1,15 @@
-#include "params.hpp"
+#include "utils/testing.hpp"
 
-BOOST_AUTO_TEST_CASE_TEMPLATE( TRACE, T, test_types)
+TEST_CASE( "Matrix trace is calculated", "[trace]" )
 {
-    typedef alps::numeric::matrix<typename T::value_type> sMatrix;
-    typedef ambient::numeric::tiles<ambient::numeric::matrix<typename T::value_type> > pMatrix;
+    matrix<double>  A (TEST_M,TEST_M);
+    matrix_<double> A_(TEST_M,TEST_M);
 
-    pMatrix pA(T::valuex,T::valuex);
-    sMatrix sA(T::valuex,T::valuex);
+    generate(A);
+    A_ = cast<matrix_<double> >(A);
 
-    generate(pA);
-    sA = cast<sMatrix>(pA);
+    double t_ = trace(A_);
+    double t  = trace(A);
 
-    typename T::value_type sa = trace(sA);
-    typename T::value_type pa = trace(pA);
-
-    ambient::cout << "Trace of sA " << sa << "; trace of pA " << pa << std::endl;
-    Boost_check_close_adapter(sa,pa);
+    REQUIRE_CLOSE(t, t_);
 }
-
-

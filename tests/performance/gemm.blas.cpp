@@ -1,23 +1,15 @@
-#include "params.hpp"
+#define AMBIENT_OMP
+#include "utils/testing.hpp"
 
-namespace Random{
-   struct random {
-       random(){};
-       double operator()(){return drand48();} 
-       int IntRd(){return rand();}
-   };
-}
+TEST_CASE( "Matrix multiplication performance measured", "[blas::gemm]" )
+{
+    measurement params;
+    size_t x = params.num_cols();
+    size_t y = params.num_rows();
 
-BOOST_AUTO_TEST_CASE_TEMPLATE(gemm_blas, T, test_types){
-    size_t x = get_input_x<T>();
-    size_t y = get_input_y<T>();
-    size_t nthreads = get_input_threads<T>();
-
-    Random::random Rd;
-    omp_set_num_threads(nthreads);
-    typename T::value_type* ad;
-    typename T::value_type* bd;
-    typename T::value_type* cd;
+    double* ad;
+    double* bd;
+    double* cd;
     
     int m,n,k;
     int lda,ldb,ldc;
@@ -29,25 +21,24 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(gemm_blas, T, test_types){
 
     lda = ldb = ldc = (int)x;
 
-    ad = new typename T::value_type[x*y]; 
-    bd = new typename T::value_type[x*y]; 
-    cd = new typename T::value_type[x*y]; 
+    ad = new double[x*y]; 
+    bd = new double[x*y]; 
+    cd = new double[x*y]; 
   
-    memset((void*)cd,0,x*y*sizeof(typename T::value_type));
+    memset((void*)cd,0,x*y*sizeof(double));
    
     for(int i(0); i< x*y ; ++i){
-        ad[i] = Rd();
-        bd[i] = Rd();
+        ad[i] = ambient::utils::Rd();
+        bd[i] = ambient::utils::Rd();
     }
        
-    ambient::async_timer time("blas");
+    measurement::timer time("blas");
     time.begin();
-    ambient::numeric::kernels::helper_blas<typename T::value_type>::gemm("N","N", &m, &n, &k, &alpha, ad, &lda, bd, &ldb, &beta, cd, &ldc);
+    ambient::numeric::mkl::blas<double>::gemm("N","N", &m, &n, &k, &alpha, ad, &lda, bd, &ldb, &beta, cd, &ldc);
     time.end();
 
-    report(time, GFlopsGemm, x, y, nthreads);
-    delete [] ad;   
-    delete [] bd;   
-    delete [] cd;   
+    params.report(gflops::gemm, time.get_time());
+    delete[] ad;
+    delete[] bd;
+    delete[] cd;
 }
-

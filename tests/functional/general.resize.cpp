@@ -1,18 +1,15 @@
-#include "params.hpp"
+#include "utils/testing.hpp"
 
-BOOST_AUTO_TEST_CASE_TEMPLATE( RESIZE, T, test_types)
+TEST_CASE( "Matrix is constructed and resized", "[resize]" )
 {
-    typedef alps::numeric::matrix<typename T::value_type> sMatrix;
-    typedef ambient::numeric::tiles<ambient::numeric::matrix<typename T::value_type> > pMatrix;
+    matrix<double>  A (TEST_M,TEST_N);
+    matrix_<double> A_(TEST_M,TEST_N);
 
-    pMatrix pA(T::valuex,T::valuey);
-    sMatrix sA(T::valuex,T::valuey);
+    generate(A);
+    A_ = cast<matrix_<double> >(A);
 
-    generate(pA);
-    sA = cast<sMatrix>(pA);
+    A_.resize(TEST_M,TEST_M/2);
+    A.resize(TEST_M,TEST_M/2);
 
-    sA.resize(4,2);
-    pA.resize(4,2);
-
-    BOOST_CHECK(pA == sA);
+    REQUIRE((A == A_));
 }

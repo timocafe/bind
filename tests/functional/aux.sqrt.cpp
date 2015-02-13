@@ -1,18 +1,15 @@
-#include "params.hpp"
+#include "utils/testing.hpp"
 
-BOOST_AUTO_TEST_CASE_TEMPLATE( SQRT, T, test_types)
+TEST_CASE( "Square root of diagonal matrix is computed", "[sqrt]" )
 {
-    typedef alps::numeric::diagonal_matrix<typename T::value_type> sDiagMatrix;
-    typedef ambient::numeric::tiles<ambient::numeric::diagonal_matrix<typename T::value_type> > pDiagMatrix;
+    diagonal<double>  A(TEST_M, TEST_M);
+    diagonal_<double> A_((size_t)TEST_M);
 
-    pDiagMatrix pA(T::valuex, T::valuex);
-    sDiagMatrix sA((std::size_t)T::valuex);
+    generate(A);
+    A_ = cast<diagonal_<double> >(A);
 
-    generate(pA);
-    sA = cast<sDiagMatrix>(pA);
+    A_ = sqrt(A_);
+    sqrt_inplace(A);
 
-    sA = sqrt(sA);
-    ambient::numeric::sqrt_inplace(pA);
-
-    BOOST_CHECK(pA==sA);
+    REQUIRE((A == A_));
 }

@@ -1,26 +1,21 @@
-#include "params.hpp"
+#include "utils/testing.hpp"
 
-BOOST_AUTO_TEST_CASE_TEMPLATE( HEEV_COMPARISON_VALUE, T, test_types)
+TEST_CASE( "Hermitian matrix eigenvalues and eigenvectors are computed", "[heev]" )
 {
-    typedef alps::numeric::matrix<typename T::value_type> sMatrix;
-    typedef ambient::numeric::tiles<ambient::numeric::matrix<typename T::value_type> > pMatrix;
-    typedef ambient::numeric::tiles<ambient::numeric::diagonal_matrix<double> > pDiagMatrix;
-    typedef alps::numeric::diagonal_matrix<double> sDiagMatrix;
+    matrix<std::complex<double> > A(TEST_M,TEST_M);
+    matrix<std::complex<double> > V(TEST_M,TEST_M);
+    diagonal<double> E(TEST_M,TEST_M); 
 
-    pMatrix pA(T::valuex,T::valuex);
-    pMatrix pV(T::valuex,T::valuex);
-    pDiagMatrix pE(T::valuex,T::valuex); 
-
-    sMatrix sA(T::valuex,T::valuex);
-    sMatrix sV(T::valuex,T::valuex);
-    sDiagMatrix sE((std::size_t)T::valuex);
+    matrix_<std::complex<double> > A_(TEST_M,TEST_M);
+    matrix_<std::complex<double> > V_(TEST_M,TEST_M);
+    diagonal_<double> E_((size_t)TEST_M);
  
-    generate_hermitian(pA);
-    sA = cast<sMatrix>(pA);
+    generate_hermitian(A);
+    A_ = cast<matrix_<std::complex<double> > >(A);
 
-    heev(sA,sV,sE);
-    heev(pA,pV,pE);
+    heev(A,  V,  E);
+    heev(A_, V_, E_);
 
-    BOOST_CHECK(pE == sE);
-    //BOOST_CHECK(pV == sV); // mismatch a bit
+    REQUIRE((E == E_));
+    //REQUIRE((V == V_)); // mismatch a bit
 }

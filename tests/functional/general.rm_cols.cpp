@@ -1,76 +1,60 @@
-#include "params.hpp"
+#include "utils/testing.hpp"
 
-BOOST_AUTO_TEST_CASE_TEMPLATE( REMOVE_FIRST_COL, T, test_types)
+TEST_CASE( "Matrix first column is removed", "[remove_first_col]" )
 {
-    typedef alps::numeric::matrix<typename T::value_type> sMatrix;
-    typedef ambient::numeric::tiles<ambient::numeric::matrix<typename T::value_type> > pMatrix;
+    matrix<double>  A (TEST_M,TEST_N);
+    matrix_<double> A_(TEST_M,TEST_N);
 
-    pMatrix pA(T::valuex,T::valuey);
-    sMatrix sA(T::valuex,T::valuey);
+    generate(A);
+    A_ = cast<matrix_<double> >(A);
 
-    generate(pA);
+    remove_cols(A_,0,1);
+    remove_cols(A,0,1);
 
-    sA = cast<sMatrix>(pA);
-
-    remove_cols(sA,0,1);
-    remove_cols(pA,0,1);
-
-    BOOST_CHECK(pA==sA);
+    REQUIRE((A == A_));
 }
 
-BOOST_AUTO_TEST_CASE_TEMPLATE( REMOVE_LAST_COL, T, test_types)
+TEST_CASE( "Matrix last column is removed", "[remove_last_col]" )
 {
-    typedef alps::numeric::matrix<typename T::value_type> sMatrix;
-    typedef ambient::numeric::tiles<ambient::numeric::matrix<typename T::value_type> > pMatrix;
+    matrix<double>  A (TEST_M,TEST_N);
+    matrix_<double> A_(TEST_M,TEST_N);
 
-    pMatrix pA(T::valuex,T::valuey);
-    sMatrix sA(T::valuex,T::valuey);
+    generate(A);
+    A_ = cast<matrix_<double> >(A);
 
-    generate(pA);
+    remove_cols(A_, TEST_N-1, 1);
+    remove_cols(A,  TEST_N-1, 1);
 
-    sA = cast<sMatrix>(pA);
-
-    remove_cols(sA,T::valuey-1,1);
-    remove_cols(pA,T::valuey-1,1);
-
-    BOOST_CHECK(pA==sA);
+    REQUIRE((A == A_));
 }
 
-BOOST_AUTO_TEST_CASE_TEMPLATE( REMOVE_ONE_COL, T, test_types)
+TEST_CASE( "Matrix column is removed", "[remove_one_col]" )
 {
-    typedef alps::numeric::matrix<typename T::value_type> sMatrix;
-    typedef ambient::numeric::tiles<ambient::numeric::matrix<typename T::value_type> > pMatrix;
+    matrix<double>  A (TEST_M,TEST_N);
+    matrix_<double> A_(TEST_M,TEST_N);
 
-    pMatrix pA(T::valuex,T::valuey);
-    sMatrix sA(T::valuex,T::valuey);
-
-    generate(pA);
-
-    sA = cast<sMatrix>(pA);
-    int col =  Rd.IntRd()%(sA.num_cols());  
+    generate(A);
+    A_ = cast<matrix_<double> >(A);
+    int col =  ambient::utils::Rd.IntRd() % A_.num_cols();
     
-    remove_cols(sA,col,1);
-    remove_cols(pA,col,1);
+    remove_cols(A_, col, 1);
+    remove_cols(A,  col, 1);
 
-    BOOST_CHECK(pA==sA);
+    REQUIRE((A == A_));
 }
 
-BOOST_AUTO_TEST_CASE_TEMPLATE( REMOVE_SEVERAL_COLS, T, test_types)
+TEST_CASE( "Some matrix columns are removed", "[remove_several_cols]" )
 {
-    typedef alps::numeric::matrix<typename T::value_type> sMatrix;
-    typedef ambient::numeric::tiles<ambient::numeric::matrix<typename T::value_type> > pMatrix;
+    matrix<double>  A (TEST_M,TEST_N);
+    matrix_<double> A_(TEST_M,TEST_N);
 
-    pMatrix pA(T::valuex,T::valuey);
-    sMatrix sA(T::valuex,T::valuey);
+    generate(A);
+    A_ = cast<matrix_<double> >(A);
+    int col =  ambient::utils::Rd.IntRd() % A_.num_cols();
+    int numcols = TEST_N - col - 1;
 
-    generate(pA);
+    remove_cols(A_, col, numcols);
+    remove_cols(A,  col, numcols);
 
-    sA = cast<sMatrix>(pA);
-    int col =  Rd.IntRd()%(sA.num_cols()); 
-    int numcols = T::valuey - col -1;   
-
-    remove_cols(sA,col,numcols);
-    remove_cols(pA,col,numcols);
-
-    BOOST_CHECK(pA==sA);
+    REQUIRE((A == A_));
 }
