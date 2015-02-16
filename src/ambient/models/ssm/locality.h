@@ -25,15 +25,11 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef AMBIENT_UTILS_MATH
-#define AMBIENT_UTILS_MATH
+#ifndef AMBIENT_MODELS_SSM_LOCALITY
+#define AMBIENT_MODELS_SSM_LOCALITY
 
-#define __a_ceil(x) (((double)x-(int)x) == 0 ? (int)x : (int)x+1)
-
-inline size_t __a_mod(size_t size, size_t tile){
-    size_t m = size % tile;
-    if(m == 0) m = tile;
-    return m;
+namespace ambient {
+    enum class locality { remote, local, common };
 }
 
 #endif

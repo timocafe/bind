@@ -29,7 +29,7 @@
 #define AMBIENT_INTERFACE_KERNEL
 
 #include "ambient/utils/timings.hpp"
-#include "ambient/utils/index_tuple.h"
+#include "utils/index_tuple.h"
 
 #include "ambient/interface/kernel_inliner.hpp"
 

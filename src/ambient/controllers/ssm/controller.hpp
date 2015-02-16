@@ -27,9 +27,9 @@
 
 #include "ambient/utils/io.hpp"
 #include "ambient/utils/timings.hpp"
-#include "ambient/utils/overseer.hpp"
-#include "ambient/utils/service.hpp"
-#include "ambient/utils/mem.h"
+#include "utils/service.hpp"
+#include "utils/overseer.hpp"
+#include "utils/mem.h"
 
 namespace ambient { namespace controllers { namespace ssm {
 

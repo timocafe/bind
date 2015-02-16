@@ -25,12 +25,10 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef AMBIENT_UTILS_ENUMS
-#define AMBIENT_UTILS_ENUMS
+#ifndef AMBIENT_MEMORY_TYPES
+#define AMBIENT_MEMORY_TYPES
 
 namespace ambient {
-    enum class locality { remote, local, common };
-    enum class actor_t  { base, common, single };
     enum class region_t { bulk, standard, delegated };
 }
 

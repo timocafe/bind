@@ -60,7 +60,6 @@
 #define AMBIENT_MPI_THREADING         MPI_THREAD_FUNNELED
 
 #include "ambient/utils/dim2.h"
-#include "ambient/utils/enums.h"
 #include "ambient/utils/tree.hpp"
 #include "ambient/utils/fence.hpp"
 #include "ambient/utils/threads.hpp"
@@ -71,6 +70,7 @@
 #include "ambient/memory/new.h"
 #include "ambient/memory/allocator.h"
 
+#include "ambient/models/ssm/locality.h"
 #include "ambient/models/ssm/revision.h"
 #include "ambient/models/ssm/history.h"
 #include "ambient/models/ssm/transformable.h"

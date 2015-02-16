@@ -30,6 +30,8 @@
 
 namespace ambient {
 
+    enum class actor_t { base, common, single };
+
     class actor {
     protected:
         typedef models::ssm::model model_type;

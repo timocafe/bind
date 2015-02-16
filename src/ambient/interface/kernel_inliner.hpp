@@ -28,7 +28,7 @@
 #ifndef AMBIENT_INTERFACE_KERNEL_INLINER
 #define AMBIENT_INTERFACE_KERNEL_INLINER
 
-#include "ambient/utils/index_tuple.h"
+#include "utils/index_tuple.h"
 
 namespace ambient {
 
