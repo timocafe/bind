@@ -31,9 +31,8 @@ set(MKL_LIBRARIES "" CACHE STRINGS "BLAS/LAPACK libraries")
 set(PLASMA_LIB_DIR "/usr/local/lib" CACHE PATH "Location of PLASMA libraries.")
 set(PLASMA_LIBRARIES "-lplasma -lcoreblas -llapacke -lquark" CACHE STRINGS "PLASMA libraries")
 set(AMBIENT_CXX_FLAGS "-std=c++11" CACHE STRINGS "C++11 support is required, e.g. -std=c++11 and -gcc-name=XX")
-
-option(AMBIENT_DISABLE_MPI "Disable MPI support (shared memory only)" ON)
-option(REGRESSION_TESTS "Build regression tests" OFF)
+option(AMBIENT_DISABLE_MPI "Disable MPI support (shared memory only)" OFF)
+option(AMBIENT_REGRESSION_TESTS "Build regression tests" OFF)
 
 ########################################################################
 #
@@ -44,36 +43,38 @@ option(REGRESSION_TESTS "Build regression tests" OFF)
 set(AMBIENT_INCLUDE_DIRS)
 set(AMBIENT_LIBRARIES)
 set(AMBIENT_LIBRARY_DIRS)
+set(AMBIENT_THREADING_FLAGS)
 
 if(${AMBIENT_THREADING} MATCHES "cilk")
-  set(AMBIENT_CXX_FLAGS "${AMBIENT_CXX_FLAGS} -DAMBIENT_CILK")
+  set(AMBIENT_THREADING_FLAGS "-DAMBIENT_CILK")
 elseif(${AMBIENT_THREADING} MATCHES "openmp")
   find_package(OpenMP REQUIRED)
-  set(AMBIENT_CXX_FLAGS "${AMBIENT_CXX_FLAGS} -DAMBIENT_OMP ${OpenMP_CXX_FLAGS}")
+  set(AMBIENT_THREADING_FLAGS "-DAMBIENT_OMP ${OpenMP_CXX_FLAGS}")
 elseif(${AMBIENT_THREADING} MATCHES "serial")
-  set(AMBIENT_CXX_FLAGS "${AMBIENT_CXX_FLAGS} -DAMBIENT_SERIAL")
+  set(AMBIENT_THREADING_FLAGS "-DAMBIENT_SERIAL")
 elseif(NOT ${AMBIENT_THREADING} MATCHES "auto")
   message(FATAL_ERROR "Variable AMBIENT_THREADING has to be one of 'cilk', 'openmp', 'serial' or 'auto'")
 endif()
 message(STATUS "Ambient threading: ${AMBIENT_THREADING}")
 
-if(AMBIENT_DISABLE_MPI)
-  message(STATUS "MPI is disabled")
-  set(AMBIENT_CXX_FLAGS "${AMBIENT_CXX_FLAGS} -DAMBIENT_DISABLE_MPI")
-else(AMBIENT_DISABLE_MPI)
-  if(NOT MPI_CXX_FOUND)
-    find_package(MPI REQUIRED)
-  else()
-    set(MPI_CXX_INCLUDE_PATH ${MPI_CXX_INCLUDE_PATH} CACHE STRINGS "MPI CXX include path")
-    set(MPI_CXX_LINK_FLAGS ${MPI_CXX_LINK_FLAGS} CACHE STRINGS "MPI CXX linking flags" )
-    set(MPI_CXX_LIBRARIES ${MPI_CXX_LIBRARIES} CACHE STRINGS "MPI CXX libraries to link against")
-  endif(NOT MPI_CXX_FOUND)
+if(NOT MPI_CXX_FOUND AND NOT AMBIENT_DISABLE_MPI)
+  find_package(MPI)
+endif(NOT MPI_CXX_FOUND AND NOT AMBIENT_DISABLE_MPI)
 
+if(MPI_CXX_FOUND AND NOT AMBIENT_DISABLE_MPI)
   message(STATUS "MPI include: ${MPI_CXX_INCLUDE_PATH}")
   message(STATUS "MPI libs: ${MPI_CXX_LIBRARIES}")
   list(APPEND AMBIENT_INCLUDE_DIRS ${MPI_CXX_INCLUDE_PATH})
   list(APPEND AMBIENT_LIBRARIES ${MPI_CXX_LIBRARIES})
-endif(AMBIENT_DISABLE_MPI)
+else(MPI_CXX_FOUND AND NOT AMBIENT_DISABLE_MPI)
+  message(STATUS "Warning: MPI is disabled")
+  set(AMBIENT_CXX_FLAGS "${AMBIENT_CXX_FLAGS} -DAMBIENT_DISABLE_MPI")
+endif(MPI_CXX_FOUND AND NOT AMBIENT_DISABLE_MPI)
+
+message(STATUS "Math lib dirs: ${MKL_LIB_DIR} ${PLASMA_LIB_DIR}")
+message(STATUS "Math libs:     ${MKL_LIBRARIES} ${PLASMA_LIBRARIES}")
+list(APPEND AMBIENT_LIBRARY_DIRS ${MKL_LIB_DIR} ${PLASMA_LIB_DIR})
+list(APPEND AMBIENT_LIBRARIES ${MKL_LIBRARIES} ${PLASMA_LIBRARIES})
 
 ########################################################################
 #
@@ -81,7 +82,6 @@ endif(AMBIENT_DISABLE_MPI)
 #
 ########################################################################
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${AMBIENT_CXX_FLAGS}")
 include_directories(${AMBIENT_INCLUDE_DIRS} ${AMBIENT_SOURCES_DIR})
 link_directories(${AMBIENT_LIBRARY_DIRS})
 add_subdirectory(src/ambient)
@@ -92,24 +92,12 @@ add_subdirectory(src/ambient)
 #
 ########################################################################
 
-if(REGRESSION_TESTS)
-  message(STATUS "Math lib dirs: ${MKL_LIB_DIR} ${PLASMA_LIB_DIR}")
-  message(STATUS "Math libs:     ${MKL_LIBRARIES} ${PLASMA_LIBRARIES}")
-  list(APPEND AMBIENT_LIBRARY_DIRS ${MKL_LIB_DIR} ${PLASMA_LIB_DIR})
-  list(APPEND AMBIENT_LIBRARIES ${MKL_LIBRARIES} ${PLASMA_LIBRARIES})
-
-  macro(compile_with_ambient)
-    include_directories(${AMBIENT_INCLUDE_DIRS})
-    link_directories(${AMBIENT_LIBRARY_DIRS})
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${AMBIENT_COMPILE_FLAGS}")
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${AMBIENT_EXE_FLAGS}")
-  endmacro(compile_with_ambient)
-
+if(AMBIENT_REGRESSION_TESTS)
   include(CTest)
   enable_testing() 
   add_subdirectory(tests/functional)
   add_subdirectory(tests/performance)
-endif(REGRESSION_TESTS)
+endif(AMBIENT_REGRESSION_TESTS)
 
 ########################################################################
 #
@@ -120,7 +108,7 @@ endif(REGRESSION_TESTS)
 list(APPEND AMBIENT_CONFIG_INCLUDE_DIRS ${CMAKE_INSTALL_PREFIX}/include ${AMBIENT_INCLUDE_DIRS})
 list(APPEND AMBIENT_CONFIG_LIBRARY_DIRS ${CMAKE_INSTALL_PREFIX}/lib ${AMBIENT_LIBRARY_DIRS})
 list(APPEND AMBIENT_CONFIG_LIBRARIES ambient ${AMBIENT_LIBRARIES})
-list(APPEND AMBIENT_CONFIG_COMPILE_FLAGS ${AMBIENT_CXX_FLAGS})
+list(APPEND AMBIENT_CONFIG_COMPILE_FLAGS ${AMBIENT_CXX_FLAGS} ${AMBIENT_THREADING_FLAGS})
 
 configure_file(AmbientConfig.cmake.in ${PROJECT_BINARY_DIR}/AmbientConfig.cmake)
 

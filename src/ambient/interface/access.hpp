@@ -34,6 +34,28 @@ namespace ambient {
 
     using ambient::models::ssm::revision;
 
+    template<typename V>
+    inline void merge(const V& src, V& dst){
+        assert(dst.ambient_rc.desc->current == NULL);
+        if(weak(src)) return;
+        revision* r = src.ambient_rc.desc->back();
+        dst.ambient_rc.desc->current = r;
+        // do not deallocate or reuse
+        if(!r->valid() && r->state != ambient::locality::remote){
+            assert(r->spec.region != region_t::delegated);
+            r->spec.protect();
+        }
+        assert(!r->valid() || !r->spec.bulked() || ambient::models::ssm::model::remote(r)); // can't rely on bulk memory
+        r->spec.crefs++;
+    }
+
+    template<typename V>
+    inline void swap_with(V& left, V& right){
+        std::swap(left.ambient_rc.desc, right.ambient_rc.desc);
+        left.ambient_after = left.ambient_rc.desc->current;
+        right.ambient_after = right.ambient_rc.desc->current;
+    }
+
     template <typename T> static revision& naked(T& obj){
         return *obj.ambient_rc.desc->current;
     }
