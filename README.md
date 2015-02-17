@@ -45,7 +45,7 @@ Ambient
   [MPI_THREAD_FUNNELED]
                                             
 - AMBIENT_IB  
-  Ambient internal block-size (also used as a matrix tile size)  
+  Ambient internal block-size (also used as default partition/tile size)  
   [2048]
                                             
 - AMBIENT_INSTR_BULK_CHUNK  

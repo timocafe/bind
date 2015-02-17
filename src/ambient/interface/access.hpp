@@ -98,7 +98,7 @@ namespace ambient {
         c.embed(get_allocator<T>::type::calloc(c.spec));
     }
 
-    template <typename T> static void revise(unbound< T >& obj){
+    template <typename T> static void revise(volatile T& obj){
         revision& c = *obj.ambient_after; if(c.valid()) return;
         revision& p = *obj.ambient_before;
         if(p.valid() && p.locked_once() && !p.referenced() && c.spec.conserves(p.spec)) c.reuse(p);

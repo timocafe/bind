@@ -231,7 +231,7 @@ namespace ambient {
         template<size_t arg> static void modify_local(T& obj, functor* m){
             decltype(obj.ambient_rc.desc) o = obj.ambient_rc.desc;
             selector.get_controller().touch(o);
-            T* var = (T*)ambient::pool::malloc<instr_bulk,T>(); memcpy((void*)var, &obj, sizeof(T)); m->arguments[arg] = (void*)var;
+            T* var = (T*)ambient::pool::malloc<instr_bulk,T>(); memcpy((void*)var, (void*)&obj, sizeof(T)); m->arguments[arg] = (void*)var;
 
             selector.get_controller().use_revision(o);
             selector.get_controller().collect(o->back());
@@ -244,7 +244,7 @@ namespace ambient {
         template<size_t arg> static void modify(T& obj, functor* m){
             decltype(obj.ambient_rc.desc) o = obj.ambient_rc.desc;
             selector.get_controller().touch(o);
-            T* var = (T*)ambient::pool::malloc<instr_bulk,T>(); memcpy((void*)var, &obj, sizeof(T)); m->arguments[arg] = (void*)var;
+            T* var = (T*)ambient::pool::malloc<instr_bulk,T>(); memcpy((void*)var, (void*)&obj, sizeof(T)); m->arguments[arg] = (void*)var;
             selector.get_controller().use_revision(o);
             selector.get_controller().collect(o->back());
 
@@ -290,10 +290,6 @@ namespace ambient {
     template <typename T> struct checked_get_allocator<false, T> { typedef typename ambient::default_allocator<typename T::value_type> type; };
     template <typename T> struct get_allocator { typedef typename checked_get_allocator<has_allocator<T>::value, T>::type type; };
 
-    template <class T> struct unbound : public T {
-        typedef typename get_allocator<T>::type allocator_type;
-    };
-
     template<typename T> struct has_versioning {
         template<std::size_t V> struct valuekeeper {};
         template<typename R, typename C> static char helper(R(C::*)());
@@ -319,6 +315,12 @@ namespace ambient {
     struct info <const T> {
         typedef typename const_versioned_info<has_versioning<T>::value,T>::type typed;
         template <typename U> static const T& unfold(const T& naked){ return naked; }
+    };
+
+    template <typename T>
+    struct info <volatile T> {
+        typedef write_iteratable_info<volatile T> typed;
+        template <typename U> static volatile T& unfold(volatile T& naked){ return naked; }
     };
 
     template <>
@@ -364,13 +366,6 @@ namespace ambient {
     struct info < transpose_view<Matrix> > {
         typedef transpose_view<Matrix> type;
         template <typename U> static Matrix& unfold(type& folded){ return *(Matrix*)&folded; }
-    };
-
-    template <typename T>
-    struct info < unbound<T> > {
-        typedef unbound<T> type;
-        typedef write_iteratable_info< type > typed; 
-        template <typename U> static type& unfold(type& naked){ return naked; }
     };
 
     // }}}

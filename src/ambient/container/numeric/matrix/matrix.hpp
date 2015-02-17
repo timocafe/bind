@@ -251,12 +251,12 @@ namespace ambient { namespace numeric {
     }
 
     template<typename T, class A>
-    inline value_type* matrix<T,A>::data(){
+    inline value_type* matrix<T,A>::data() volatile {
         return ambient::block<T>::data();
     }
 
     template<typename T, class A>
-    inline const value_type* matrix<T,A>::data() const {
+    inline const value_type* matrix<T,A>::data() const volatile {
         return ambient::block<T>::data();
     }
 
