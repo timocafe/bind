@@ -64,7 +64,7 @@ int main(){
     mtx pC(N,N);
 
     ambient::timer t1("gemm"); t1.begin();
-    cout << "distributed gemm... (dim " << N << ")\n";
+    std::cout << "distributed gemm... (dim " << N << ")\n";
 
     mp_gemm<GRAN>(pA, pB, pC);
 

@@ -34,6 +34,7 @@ namespace ambient {
     class backbone : public Context {
     private:
         typedef typename Context::controller_type controller_type;
+        utils::funneled_io io_guard;
         actor_auto base;
         ambient::mutex mtx;
         int tag_ub;

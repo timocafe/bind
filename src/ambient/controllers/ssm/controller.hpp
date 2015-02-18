@@ -27,7 +27,7 @@
 
 #include "ambient/utils/io.hpp"
 #include "ambient/utils/timings.hpp"
-#include "utils/service.hpp"
+#include "utils/mkl_parallel.hpp"
 #include "utils/overseer.hpp"
 #include "utils/mem.h"
 

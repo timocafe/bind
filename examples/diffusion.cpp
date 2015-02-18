@@ -460,7 +460,7 @@ int main(int argc, char* argv[]){
     double rmax = 1;
     double rmin = -1;
     size_t N = 1 << std::stoul(argv[1]);
-    ambient::cout << "Domain: " << N << "\n";
+    std::cout << "Domain: " << N << "\n";
     size_t max_steps = 40;
     Diffusion2D task(D, rmax, rmin, N);
 
@@ -471,8 +471,8 @@ int main(int argc, char* argv[]){
     time.end();
     {
         ambient::actor select(ambient::scope::begin());
-        ambient::cout << "getting results... ";
-        ambient::cout << task.get_size() << '\t' << task.get_moment() << std::endl;
+        std::cout << "getting results... ";
+        std::cout << task.get_size() << '\t' << task.get_moment() << std::endl;
     }
     return 0;
 }

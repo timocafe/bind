@@ -33,20 +33,21 @@ namespace ambient {
         template<class Context>
         backbone<Context>::backbone() : sid(1) {
             this->init(&base);
+            this->io_guard.enable();
             if(ambient::isset("AMBIENT_VERBOSE")){
-                ambient::cout << "ambient: initialized ("                   << AMBIENT_THREADING_TAGLINE      << ")\n";
-                if(ambient::isset("AMBIENT_MKL_NUM_THREADS")) ambient::cout << "ambient: selective threading (mkl)\n";
-                ambient::cout << "ambient: size of instr bulk chunks: "     << AMBIENT_INSTR_BULK_CHUNK       << "\n";
-                ambient::cout << "ambient: size of data bulk chunks: "      << AMBIENT_DATA_BULK_CHUNK        << "\n";
-                if(ambient::isset("AMBIENT_BULK_LIMIT")) ambient::cout << "ambient: max share of data bulk: " << ambient::getint("AMBIENT_BULK_LIMIT") << "%\n";
-                if(ambient::isset("AMBIENT_BULK_REUSE")) ambient::cout << "ambient: enabled bulk garbage collection\n";
-                if(ambient::isset("AMBIENT_FORCE_BULK_DEALLOCATION")) ambient::cout << "ambient: enabled bulk deallocation\n";
+                std::cout << "ambient: initialized ("                   << AMBIENT_THREADING_TAGLINE      << ")\n";
+                if(ambient::isset("AMBIENT_MKL_NUM_THREADS")) std::cout << "ambient: selective threading (mkl)\n";
+                std::cout << "ambient: size of instr bulk chunks: "     << AMBIENT_INSTR_BULK_CHUNK       << "\n";
+                std::cout << "ambient: size of data bulk chunks: "      << AMBIENT_DATA_BULK_CHUNK        << "\n";
+                if(ambient::isset("AMBIENT_BULK_LIMIT")) std::cout << "ambient: max share of data bulk: " << ambient::getint("AMBIENT_BULK_LIMIT") << "%\n";
+                if(ambient::isset("AMBIENT_BULK_REUSE")) std::cout << "ambient: enabled bulk garbage collection\n";
+                if(ambient::isset("AMBIENT_FORCE_BULK_DEALLOCATION")) std::cout << "ambient: enabled bulk deallocation\n";
                 #ifdef MPI_VERSION
-                ambient::cout << "ambient: maximum tag value: "             << ambient::get_tag_ub()          << "\n";
-                ambient::cout << "ambient: number of procs: "               << ambient::num_procs()           << "\n";
+                std::cout << "ambient: maximum tag value: "             << ambient::get_tag_ub()          << "\n";
+                std::cout << "ambient: number of procs: "               << ambient::num_procs()           << "\n";
                 #endif
-                ambient::cout << "ambient: number of threads: "             << ambient::num_threads()         << "\n";
-                ambient::cout << "\n";
+                std::cout << "ambient: number of threads: "             << ambient::num_threads()         << "\n";
+                std::cout << "\n";
             }
             if(ambient::isset("AMBIENT_MKL_NUM_THREADS")) mkl_parallel();
             std::vector<int> procs; for(int i = 0; i < ambient::num_procs(); i++) procs.push_back(i);

@@ -161,6 +161,12 @@ namespace ambient {
     T operator / (std::complex<double> l, const future<T>& r){
         return (l / r.load());
     }
+
+    template<class T>
+    std::ostream& operator << (std::ostream& os, const future<T>& obj){
+        os << obj.load();
+        return os;
+    }
 }
 
 namespace ambient { namespace numeric {

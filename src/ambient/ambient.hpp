@@ -65,6 +65,7 @@
 #include "ambient/utils/threads.hpp"
 #include "ambient/utils/math.hpp"
 #include "ambient/utils/rank_t.hpp"
+#include "ambient/utils/io.hpp"
 
 #include "ambient/memory/pool.hpp"
 #include "ambient/memory/new.h"
@@ -98,7 +99,6 @@
 #include "ambient/controllers/ssm/backbone.h"
 
 #include "ambient/utils/auxiliary.hpp"
-#include "ambient/utils/io.hpp"
 
 #include "ambient/memory/new.hpp"
 #include "ambient/memory/allocator.hpp"

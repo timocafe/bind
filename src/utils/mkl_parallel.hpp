@@ -42,31 +42,29 @@ namespace ambient {
         mkl_parallel(int nt = 0){
             if(nt || ambient::isset("AMBIENT_MKL_NUM_THREADS")){
                 if(!nt) nt = ambient::getint("AMBIENT_MKL_NUM_THREADS");
-                if(fptr == NULL) import();
-                fptr(nt);
+                invoke_set_num_threads(nt);
             }
             manual = (nt != 0);
         }
        ~mkl_parallel(){
-            if(manual) fptr(1);
+            if(manual) invoke_set_num_threads(1);
         }
     private:
-        void import(){
-            void* handle = dlopen("libmkl_intel_lp64.so", RTLD_LAZY); 
-            if(!handle) throw std::runtime_error("Error: cannot open libmkl_intel_lp64.so!");
-            dlerror(); // reset errors
-            fptr = (fptr_t) dlsym(handle, "MKL_Set_Num_Threads");
-            if(dlerror()) throw std::runtime_error("Error: cannot load symbol 'MKL_Set_Num_Threads'");
-            dlclose(handle);
+        void invoke_set_num_threads(int nt){
+            static fptr_t fptr = NULL;
+            if(fptr == NULL){
+                void* handle = dlopen("libmkl_intel_lp64.so", RTLD_LAZY); 
+                if(!handle) throw std::runtime_error("Error: cannot open libmkl_intel_lp64.so!");
+                dlerror(); // reset errors
+                fptr = (fptr_t) dlsym(handle, "MKL_Set_Num_Threads");
+                if(dlerror()) throw std::runtime_error("Error: cannot load symbol 'MKL_Set_Num_Threads'");
+                dlclose(handle);
+            }
+            fptr(nt);
         }
     private:
         bool manual;
-        static fptr_t fptr;
     };
-
-    #ifdef AMBIENT_GLOBALS
-    mkl_parallel::fptr_t mkl_parallel::fptr = NULL;
-    #endif
 
 }
 

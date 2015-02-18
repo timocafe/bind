@@ -35,48 +35,27 @@ namespace ambient {
 
 namespace ambient { namespace utils {
 
-    class mpostream {
+    class funneled_io {
     public:
-        std::fstream nullio;
-        mpostream() : nullio("/dev/null") { }
-
-        template<class T>
-        mpostream& operator<<(ambient::future<T> const & obj){
-            if(ambient::verbose()) std::cout << obj.load();
-            else nullio << obj.load();
-            return *this;
+        funneled_io() : nullio("/dev/null"), latch(NULL) { }
+       ~funneled_io(){
+            disable();
         }
-
-        template<class T>
-        mpostream& operator<<(T const & obj){
-            if(ambient::verbose()) std::cout << obj;
-            return *this;
+        void enable(){
+            if(ambient::verbose()) return;
+            latch = std::cout.rdbuf();
+            std::cout.rdbuf(nullio.rdbuf());
         }
-
-        mpostream& operator<<(std::ostream& (*pf)(std::ostream&)){
-            if(ambient::verbose()) std::cout << pf;
-            return *this;
+        void disable(){
+            if(!latch) return;
+            std::cout.rdbuf(latch);
+            latch = NULL;
         }
-
-        void precision(int p){
-            if(ambient::verbose()) std::cout.precision(p);
-        }
-
-        void flush(){
-            if(ambient::verbose()) std::cout.flush();
-        }
+    private:
+        std::ofstream nullio;
+        std::streambuf* latch;
     };
 
 } }
-
-namespace ambient {
-    #ifdef AMBIENT_GLOBALS
-    utils::mpostream cout;
-    utils::mpostream cerr;
-    #else
-    extern utils::mpostream cout;
-    extern utils::mpostream cerr;
-    #endif
-}
 
 #endif
