@@ -61,7 +61,7 @@
 
 #include "ambient/utils/dim2.h"
 #include "ambient/utils/tree.hpp"
-#include "ambient/utils/fence.hpp"
+#include "ambient/utils/guard_once.hpp"
 #include "ambient/utils/threads.hpp"
 #include "ambient/utils/math.hpp"
 #include "ambient/utils/rank_t.hpp"

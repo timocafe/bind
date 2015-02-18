@@ -25,33 +25,17 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef AMBIENT_UTILS_FENCE
-#define AMBIENT_UTILS_FENCE
+#ifndef AMBIENT_UTILS_GUARD_ONCE
+#define AMBIENT_UTILS_GUARD_ONCE
 
 namespace ambient {
 
-    class fence {
+    class guard_once {
     public:
-        fence() : f(NULL) { }
-        bool once(){ if(!f){ f = &nptr; return true; } return false; }
-    protected:
-        static void* nptr;
-        void** f;
-    };
-
-    #ifdef AMBIENT_GLOBALS
-    void* fence::nptr = NULL;
-    #endif
-
-    class ordered_fence : public fence {
-    public:
-        ordered_fence(){ }
-        ordered_fence(void**& o){ this->adhere(o); }
-        void adhere(void**& o){ this->f = o; o = (void**)&this->f; }
-        bool ordered_once()   { if(!*this->f){ this->f = NULL; return true; } return false; }
-        bool empty()          { return !this->f; }
-        static void reset()   { order = &fence::nptr; }
-        static void** order;  // = &fence::nptr;
+        guard_once() : once(false) { }
+        bool operator()(){ if(!once){ once = true; return true; } return false; }
+    private:
+        bool once;
     };
 
 }

@@ -35,37 +35,6 @@ namespace ambient {
 
 namespace ambient { namespace utils {
 
-    class ostream {
-    public:
-        std::fstream nullio;
-        ostream() : nullio("/dev/null") { }
-
-        template<class T>
-        ostream& operator<<(ambient::future<T> const & obj){
-            std::cout << obj.load();
-            return *this;
-        }
-
-        template<class T>
-        ostream& operator<<(T const & obj){
-            std::cout << obj;
-            return *this;
-        }
-
-        ostream& operator<<(std::ostream& (*pf)(std::ostream&)){
-            std::cout << pf;
-            return *this;
-        }
-
-        void precision(int p){
-            std::cout.precision(p);
-        }
-
-        void flush(){
-            std::cout.flush();
-        }
-    };
-
     class mpostream {
     public:
         std::fstream nullio;

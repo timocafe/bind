@@ -69,7 +69,7 @@ namespace ambient { namespace channels { namespace mpi {
     }
 
     inline bool collective<typename channel::block_type>::test(){
-        if(this->guard.once()){
+        if(this->once()){
             if(states.back()){
                 this->size = ambient::num_procs();
                 this->list = &channel::setup().circle[root];
@@ -91,7 +91,7 @@ namespace ambient { namespace channels { namespace mpi {
     }
 
     inline bool collective<typename channel::scalar_type>::test(){
-        if(guard.once()){
+        if(this->once()){
             this->size = ambient::num_procs();
             this->list = &channel::setup().circle[root];
             this->self = (size + ambient::rank() - root) % size;
