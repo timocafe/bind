@@ -14,6 +14,7 @@
 
 #define CATCH_CONFIG_MAIN
 #include "utils/catch.hpp"
+#include "utils/timings.hpp"
 
 #define TOLERANCE (double)1/0xF4240
 #define REQUIRE_CLOSE(a,b) REQUIRE(ambient::utils::require_close(a,b,TOLERANCE))

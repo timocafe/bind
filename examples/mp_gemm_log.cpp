@@ -1,5 +1,6 @@
 #include "ambient/ambient.hpp"
 #include "ambient/container/numeric/matrix.hpp"
+#include "utils/timings.hpp"
 
 #define GRAN 2
 #define N AMBIENT_IB*GRAN*2

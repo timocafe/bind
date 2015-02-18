@@ -31,6 +31,7 @@
 #define EXTRACT(var) T* var = (T*)m->arguments[arg];
 
 namespace ambient {
+    template<typename T> class future;
     template<typename T> class default_allocator;
     using ambient::controllers::ssm::functor;
     using ambient::models::ssm::history;

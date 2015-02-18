@@ -1,5 +1,6 @@
 #include "ambient/ambient.hpp"
 #include "ambient/container/numeric/matrix.hpp"
+#include "utils/timings.hpp"
 
 int main(){
     using namespace ambient;

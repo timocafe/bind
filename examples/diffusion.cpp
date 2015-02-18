@@ -1,6 +1,6 @@
 #include "ambient/ambient.hpp"
 #include "ambient/utils/math.hpp"
-#include "ambient/utils/timings.hpp"
+#include "utils/timings.hpp"
 #define IB 256
 
 template<typename T> class stencil;

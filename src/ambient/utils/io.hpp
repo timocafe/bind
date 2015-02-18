@@ -29,7 +29,6 @@
 #define AMBIENT_IO
 
 namespace ambient { 
-    template<typename T> class future;
     bool verbose();
 }
 
