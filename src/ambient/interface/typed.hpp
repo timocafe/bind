@@ -30,12 +30,6 @@
 
 #define EXTRACT(var) T* var = (T*)m->arguments[arg];
 
-namespace ambient { namespace numeric {
-    template <class T, class Allocator> class matrix;
-    template <class T> class transpose_view;
-    template <class T> class diagonal_matrix;
-} }
-
 namespace ambient {
     template<typename T> class default_allocator;
     using ambient::controllers::ssm::functor;
@@ -262,11 +256,6 @@ namespace ambient {
     // }}}
 
     // {{{ compile-time type info: specialization for forwarded types
-    using ambient::numeric::future;
-    using ambient::numeric::matrix;
-    using ambient::numeric::diagonal_matrix;
-    using ambient::numeric::transpose_view;
-
 
     template <typename T>
     struct is_polymorphic {
@@ -308,7 +297,7 @@ namespace ambient {
 
     template <typename T>
     struct info {
-        typedef typename       versioned_info<has_versioning<T>::value,T>::type typed;
+        typedef typename versioned_info<has_versioning<T>::value,T>::type typed;
         template <typename U> static U& unfold(T& naked){ return *static_cast<U*>(&naked); }
     };
     template <typename T>
@@ -321,13 +310,6 @@ namespace ambient {
     struct info <volatile T> {
         typedef write_iteratable_info<volatile T> typed;
         template <typename U> static volatile T& unfold(volatile T& naked){ return naked; }
-    };
-
-    template <>
-    struct info < size_t > {
-        typedef size_t type;
-        typedef singular_inplace_info<type> typed; 
-        template <typename U> static type& unfold(type& naked){ return naked; }
     };
 
     template <typename S>
@@ -344,28 +326,11 @@ namespace ambient {
         template <typename U> static type& unfold(type& folded){ return folded.unfold(); }
     };
 
-    template <typename S>
-    struct info < diagonal_matrix<S> > {
-        typedef diagonal_matrix<S> type;
-        template <typename U> static U& unfold(type& folded){ return *static_cast<U*>(&folded.get_data()); }
-    };
-
-    template <typename S>
-    struct info < const diagonal_matrix<S> > {
-        typedef const diagonal_matrix<S> type;
-        template <typename U> static const matrix<S, ambient::default_allocator<S> >& unfold(type& folded){ return folded.get_data(); }
-    };
-
-    template <class Matrix>
-    struct info < const transpose_view<Matrix> > {
-        typedef const transpose_view<Matrix> type;
-        template <typename U> static const Matrix& unfold(type& folded){ return *(const Matrix*)&folded; }
-    };
-
-    template <class Matrix>
-    struct info < transpose_view<Matrix> > {
-        typedef transpose_view<Matrix> type;
-        template <typename U> static Matrix& unfold(type& folded){ return *(Matrix*)&folded; }
+    template <>
+    struct info < size_t > {
+        typedef size_t type;
+        typedef singular_inplace_info<type> typed; 
+        template <typename U> static type& unfold(type& naked){ return naked; }
     };
 
     // }}}

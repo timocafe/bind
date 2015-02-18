@@ -29,9 +29,7 @@
 #define AMBIENT_IO
 
 namespace ambient { 
-    namespace numeric {
-        template<typename T> class future;
-    }
+    template<typename T> class future;
     bool verbose();
 }
 
@@ -43,7 +41,7 @@ namespace ambient { namespace utils {
         ostream() : nullio("/dev/null") { }
 
         template<class T>
-        ostream& operator<<(ambient::numeric::future<T> const & obj){
+        ostream& operator<<(ambient::future<T> const & obj){
             std::cout << obj.load();
             return *this;
         }
@@ -74,7 +72,7 @@ namespace ambient { namespace utils {
         mpostream() : nullio("/dev/null") { }
 
         template<class T>
-        mpostream& operator<<(ambient::numeric::future<T> const & obj){
+        mpostream& operator<<(ambient::future<T> const & obj){
             if(ambient::verbose()) std::cout << obj.load();
             else nullio << obj.load();
             return *this;
