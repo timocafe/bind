@@ -15,7 +15,7 @@ endif(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Type of build" FORCE)
 endif(NOT CMAKE_BUILD_TYPE)
-message(STATUS "Build type: " ${CMAKE_BUILD_TYPE})
+message(STATUS "Configuration type: " ${CMAKE_BUILD_TYPE})
 
 set(AMBIENT_SOURCES_DIR "${PROJECT_SOURCE_DIR}/src")
 
@@ -32,11 +32,11 @@ set(PLASMA_LIB_DIR "/usr/local/lib" CACHE PATH "Location of PLASMA libraries.")
 set(PLASMA_LIBRARIES "-lplasma -lcoreblas -llapacke -lquark" CACHE STRINGS "PLASMA libraries")
 set(AMBIENT_CXX_FLAGS "-std=c++11" CACHE STRINGS "C++11 support is required, e.g. -std=c++11 and -gcc-name=XX")
 option(AMBIENT_DISABLE_MPI "Disable MPI support (shared memory only)" OFF)
-option(AMBIENT_REGRESSION_TESTS "Build regression tests" OFF)
+option(AMBIENT_REGRESSION_TESTS "Build regression tests" ON)
 
 ########################################################################
 #
-# Dependencies
+# Configuration
 #
 ########################################################################
 
@@ -76,15 +76,8 @@ message(STATUS "Math libs:     ${MKL_LIBRARIES} ${PLASMA_LIBRARIES}")
 list(APPEND AMBIENT_LIBRARY_DIRS ${MKL_LIB_DIR} ${PLASMA_LIB_DIR})
 list(APPEND AMBIENT_LIBRARIES ${MKL_LIBRARIES} ${PLASMA_LIBRARIES})
 
-########################################################################
-#
-# Compilation
-#
-########################################################################
-
 include_directories(${AMBIENT_INCLUDE_DIRS} ${AMBIENT_SOURCES_DIR})
 link_directories(${AMBIENT_LIBRARY_DIRS})
-add_subdirectory(src/ambient)
 
 ########################################################################
 #
@@ -107,7 +100,7 @@ endif(AMBIENT_REGRESSION_TESTS)
 
 list(APPEND AMBIENT_CONFIG_INCLUDE_DIRS ${CMAKE_INSTALL_PREFIX}/include ${AMBIENT_INCLUDE_DIRS})
 list(APPEND AMBIENT_CONFIG_LIBRARY_DIRS ${CMAKE_INSTALL_PREFIX}/lib ${AMBIENT_LIBRARY_DIRS})
-list(APPEND AMBIENT_CONFIG_LIBRARIES ambient ${AMBIENT_LIBRARIES})
+list(APPEND AMBIENT_CONFIG_LIBRARIES ${AMBIENT_LIBRARIES})
 list(APPEND AMBIENT_CONFIG_COMPILE_FLAGS ${AMBIENT_CXX_FLAGS} ${AMBIENT_THREADING_FLAGS})
 
 configure_file(AmbientConfig.cmake.in ${PROJECT_BINARY_DIR}/AmbientConfig.cmake)
