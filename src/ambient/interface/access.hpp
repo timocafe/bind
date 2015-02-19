@@ -61,9 +61,9 @@ namespace ambient {
     }
 
     template <typename T> static bool exclusive(T& obj){
-        selector.get_controller().touch(obj.ambient_rc.desc);
+        ambient::select().get_controller().touch(obj.ambient_rc.desc);
         revision& c = *obj.ambient_rc.desc->current;
-        if(selector.get_actor().remote()){
+        if(ambient::select().get_actor().remote()){
             c.state = ambient::locality::remote;
             c.owner = ambient::which();
             return true;
@@ -75,7 +75,7 @@ namespace ambient {
     }
 
     template <typename T> static T& load(T& obj){ 
-        selector.get_controller().touch(obj.ambient_rc.desc);
+        ambient::select().get_controller().touch(obj.ambient_rc.desc);
         ambient::sync(); 
         revision& c = *obj.ambient_rc.desc->current;
         assert(c.state == ambient::locality::local || c.state == ambient::locality::common);

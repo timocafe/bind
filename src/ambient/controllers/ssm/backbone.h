@@ -30,20 +30,23 @@
 
 namespace ambient {
 
-    template <class Context>
-    class backbone : public Context {
+    class backbone : public context {
+        backbone(const backbone&) = delete;
+        backbone& operator=(const backbone&) = delete;
     private:
-        typedef typename Context::controller_type controller_type;
+        typedef typename context::controller_type controller_type;
         utils::funneled_io io_guard;
-        actor_auto base;
+        actor_auto* base_actor;
         ambient::mutex mtx;
+        int num_procs;
         int tag_ub;
         int sid;
     public:
-        backbone();
+       ~backbone();
         controller_type* provide_controller();
         void revoke_controller(controller_type* c);
         void sync();
+        void info();
         int  generate_sid();
         bool tunable();
         void schedule();
@@ -56,26 +59,19 @@ namespace ambient {
         void push_scope(scope* s);
         controller_type& get_controller();
         ambient::mutex& get_mutex();
-        actor_auto& get_base();
+        actor_auto& get_base_actor();
         actor& get_actor();
         scope& get_scope();
         int get_sid();
+        int get_num_procs();
+    private:
+        friend backbone& select();
+        backbone(); 
     };
-}
 
-namespace ambient {
-    #ifdef AMBIENT_SERIAL_COLLECTION
-    typedef backbone<ambient::context_serial> backbone_type;
-    #else
-    typedef backbone<ambient::context_mt> backbone_type;
-    #endif
-
-    #ifdef AMBIENT_GLOBALS
-    backbone_type selector;
-    void sync(){ selector.sync(); }
-    #else
-    extern backbone_type selector;
-    #endif
+    inline backbone& select(){
+        static backbone b; return b;
+    }
 }
 
 #endif

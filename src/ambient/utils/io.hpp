@@ -28,10 +28,6 @@
 #ifndef AMBIENT_IO
 #define AMBIENT_IO
 
-namespace ambient { 
-    bool verbose();
-}
-
 namespace ambient { namespace utils {
 
     class funneled_io {
@@ -41,7 +37,6 @@ namespace ambient { namespace utils {
             disable();
         }
         void enable(){
-            if(ambient::verbose()) return;
             latch = std::cout.rdbuf();
             std::cout.rdbuf(nullio.rdbuf());
         }

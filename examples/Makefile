@@ -1,7 +1,7 @@
 # Makefile example (icc)
 
 SHELL := /bin/bash
-CXXFLAGS?= -std=c++11 -O3 -DNDEBUG -DAMBIENT_GLOBALS -DAMBIENT_DISABLE_MPI -I../src -mkl
+CXXFLAGS?= -std=c++11 -O3 -DNDEBUG -DAMBIENT_DISABLE_MPI -I../src -mkl
 
 .DEFAULT: all
 .PHONY: all clean

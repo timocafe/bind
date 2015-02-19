@@ -57,7 +57,8 @@ namespace ambient {
     class actor_auto : public actor {
     public:
         typedef typename actor::model_type model_type;
-        actor_auto();
+        typedef controllers::ssm::controller controller_type;
+        actor_auto(controller_type* c);
         void set(rank_t r);
         void set(scope::const_iterator it);
         void schedule();

@@ -1,7 +1,6 @@
 #ifndef TESTING_TOOLS
 #define TESTING_TOOLS
 
-#define AMBIENT_GLOBALS
 #include "ambient/ambient.hpp"
 #include "ambient/container/numeric/matrix.hpp"
 #ifdef AMBIENT_ALPS

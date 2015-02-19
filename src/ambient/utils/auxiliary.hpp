@@ -32,8 +32,10 @@ namespace ambient {
 
     using ambient::models::ssm::revision;
 
-    void sync();
-    
+    inline void sync(){
+        ambient::select().sync();
+    }
+
     template<typename T> 
     void sync(const T& t){ 
         ambient::sync(); 
@@ -48,15 +50,15 @@ namespace ambient {
     }
 
     inline int num_procs(){
-        return selector.get_controller().get_num_procs();
+        return ambient::select().get_num_procs();
     }
 
     inline int get_tag_ub(){
-        return selector.get_controller().get_tag_ub();
+        return ambient::select().get_controller().get_tag_ub();
     }
 
     inline rank_t rank(){
-        return selector.get_controller().get_rank();
+        return ambient::select().get_controller().get_rank();
     }
 
     inline bool master(){
@@ -64,12 +66,12 @@ namespace ambient {
     }
 
     inline bool verbose(){ 
-        return selector.get_controller().verbose();
+        return ambient::select().get_controller().verbose();
     }
 
     template<typename T>
     inline void destroy(T* o){ 
-        selector.get_controller().collect(o); 
+        ambient::select().get_controller().collect(o); 
     }
 
     template<typename V>
@@ -108,11 +110,11 @@ namespace ambient {
     }
 
     inline rank_t which(){
-        return ambient::selector.get_actor().which();
+        return ambient::select().get_actor().which();
     }
 
     inline actor& get_actor(){
-        return ambient::selector.get_actor();
+        return ambient::select().get_actor();
     }
 
 }
