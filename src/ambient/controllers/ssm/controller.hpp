@@ -26,7 +26,7 @@
  */
 
 #include "utils/mkl_parallel.hpp"
-#include "utils/mem.h"
+#include "utils/mem.hpp"
 
 namespace ambient { namespace controllers { namespace ssm {
 
