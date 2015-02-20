@@ -33,6 +33,7 @@ namespace ambient {
     class backbone : public context {
         backbone(const backbone&) = delete;
         backbone& operator=(const backbone&) = delete;
+        backbone(); 
     private:
         typedef typename context::controller_type controller_type;
         utils::funneled_io io_guard;
@@ -64,14 +65,15 @@ namespace ambient {
         scope& get_scope();
         int get_sid();
         int get_num_procs();
-    private:
-        friend backbone& select();
-        backbone(); 
+    public:
+        template<class T>
+        struct weak_instance {
+            static backbone w;
+        };
     };
 
-    inline backbone& select(){
-        static backbone b; return b;
-    }
+    template<class T> backbone backbone::weak_instance<T>::w;
+    inline backbone& select(){ return backbone::weak_instance<void>::w; }
 }
 
 #endif

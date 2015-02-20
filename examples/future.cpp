@@ -13,4 +13,3 @@ int main(){
     std::cout << "Future value: " << sum << "\n";
     return 0;
 }
-
