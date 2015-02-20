@@ -32,7 +32,7 @@ set(PLASMA_LIB_DIR "/usr/local/lib" CACHE PATH "Location of PLASMA libraries.")
 set(PLASMA_LIBRARIES "-lplasma -lcoreblas -llapacke -lquark" CACHE STRINGS "PLASMA libraries")
 set(AMBIENT_CXX_FLAGS "-std=c++11" CACHE STRINGS "C++11 support is required, e.g. -std=c++11 and -gcc-name=XX")
 option(AMBIENT_DISABLE_MPI "Disable MPI support (shared memory only)" OFF)
-option(AMBIENT_REGRESSION_TESTS "Build regression tests" ON)
+option(AMBIENT_REGRESSION_TESTS "Build regression tests" OFF)
 
 ########################################################################
 #
@@ -90,6 +90,8 @@ if(AMBIENT_REGRESSION_TESTS)
   enable_testing() 
   add_subdirectory(tests/functional)
   add_subdirectory(tests/performance)
+else(AMBIENT_REGRESSION_TESTS)
+  message("\n\n Ambient is a header-only library (so go ahead and 'make install') \n\n")
 endif(AMBIENT_REGRESSION_TESTS)
 
 ########################################################################
@@ -111,11 +113,16 @@ configure_file(AmbientConfig.cmake.in ${PROJECT_BINARY_DIR}/AmbientConfig.cmake)
 #
 ########################################################################
 
-install(FILES ${PROJECT_BINARY_DIR}/AmbientConfig.cmake DESTINATION share)
-
 install(DIRECTORY src/ambient src/utils
         DESTINATION include
         COMPONENT headers
         PATTERN .svn EXCLUDE
-        PATTERN CMakeLists.txt EXCLUDE
-       )
+        PATTERN CMakeLists.txt EXCLUDE)
+
+install(DIRECTORY examples
+        DESTINATION share
+        PATTERN .svn EXCLUDE
+        PATTERN CMakeLists.txt EXCLUDE)
+
+install(FILES ${PROJECT_BINARY_DIR}/AmbientConfig.cmake
+        DESTINATION share)
