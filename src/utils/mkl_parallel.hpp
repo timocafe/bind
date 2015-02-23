@@ -25,8 +25,24 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef AMBIENT_UTILS_SERVICE
-#define AMBIENT_UTILS_SERVICE
+#ifndef AMBIENT_UTILS_MKL_PARALLEL
+#define AMBIENT_UTILS_MKL_PARALLEL
+
+/*
+ * Most of the time single-threaded MKL calls are sufficient - but in some cases
+ * there could be not enough tasks to be executed and therefor one would benefit
+ * from MKL's inner parallelisation. And while MKL_NUM_THREADS environment variable
+ * controls the number of threads in ALL of the MKL calls - it would lead to resource
+ * overloading (and hence performance degradation) when there is no need for task's
+ * inner parallelism.
+ *
+ * mkl_parallel acts as a guard - if used, only the provided number of threads is
+ * used inside MKL calls during its lifetime, single thread is used anywhere else.
+ * Without an argument mkl_parallel will look for MKL_NUM_THREADS and will result
+ * in no op if it's not present.
+ *
+ * Important: set AMBIENT_MKL_PARALLEL environment variable to enable this utility.
+ */
 
 #include <dlfcn.h>
 
@@ -36,18 +52,18 @@ extern "C" {
 
 namespace ambient {
 
+    inline int get_default_nt();
+
     class mkl_parallel {
     public:
         typedef void (*fptr_t)(int);
-        mkl_parallel(int nt = 0){
-            if(nt || ambient::isset("AMBIENT_MKL_NUM_THREADS")){
-                if(!nt) nt = ambient::getint("AMBIENT_MKL_NUM_THREADS");
-                invoke_set_num_threads(nt);
-            }
-            manual = (nt != 0);
+        mkl_parallel(int n = 0) : nt(n) {
+            if(nt <= 0) nt = get_default_nt();
+            else if(!get_default_nt()) nt = 0;
+            if(nt) invoke_set_num_threads(nt);
         }
        ~mkl_parallel(){
-            if(manual) invoke_set_num_threads(1);
+            if(nt) invoke_set_num_threads(1);
         }
     private:
         void invoke_set_num_threads(int nt){
@@ -63,9 +79,36 @@ namespace ambient {
             fptr(nt);
         }
     private:
-        bool manual;
+        int nt;
     };
 
+    class mkl_init {
+    private:
+        mkl_init() : default_nt(0) {
+            if(ambient::isset("AMBIENT_MKL_PARALLEL")){
+                if(ambient::isset("MKL_NUM_THREADS"))
+                    default_nt = ambient::getint("MKL_NUM_THREADS");
+                else
+                    default_nt = 1;
+                if(ambient::isset("AMBIENT_VERBOSE"))
+                    std::cout << "ambient: selective mkl threading (" << default_nt << ")\n\n";
+                mkl_parallel(1);
+            }
+        }
+    public:
+        template<class T>
+        struct weak_instance {
+            static mkl_init w;
+        };
+        int default_nt;
+    };
+
+    template<class T>
+    mkl_init mkl_init::weak_instance<T>::w;
+
+    inline int get_default_nt(){
+        return mkl_init::weak_instance<void>::w.default_nt;
+    }
 }
 
 #endif

@@ -8,15 +8,6 @@ Ambient
   print-out Ambient configuration prior to running  
   [not set]
 
-- AMBIENT_MKL_NUM_THREADS=[thread count]  
-  enable selective threading: MKL will use only 1 thread unless sync is called passing mkl_parallel() - then the [thread count] is used.  
-  [not set]
-
-- MKL_NUM_THREADS=[thread count]  
-  MKL will use [thread count] in all of its calls.  
-  *Warning: can cause performance degradation due to resources overloading. Use AMBIENT_MKL_NUM_THREADS to override it.*  
-  [auto]
-                                            
 - AMBIENT_BULK_LIMIT=[p]  
   limit the data bulk memory consumption by [p] percents of total memory  
   [60]

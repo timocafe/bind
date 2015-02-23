@@ -25,7 +25,6 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#include "utils/mkl_parallel.hpp"
 #include "utils/mem.hpp"
 
 namespace ambient { namespace controllers { namespace ssm {

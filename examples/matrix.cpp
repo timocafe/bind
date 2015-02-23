@@ -1,6 +1,7 @@
 #include "ambient/ambient.hpp"
 #include "ambient/container/numeric/matrix.hpp"
 #include "utils/timings.hpp"
+#include "utils/mkl_parallel.hpp"
 
 int main(){
     using namespace ambient;

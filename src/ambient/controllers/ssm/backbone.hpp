@@ -41,7 +41,6 @@ namespace ambient {
             this->push_scope(new ambient::scope(num_procs));
             if(!get_controller().verbose()) this->io_guard.enable();
             if(ambient::isset("AMBIENT_VERBOSE")) this->info();
-            if(ambient::isset("AMBIENT_MKL_NUM_THREADS")) mkl_parallel();
         }
         inline void backbone::info(){
             std::cout << "ambient: initialized ("                   << AMBIENT_THREADING_TAGLINE      << ")\n";
@@ -50,7 +49,6 @@ namespace ambient {
             if(ambient::isset("AMBIENT_BULK_LIMIT")) std::cout << "ambient: max share of data bulk: " << ambient::getint("AMBIENT_BULK_LIMIT") << "%\n";
             if(ambient::isset("AMBIENT_BULK_REUSE")) std::cout << "ambient: enabled bulk garbage collection\n";
             if(ambient::isset("AMBIENT_FORCE_BULK_DEALLOCATION")) std::cout << "ambient: enabled bulk deallocation\n";
-            if(ambient::isset("AMBIENT_MKL_NUM_THREADS")) std::cout << "ambient: selective threading (mkl)\n";
             #ifdef MPI_VERSION
             std::cout << "ambient: maximum tag value: "             << tag_ub                         << "\n";
             std::cout << "ambient: number of procs: "               << num_procs                      << "\n";
