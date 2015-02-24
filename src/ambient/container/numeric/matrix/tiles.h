@@ -37,7 +37,7 @@
 
 namespace ambient { namespace numeric {
 
-    template <class Matrix, int IB = AMBIENT_IB>
+    template <class Matrix, int IB = AMBIENT_DEFAULT_IB>
     class tiles : public ambient::memory::use_fixed_new<tiles<Matrix,IB> > {
     public:
         typedef typename Matrix::value_type  value_type;

@@ -50,7 +50,7 @@ namespace ambient { namespace memory {
                 inline void* data_bulk::calloc(size_t s) { void* m = malloc(s);   memset(m, 0, s); return m; }
 
     inline void* data_bulk::soft_malloc(size_t s){
-        if(instance().soft_limit < factory<AMBIENT_DATA_BULK_CHUNK>::size() || s > AMBIENT_IB*AMBIENT_IB*16) return NULL;
+        if(instance().soft_limit < factory<AMBIENT_DATA_BULK_CHUNK>::size() || s > AMBIENT_DATA_BULK_CHUNK) return NULL;
         return malloc(s);
     }
 
