@@ -1,38 +1,15 @@
 Ambient
 =======
-**Dataflow C++ framework for distributed computations**
-
-### Environment variables
-
-- AMBIENT_VERBOSE  
-  print-out Ambient configuration prior to running  
-  [not set]
-
-- AMBIENT_BULK_LIMIT=[p]  
-  limit the data bulk memory consumption by [p] percents of total memory  
-  [60]
-                                            
-- AMBIENT_BULK_REUSE  
-  setting this variable will enable bulk garbage collection  
-  [not set]
-                                            
-- AMBIENT_FORCE_BULK_DEALLOCATION  
-  deallocate data bulk every time the sync has finished  
-  [not set]
-
+**C++ framework for automatic application parallelisation under shared/distributed memory systems running Linux/OSX**
 
 ### Compilation defines
 
-- [AMBIENT_CILK, AMBIENT_OMP, AMBIENT_SERIAL]  
-  manually set the desired threading implementation  
+- AMBIENT_THREADING  
+  set the desired threading implementation (CILK, OPENMP or SERIAL)  
   [auto]
 
-- AMBIENT_DISABLE_MPI
-  set this define to disable MPI support
-  [not set]
-
-- AMBIENT_MPI_THREADING  
-  desired level of MPI threading (note: Ambient calls MPI routines through the main thread)  
+- AMBIENT_MPI  
+  MPI mode (use MPI_DISABLE or set the desired threading level)
   [MPI_THREAD_FUNNELED]
                                             
 - AMBIENT_DEFAULT_IB  
@@ -51,9 +28,25 @@ Ambient
   enable to make operations collection not thread-safe  
   [not set]
 
-### Implementation caveats
+### Environment variables
 
-- *Direct element access is slow and should be used only for debugging.*
+- AMBIENT_VERBOSE  
+  print-out Ambient configuration prior to running  
+  [not set]
 
-- *The copy is performed by fusing two version-histories together (they share the same revision in one point).
-  Therefore the direct element access (note: deprecated, see above) for writing is unsafe.*
+- AMBIENT_BULK_LIMIT=[p]  
+  limit the data bulk memory consumption by [p] percents of total memory  
+  [60]
+                                            
+- AMBIENT_BULK_REUSE  
+  setting this variable will enable bulk garbage collection  
+  [not set]
+                                            
+- AMBIENT_BULK_FORCE_FREE  
+  deallocate data bulk every time the sync has finished  
+  [not set]
+
+### License
+
+Distributed under the Boost Software License, Version 1.0.  
+(See http://www.boost.org/LICENSE_1_0.txt)
