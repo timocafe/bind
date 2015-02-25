@@ -9,11 +9,11 @@ Ambient
   [auto]
 
 - AMBIENT_MPI  
-  MPI mode (use MPI_DISABLE or set the desired threading level)
+  MPI mode (use MPI_DISABLE or set the desired threading level)  
   [MPI_THREAD_FUNNELED]
                                             
 - AMBIENT_DEFAULT_IB  
-  Default blocking factor (partition/tile default size)
+  Default blocking factor (partition/tile default size)  
   [2048]
                                             
 - AMBIENT_INSTR_BULK_CHUNK  
