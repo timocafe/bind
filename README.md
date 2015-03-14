@@ -1,58 +1,26 @@
 Ambient
 =======
-**C++ framework for automatic application parallelisation under shared/distributed memory systems running Linux/OSX**
+**C++ framework for application parallelisation under shared/distributed memory systems running Linux/OSX.**
 
-### Compilation defines
-
-- AMBIENT_THREADING  
-  set the desired threading implementation (CILK, OPENMP or SERIAL)  
-  [auto]
-
-- AMBIENT_MPI  
-  MPI mode (use MPI_DISABLE or set the desired threading level)  
-  [MPI_THREAD_FUNNELED]
-                                            
-- AMBIENT_DEFAULT_IB  
-  Default blocking factor (partition/tile default size)  
-  [2048]
-                                            
-- AMBIENT_INSTR_BULK_CHUNK  
-  size (bytes) of memory chunks for operations logging (async calls info)  
-  [16MB]
-                                            
-- AMBIENT_DATA_BULK_CHUNK  
-  size (bytes) of memory chunks for communications and temporary objects (> size of corresponding tiles)  
-  [64MB]
-                                            
-- AMBIENT_SERIAL_COLLECTION  
-  enable to make operations collection not thread-safe  
-  [not set]
-
-### Environment variables
-
-- AMBIENT_VERBOSE  
-  print-out Ambient configuration prior to running  
-  [not set]
-
-- AMBIENT_BULK_LIMIT=[p]  
-  limit the data bulk memory consumption by [p] percents of total memory  
-  [60]
-                                            
-- AMBIENT_BULK_REUSE  
-  setting this variable will enable bulk garbage collection  
-  [not set]
-                                            
-- AMBIENT_BULK_FORCE_FREE  
-  deallocate data bulk every time the sync has finished  
-  [not set]
-
-### License
-
-```sh 
-Distributed under the Boost Software License, Version 1.0.  
-(See http://www.boost.org/LICENSE_1_0.txt)
+### Installation
+Ambient is a header-only library (so just installing the sources is enough):  
+```sh
+  cmake .  
+  make install
 ```
 
+### Usage
+Compilation of the target application against Ambient include folder with C++11 enabled is generally sufficient. Otherwise be sure to check the compilation options: threading backend and MPI mode are compiler-specific by default (so the respective compiler knobs might be needed). 
+
+To enforce threading backend or MPI mode use the following knobs:
+
+    -DAMBIENT_THREADING [CILK, OPENMP or SERIAL]  
+    -DAMBIENT_MPI [MPI_DISABLE or the desired MPI threading level]
+
+(Set AMBIENT_VERBOSE environment variable to see the resulting configuration).
+
+Check the [developer's guide](http://ambient.comp-phys.org/guide.html) for more detailed information.
+
+### License
     Distributed under the Boost Software License, Version 1.0.  
     (See http://www.boost.org/LICENSE_1_0.txt)
-
