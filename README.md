@@ -5,8 +5,8 @@ Ambient
 ### Installation
 Ambient is a header-only library (so just installing the sources is enough):  
 ```sh
-  cmake .  
-  make install
+cmake .  
+make install
 ```
 
 ### Usage
