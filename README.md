@@ -19,7 +19,7 @@ To enforce threading backend or MPI mode use the following knobs:
 
 (Set AMBIENT_VERBOSE environment variable to see the resulting configuration).
 
-Check the [developer's guide](http://ambient.comp-phys.org/guide.html) for more detailed information.
+Check the [developer's guide](http://ambient.comp-phys.org/guide.pdf) for more detailed information.
 
 ### License
     Distributed under the Boost Software License, Version 1.0.  
