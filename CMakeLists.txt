@@ -27,10 +27,10 @@ set(AMBIENT_SOURCES_DIR "${PROJECT_SOURCE_DIR}/src")
 
 set(AMBIENT_THREADING "auto" CACHE STRINGS "cilk, openmp, serial or auto.")
 set(AMBIENT_MPI "auto" CACHE STRINGS "disable, serial, funneled, serialized, multiple or auto.")
-set(MKL_LIB_DIR "/usr/local/lib" CACHE PATH "Location of BLAS/LAPACK libraries.")
+set(MKL_LIB_DIR "" CACHE PATH "Location of BLAS/LAPACK libraries.")
 set(MKL_LIBRARIES "" CACHE STRINGS "BLAS/LAPACK libraries")
-set(PLASMA_LIB_DIR "/usr/local/lib" CACHE PATH "Location of PLASMA libraries.")
-set(PLASMA_LIBRARIES "-lplasma -lcoreblas -llapacke -lquark" CACHE STRINGS "PLASMA libraries")
+set(PLASMA_LIB_DIR "" CACHE PATH "Location of PLASMA libraries.")
+set(PLASMA_LIBRARIES "" CACHE STRINGS "PLASMA libraries")
 set(AMBIENT_CXX_FLAGS "-std=c++11" CACHE STRINGS "C++11 support is required, e.g. -std=c++11 and -gcc-name=XX")
 option(AMBIENT_REGRESSION_TESTS "Build regression tests" OFF)
 
