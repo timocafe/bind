@@ -10,7 +10,7 @@ make install
 ```
 
 ### Usage
-Compilation of the target application against Ambient include folder with C++11 enabled is generally sufficient. Otherwise be sure to check the compilation options: threading backend and MPI mode are compiler-specific by default (so the respective compiler knobs might be needed). 
+Compilation of the target application against Ambient's include folder with C++11 enabled is generally sufficient. Otherwise be sure to check the compilation options: threading backend and MPI mode are compiler-specific by default (so the respective compiler knobs might be needed). 
 
 To enforce threading backend or MPI mode use the following knobs:
 
