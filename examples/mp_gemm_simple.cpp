@@ -1,6 +1,6 @@
 #include "ambient/ambient.hpp"
 #include "ambient/container/numeric/matrix.hpp"
-#include "utils/timings.hpp"
+#include "utils/timer.hpp"
 
 #define N AMBIENT_DEFAULT_IB*4 
 

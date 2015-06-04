@@ -25,8 +25,8 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef AMBIENT_UTILS_TIMINGS
-#define AMBIENT_UTILS_TIMINGS
+#ifndef AMBIENT_UTILS_TIMER
+#define AMBIENT_UTILS_TIMER
 #include "ambient/ambient.hpp"
 
 namespace ambient {

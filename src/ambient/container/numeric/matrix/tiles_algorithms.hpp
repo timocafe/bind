@@ -31,7 +31,6 @@
 #include "ambient/container/numeric/matrix/tiles.h"
 #include "ambient/container/iterator/block_pair_iterator.hpp"
 #include "ambient/utils/reduce.hpp"
-#include <utility>
 
 #define value_type      typename tiles<Matrix, IB>::value_type
 #define size_type       typename tiles<Matrix, IB>::size_type
