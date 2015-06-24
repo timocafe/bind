@@ -36,7 +36,7 @@
 #include "ambient/memory/data_bulk.h"
 #include "ambient/memory/instr_bulk.h"
 
-namespace ambient { namespace memory {
+namespace ambient { namespace memory { namespace cpu {
 
     struct standard {
         static void* malloc(size_t sz){ return std::malloc(sz); }
@@ -45,10 +45,6 @@ namespace ambient { namespace memory {
             return region_t::standard;
         }
     };
-
-} }
-
-namespace ambient { namespace memory { namespace cpu {
 
     struct fixed {
         // boost::singleton_pool<fixed,S> can be used instead (implicit mutex)
@@ -62,7 +58,6 @@ namespace ambient { namespace memory { namespace cpu {
 namespace ambient { namespace memory {
 
     using ambient::memory::data_bulk;
-    using ambient::memory::standard;
 
     struct descriptor {
 
@@ -116,12 +111,12 @@ namespace ambient { namespace memory {
             #endif
             d.region = region_t::standard;
         }
-        return malloc<standard>(d.extent);
+        return malloc<cpu::standard>(d.extent);
     }
     static void free(void* ptr, descriptor& d){ 
         if(ptr == NULL || d.region == region_t::delegated) return;
         if(d.region == region_t::bulk) free<data_bulk>(ptr);
-        else free<standard>(ptr);
+        else free<cpu::standard>(ptr);
     }
 
 } }
