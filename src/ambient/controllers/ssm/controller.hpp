@@ -119,7 +119,7 @@ namespace ambient { namespace controllers { namespace ssm {
                 ambient::memory::free(r->data, r->spec);
                 r->spec.region = ambient::region_t::delegated;
             }else if(r->spec.region == ambient::region_t::bulk){
-                ambient::memory::data_bulk::reuse(r->data);
+                ambient::memory::cpu::data_bulk::reuse(r->data);
                 r->spec.region = ambient::region_t::delegated;
             }
         }

@@ -25,10 +25,10 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef AMBIENT_MEMORY_DATA_BULK_H
-#define AMBIENT_MEMORY_DATA_BULK_H
+#ifndef AMBIENT_MEMORY_CPU_DATA_BULK_H
+#define AMBIENT_MEMORY_CPU_DATA_BULK_H
 
-namespace ambient { namespace memory {
+namespace ambient { namespace memory { namespace cpu {
 
     class data_bulk {
         data_bulk(const data_bulk&) = delete;
@@ -54,7 +54,7 @@ namespace ambient { namespace memory {
         size_t soft_limit;
     };
 
-} }
+} } }
 
 #endif
 

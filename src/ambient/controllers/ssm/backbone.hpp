@@ -76,7 +76,7 @@ namespace ambient {
         }
         inline void backbone::sync(){
             context::sync();
-            memory::data_bulk::drop();
+            memory::cpu::data_bulk::drop();
         }
         inline actor& backbone::get_actor(){
             return *context::get().actors.top();

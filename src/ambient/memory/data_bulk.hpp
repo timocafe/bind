@@ -25,13 +25,13 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef AMBIENT_MEMORY_DATA_BULK_HPP
-#define AMBIENT_MEMORY_DATA_BULK_HPP
+#ifndef AMBIENT_MEMORY_CPU_DATA_BULK_HPP
+#define AMBIENT_MEMORY_CPU_DATA_BULK_HPP
 
 #include "utils/mem.hpp"
 #define FORCE_DROP_CRITERIA 60
 
-namespace ambient { namespace memory {
+namespace ambient { namespace memory { namespace cpu {
 
     inline data_bulk& data_bulk::instance(){
         static data_bulk singleton; return singleton;
@@ -72,7 +72,7 @@ namespace ambient { namespace memory {
         return region_t::bulk;
     }
 
-} }
+} } }
 
 #undef FORCE_DROP_CRITERIA
 #endif

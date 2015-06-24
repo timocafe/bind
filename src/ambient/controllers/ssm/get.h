@@ -30,8 +30,6 @@
 
 namespace ambient { namespace controllers { namespace ssm {
     
-    using ambient::memory::data_bulk;
-
     template<class T> class get {};
 
     template<>

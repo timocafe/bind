@@ -39,7 +39,7 @@ namespace ambient { namespace numeric { namespace kernels {
 
         using ambient::numeric::matrix;
         using ambient::numeric::traits::real_type;
-        using ambient::memory::data_bulk;
+        using ambient::memory::cpu::data_bulk;
        
         template<typename T, typename IB>
         void geqrt(matrix<T>& a, volatile matrix<T>& t){

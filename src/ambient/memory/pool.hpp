@@ -57,8 +57,6 @@ namespace ambient { namespace memory { namespace cpu {
 
 namespace ambient { namespace memory {
 
-    using ambient::memory::data_bulk;
-
     struct descriptor {
 
         descriptor(size_t e, region_t r = region_t::standard) : extent(e), region(r), persistency(1), crefs(1) {}
@@ -106,7 +104,7 @@ namespace ambient { namespace memory {
         assert(d.region != region_t::delegated);
         if(d.region == region_t::bulk){
             #ifdef AMBIENT_USE_DATA_BULK
-            void* ptr = data_bulk::soft_malloc(d.extent);
+            void* ptr = cpu::data_bulk::soft_malloc(d.extent);
             if(ptr) return ptr;
             #endif
             d.region = region_t::standard;
@@ -115,7 +113,7 @@ namespace ambient { namespace memory {
     }
     static void free(void* ptr, descriptor& d){ 
         if(ptr == NULL || d.region == region_t::delegated) return;
-        if(d.region == region_t::bulk) free<data_bulk>(ptr);
+        if(d.region == region_t::bulk) free<cpu::data_bulk>(ptr);
         else free<cpu::standard>(ptr);
     }
 

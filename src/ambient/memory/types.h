@@ -25,8 +25,8 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef AMBIENT_MEMORY_TYPES
-#define AMBIENT_MEMORY_TYPES
+#ifndef AMBIENT_MEMORY_REGIONS
+#define AMBIENT_MEMORY_REGIONS
 
 namespace ambient {
     enum class region_t { bulk, standard, delegated };
