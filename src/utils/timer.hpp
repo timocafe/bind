@@ -46,6 +46,9 @@ namespace ambient {
             this->val += std::chrono::duration<double>(std::chrono::system_clock::now() - this->t0).count();
             count++;
         }
+        double get_time() const {
+            return val;
+        }
     private:
         double val;
         std::chrono::time_point<std::chrono::system_clock> t0;
