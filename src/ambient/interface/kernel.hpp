@@ -42,7 +42,7 @@ namespace ambient {
         #define inliner kernel_inliner<typename K::ftype,K::c>
         inline void operator delete (void* ptr){ }
         inline void* operator new (size_t size){
-            return ambient::pool::malloc<instr_bulk,sizeof(K)+sizeof(void*)*inliner::arity>();
+            return ambient::memory::malloc<instr_bulk,sizeof(K)+sizeof(void*)*inliner::arity>();
         }
         virtual bool ready(){ 
             return inliner::ready(this);

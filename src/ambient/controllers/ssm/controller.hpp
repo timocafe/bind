@@ -116,7 +116,7 @@ namespace ambient { namespace controllers { namespace ssm {
     inline void controller::squeeze(revision* r) const {
         if(r->valid() && !r->referenced() && r->locked_once()){
             if(r->spec.region == ambient::region_t::standard){
-                ambient::pool::free(r->data, r->spec);
+                ambient::memory::free(r->data, r->spec);
                 r->spec.region = ambient::region_t::delegated;
             }else if(r->spec.region == ambient::region_t::bulk){
                 ambient::memory::data_bulk::reuse(r->data);

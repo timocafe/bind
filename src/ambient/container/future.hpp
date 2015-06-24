@@ -42,7 +42,7 @@ namespace ambient {
         typedef T value_type;
 
         void init(value_type v = T()){
-            desc = new (ambient::pool::calloc<fixed,sizeof_transformable()>()) transformable_value<T>(v);
+            desc = new (ambient::memory::calloc<fixed,sizeof_transformable()>()) transformable_value<T>(v);
             valid = true;
         }
         template<typename S>
@@ -143,7 +143,7 @@ namespace ambient {
     future<T> operator + (const future<T>& l, const future<T>& r){
         transformable* a = l.desc; l.clear();
         transformable* b = r.desc; r.clear();
-        return future<T>(new (ambient::pool::calloc<fixed,sizeof_transformable()>()) 
+        return future<T>(new (ambient::memory::calloc<fixed,sizeof_transformable()>()) 
                          transformable_expr<T, decltype(&op_plus<T>), op_plus>(a, b)
                         ); 
     }

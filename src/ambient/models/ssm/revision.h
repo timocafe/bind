@@ -57,7 +57,7 @@ namespace ambient { namespace models { namespace ssm {
         std::atomic<int> users;
         ambient::locality state;
         std::pair<size_t, void*> assist;
-        ambient::pool::descriptor spec;
+        ambient::memory::descriptor spec;
     };
 
 } } }

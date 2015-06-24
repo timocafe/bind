@@ -43,9 +43,9 @@ namespace ambient {
         static T* allocate(std::size_t n){ throw; }
         static void deallocate(T* ptr, std::size_t n){ throw; }
 
-        static void* alloc(pool::descriptor& spec); 
-        static void* calloc(pool::descriptor& spec);
-        static void free(void* ptr, pool::descriptor& spec);
+        static void* alloc(memory::descriptor& spec); 
+        static void* calloc(memory::descriptor& spec);
+        static void free(void* ptr, memory::descriptor& spec);
     };
 
     template <class T>

@@ -50,7 +50,7 @@ namespace ambient { namespace memory {
         r->spec.crefs--;
         if(!r->referenced()){ // squeeze
             if(r->valid() && !r->locked() && r->spec.region == ambient::region_t::standard){
-                ambient::pool::free(r->data, r->spec); // artifacts or last one
+                ambient::memory::free(r->data, r->spec); // artifacts or last one
                 r->spec.region = ambient::region_t::delegated;
             }
             this->rev.push_back(r);
@@ -64,7 +64,7 @@ namespace ambient { namespace memory {
 
     inline void collector::delete_ptr::operator()( revision* r ) const {
         if(r->valid() && r->spec.region == ambient::region_t::standard){
-            ambient::pool::free(r->data, r->spec); // artifacts
+            ambient::memory::free(r->data, r->spec); // artifacts
             r->spec.region = ambient::region_t::delegated;
         }
         delete r; 
@@ -75,7 +75,7 @@ namespace ambient { namespace memory {
     }
 
     inline void collector::delete_ptr::operator()( transformable* e ) const {
-        ambient::pool::free<fixed,sizeof_transformable()>(e);
+        ambient::memory::free<fixed,sizeof_transformable()>(e);
     } 
 
     inline void collector::clear(){

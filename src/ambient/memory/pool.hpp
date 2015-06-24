@@ -55,7 +55,7 @@ namespace ambient { namespace memory {
 
 } }
 
-namespace ambient { namespace pool {
+namespace ambient { namespace memory {
 
     using ambient::memory::data_bulk;
     using ambient::memory::fixed;

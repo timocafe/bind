@@ -31,16 +31,16 @@
 namespace ambient {
 
     template <class T>
-    void* default_allocator<T>::alloc(pool::descriptor& spec) { return ambient::pool::malloc(spec); }
+    void* default_allocator<T>::alloc(memory::descriptor& spec) { return ambient::memory::malloc(spec); }
 
     template <class T>
-    void* default_allocator<T>::calloc(pool::descriptor& spec){ void* m = alloc(spec); memset(m, 0, spec.extent); return m; }
+    void* default_allocator<T>::calloc(memory::descriptor& spec){ void* m = alloc(spec); memset(m, 0, spec.extent); return m; }
 
     template <class T>
-    void default_allocator<T>::free(void* ptr, pool::descriptor& spec){ ambient::pool::free(ptr, spec); }
+    void default_allocator<T>::free(void* ptr, memory::descriptor& spec){ ambient::memory::free(ptr, spec); }
 
     template <class T>
-    T* bulk_allocator<T>::allocate(std::size_t n){ return (T*)ambient::pool::malloc<memory::instr_bulk>(n*sizeof(T)); }
+    T* bulk_allocator<T>::allocate(std::size_t n){ return (T*)ambient::memory::malloc<memory::instr_bulk>(n*sizeof(T)); }
 
     template <class T>
     void bulk_allocator<T>::deallocate(T* p, std::size_t n){ }

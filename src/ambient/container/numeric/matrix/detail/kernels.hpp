@@ -44,8 +44,8 @@ namespace ambient { namespace numeric { namespace kernels {
         template<typename T, typename IB>
         void geqrt(matrix<T>& a, volatile matrix<T>& t){
             matrix<T>& t_ = const_cast<matrix<T>&>(t);
-            T* tau  = (T*)ambient::pool::malloc<data_bulk,sizeof(T)*IB::value>(); 
-            T* work = (T*)ambient::pool::malloc<data_bulk,sizeof(T)*IB::value*PLASMA_IB>();
+            T* tau  = (T*)ambient::memory::malloc<data_bulk,sizeof(T)*IB::value>(); 
+            T* work = (T*)ambient::memory::malloc<data_bulk,sizeof(T)*IB::value*PLASMA_IB>();
             plasma::lapack<T>::geqrt(a.num_rows(), a.num_cols(), PLASMA_IB,
                                      a.data(), a.num_rows(),
                                      t_.data(), t_.num_rows(),
@@ -56,7 +56,7 @@ namespace ambient { namespace numeric { namespace kernels {
        
         template<typename T, typename TR, typename IB>
         void ormqr(const size_t& k, const matrix<T>& a, const matrix<T>& t, matrix<T>& c){
-            T* work = (T*)ambient::pool::malloc<data_bulk,sizeof(T)*IB::value*PLASMA_IB>();
+            T* work = (T*)ambient::memory::malloc<data_bulk,sizeof(T)*IB::value*PLASMA_IB>();
             plasma::lapack<T>::ormqr(PlasmaLeft, TR::value, c.num_rows(), c.num_cols(), k, PLASMA_IB,
                                      a.data(), a.num_rows(),
                                      t.data(), t.num_rows(),
@@ -68,8 +68,8 @@ namespace ambient { namespace numeric { namespace kernels {
         template<typename T, typename IB>
         void tsqrt(matrix<T>& a1, matrix<T>& a2, volatile matrix<T>& t){
             matrix<T>& t_ = const_cast<matrix<T>&>(t);
-            T* tau  = (T*)ambient::pool::malloc<data_bulk,sizeof(T)*IB::value>();
-            T* work = (T*)ambient::pool::malloc<data_bulk,sizeof(T)*IB::value*PLASMA_IB>();
+            T* tau  = (T*)ambient::memory::malloc<data_bulk,sizeof(T)*IB::value>();
+            T* work = (T*)ambient::memory::malloc<data_bulk,sizeof(T)*IB::value*PLASMA_IB>();
             plasma::lapack<T>::tsqrt(a2.num_rows(), a2.num_cols(), PLASMA_IB,
                                      a1.data(), a1.num_rows(),
                                      a2.data(), a2.num_rows(),
@@ -81,7 +81,7 @@ namespace ambient { namespace numeric { namespace kernels {
        
         template<typename T, typename TR, typename IB>
         void tsmqr(const size_t& k, matrix<T>& a1, matrix<T>& a2, const matrix<T>& v, const matrix<T>& t){
-            T* work = (T*)ambient::pool::malloc<data_bulk,sizeof(T)*IB::value*PLASMA_IB>();
+            T* work = (T*)ambient::memory::malloc<data_bulk,sizeof(T)*IB::value*PLASMA_IB>();
             plasma::lapack<T>::tsmqr(PlasmaLeft, TR::value,
                                      IB::value, a1.num_cols(), a2.num_rows(), a2.num_cols(), k, PLASMA_IB,
                                      a1.data(), a1.num_rows(),
@@ -95,8 +95,8 @@ namespace ambient { namespace numeric { namespace kernels {
         template<typename T, typename IB>
         void gelqt(matrix<T>& a, volatile matrix<T>& t){
             matrix<T>& t_ = const_cast<matrix<T>&>(t);
-            T* tau  = (T*)ambient::pool::malloc<data_bulk,sizeof(T)*IB::value>();
-            T* work = (T*)ambient::pool::malloc<data_bulk,sizeof(T)*IB::value*PLASMA_IB>();
+            T* tau  = (T*)ambient::memory::malloc<data_bulk,sizeof(T)*IB::value>();
+            T* work = (T*)ambient::memory::malloc<data_bulk,sizeof(T)*IB::value*PLASMA_IB>();
             plasma::lapack<T>::gelqt(a.num_rows(), a.num_cols(), PLASMA_IB,
                                      a.data(), a.num_rows(), 
                                      t_.data(), t_.num_rows(),
@@ -107,7 +107,7 @@ namespace ambient { namespace numeric { namespace kernels {
        
         template<typename T, typename TR, typename IB>
         void ormlq(const size_t& k, const matrix<T>& a, const matrix<T>& t, matrix<T>& c){
-            T* work = (T*)ambient::pool::malloc<data_bulk,sizeof(T)*IB::value*PLASMA_IB>();
+            T* work = (T*)ambient::memory::malloc<data_bulk,sizeof(T)*IB::value*PLASMA_IB>();
             plasma::lapack<T>::ormlq(PlasmaRight, TR::value,
                                      c.num_rows(), c.num_cols(), k, PLASMA_IB,
                                      a.data(), a.num_rows(),
@@ -120,8 +120,8 @@ namespace ambient { namespace numeric { namespace kernels {
         template<typename T, typename IB>
         void tslqt(matrix<T>& a1, matrix<T>& a2, volatile matrix<T>& t){
             matrix<T>& t_ = const_cast<matrix<T>&>(t);
-            T* tau  = (T*)ambient::pool::malloc<data_bulk,sizeof(T)*IB::value>();
-            T* work = (T*)ambient::pool::malloc<data_bulk,sizeof(T)*IB::value*PLASMA_IB>();
+            T* tau  = (T*)ambient::memory::malloc<data_bulk,sizeof(T)*IB::value>();
+            T* work = (T*)ambient::memory::malloc<data_bulk,sizeof(T)*IB::value*PLASMA_IB>();
             plasma::lapack<T>::tslqt(a2.num_rows(), a2.num_cols(), PLASMA_IB,
                                      a1.data(), a1.num_rows(),
                                      a2.data(), a2.num_rows(),
@@ -133,7 +133,7 @@ namespace ambient { namespace numeric { namespace kernels {
        
         template<typename T, typename TR, typename IB>
         void tsmlq(const size_t& k, matrix<T>& a1, matrix<T>& a2, const matrix<T>& v, const matrix<T>& t){
-            T* work = (T*)ambient::pool::malloc<data_bulk,sizeof(T)*IB::value*PLASMA_IB>();
+            T* work = (T*)ambient::memory::malloc<data_bulk,sizeof(T)*IB::value*PLASMA_IB>();
             plasma::lapack<T>::tsmlq(PlasmaRight, TR::value,
                                      a1.num_rows(), IB::value, a2.num_rows(), a2.num_cols(), k, PLASMA_IB,
                                      a1.data(), a1.num_rows(),
