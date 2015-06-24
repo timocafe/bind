@@ -30,7 +30,6 @@
 
 namespace ambient {
 
-    enum class actor_t { base, common, single };
 
     class actor {
     protected:
@@ -40,7 +39,6 @@ namespace ambient {
     public:
        ~actor();
         actor(scope::const_iterator it);
-        actor(actor_t type);
         bool remote() const;
         bool local()  const;
         bool common() const;
@@ -48,8 +46,6 @@ namespace ambient {
         friend class context_mt;
         friend class backbone;
     protected:
-        actor_t type;
-        bool dry;
         int factor;
         int round;
         rank_t rank;
@@ -57,11 +53,14 @@ namespace ambient {
         controller_type* controller;
     };
 
+    class actor_common : public actor {
+    public:
+        actor_common();
+    };
+
     class actor_auto : public actor {
     public:
-        typedef typename actor::model_type model_type;
-        typedef controllers::ssm::controller controller_type;
-        actor_auto(controller_type* c);
+        actor_auto(typename actor::controller_type* c);
         void set(rank_t r);
         void set(scope::const_iterator it);
         void schedule();

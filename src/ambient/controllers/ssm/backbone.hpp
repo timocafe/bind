@@ -34,7 +34,7 @@ namespace ambient {
             delete this->base_actor;
         }
         inline backbone::backbone() : sid(1) {
-            this->base_actor = new actor_auto(provide_controller());
+            this->base_actor = new actor_auto(&context::get().controller);
             context::init(base_actor);
             this->tag_ub = get_controller().get_tag_ub();
             this->num_procs = get_controller().get_num_procs();
@@ -43,18 +43,13 @@ namespace ambient {
             if(ambient::isset("AMBIENT_VERBOSE")) this->info();
         }
         inline void backbone::info(){
-            std::cout << "ambient: initialized ("                   << AMBIENT_THREADING_TAGLINE      << ")\n";
-            std::cout << "ambient: size of instr bulk chunks: "     << AMBIENT_INSTR_BULK_CHUNK       << "\n";
-            std::cout << "ambient: size of data bulk chunks: "      << AMBIENT_DATA_BULK_CHUNK        << "\n";
             if(ambient::isset("AMBIENT_BULK_LIMIT")) std::cout << "ambient: max share of data bulk: " << ambient::getint("AMBIENT_BULK_LIMIT") << "%\n";
             if(ambient::isset("AMBIENT_BULK_REUSE")) std::cout << "ambient: enabled bulk garbage collection\n";
             if(ambient::isset("AMBIENT_BULK_FORCE_FREE")) std::cout << "ambient: enabled bulk deallocation\n";
             #ifdef MPI_VERSION
-            std::cout << "ambient: maximum tag value: "             << tag_ub                         << "\n";
-            std::cout << "ambient: number of procs: "               << num_procs                      << "\n";
+            std::cout << "ambient: number of procs: " << num_procs << "\n";
             #endif
-            std::cout << "ambient: number of threads: "             << ambient::num_threads()         << "\n";
-            std::cout << "\n";
+            std::cout << "ambient: number of threads: " << ambient::num_threads() << " (" << AMBIENT_THREADING_TAGLINE << ")\n\n";
         }
         inline int backbone::generate_sid(){
             return (++sid %= tag_ub);
@@ -68,12 +63,15 @@ namespace ambient {
         inline typename backbone::controller_type& backbone::get_controller(){
             return *get_actor().controller; // caution: != context::get().controller
         }
-        inline void backbone::revoke_controller(controller_type* c){
-        }
         inline bool backbone::has_nested_actor(){
             return (&get_actor() != this->base_actor);
         }
-        inline typename backbone::controller_type* backbone::provide_controller(){
+        inline void backbone::deactivate(actor* a){
+            context::get().actors.pop();
+        }
+        inline typename backbone::controller_type* backbone::activate(actor* a){
+            if(has_nested_actor()) return NULL;
+            context::get().actors.push(a);
             return &context::get().controller;
         }
         inline void backbone::sync(){
@@ -85,12 +83,6 @@ namespace ambient {
         }
         inline actor_auto& backbone::get_base_actor(){
             return *this->base_actor;
-        }
-        inline void backbone::pop_actor(){
-            context::get().actors.pop();
-        }
-        inline void backbone::push_actor(actor* s){
-            context::get().actors.push(s);
         }
         inline scope& backbone::get_scope(){
             return *context::get().scopes.top();

@@ -44,8 +44,8 @@ namespace ambient {
         int sid;
     public:
        ~backbone();
-        controller_type* provide_controller();
-        void revoke_controller(controller_type* c);
+        controller_type* activate(actor* a);
+        void deactivate(actor* a);
         void sync();
         void info();
         int  generate_sid();
@@ -54,9 +54,7 @@ namespace ambient {
         void intend_read(models::ssm::revision* o);
         void intend_write(models::ssm::revision* o);
         bool has_nested_actor();
-        void pop_actor();
         void pop_scope();
-        void push_actor(actor* s);
         void push_scope(scope* s);
         controller_type& get_controller();
         ambient::mutex& get_mutex();

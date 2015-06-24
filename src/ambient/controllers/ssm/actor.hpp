@@ -30,31 +30,17 @@
 
 namespace ambient {
 
+    // {{{ primary actor-class
+
     inline actor::~actor(){
-        if(dry) return;
-        ambient::select().revoke_controller(this->controller);
-        ambient::select().pop_actor();
+        if(!this->controller) return;
+        ambient::select().deactivate(this);
     }
-    inline actor::actor(actor_t t) : type(actor_t::common), dry(true) {
-        if(t != actor_t::common) throw std::runtime_error("Error: unknown scope type!");
-        if(ambient::select().has_nested_actor()){
-            if(ambient::select().get_actor().type == actor_t::common) return;
-            throw std::runtime_error("Error: common actor inside other actor type!");
-        }
-        this->rank = ambient::select().get_controller().get_shared_rank();
-        this->state = ambient::locality::common;
-        this->controller = ambient::select().provide_controller();
-        ambient::select().push_actor(this);
-        this->dry = false;
-    }
-    inline actor::actor(scope::const_iterator it) : type(actor_t::single), dry(true) {
-        if(ambient::select().has_nested_actor()) return;
-        this->controller = ambient::select().provide_controller();
-        ambient::select().push_actor(this); 
+    inline actor::actor(scope::const_iterator it){
+        if(! (this->controller = ambient::select().activate(this)) ) return;
         this->round = this->controller->get_num_procs();
         this->rank = (*it) % this->round;
         this->state = (this->rank == controller->get_rank()) ? ambient::locality::local : ambient::locality::remote;
-        this->dry = false;
     }
     inline bool actor::remote() const {
         return (state == ambient::locality::remote);
@@ -69,8 +55,22 @@ namespace ambient {
         return this->rank;
     }
 
+    // }}}
+    // {{{ actor's special case: everyone does the same
 
-    inline actor_auto::actor_auto(controller_type* c){
+    inline actor_common::actor_common(){
+        if(! (this->controller = ambient::select().activate(this)) ){
+            if(!ambient::select().get_actor().common()) throw std::runtime_error("Nested actor_common");
+            return;
+        }
+        this->rank = controller->get_shared_rank();
+        this->state = ambient::locality::common;
+    }
+
+    // }}}
+    // {{{ actor's special case: auto-scheduling actor
+
+    inline actor_auto::actor_auto(typename actor::controller_type* c){
         this->controller = c;
         this->controller->reserve();
         this->round = controller->get_num_procs();
@@ -114,6 +114,8 @@ namespace ambient {
         std::fill(scores.begin(), scores.end(), 0);
         this->set(rank);
     }
+
+    // }}}
 }
 
 #endif

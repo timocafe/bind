@@ -85,7 +85,7 @@ namespace ambient {
         threaded_region = NULL;
         if(ambient::select().has_nested_actor())
         for(auto& k : thread_context_lane){
-            k.actors.top()->dry = true; // avoiding destructor
+            k.actors.top()->controller = NULL; // avoiding destructor
             delete k.actors.top(); k.actors.pop();
         }
         for(auto& k : thread_context_lane){
