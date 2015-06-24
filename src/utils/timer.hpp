@@ -28,67 +28,27 @@
 #ifndef AMBIENT_UTILS_TIMER
 #define AMBIENT_UTILS_TIMER
 #include "ambient/ambient.hpp"
+#include <chrono>
 
 namespace ambient {
 
     void sync();
-
-    #if defined(__APPLE__) && defined(AMBIENT_OMP)
-    struct time {
-        static double start(){ return omp_get_wtime(); }
-        static double stop() { return omp_get_wtime(); }
-    };
-    #elif defined(__APPLE__)
-    struct time {
-        static double start(){ return 0.; }
-        static double stop() { return 0.; }
-    };
-    #else
-    #define BILLION 0x3B9ACA00
-    struct time {
-        time(): thread_(pthread_self()){}
-        double parse(timespec& t){
-            return t.tv_sec+(((double)t.tv_nsec / (double)BILLION));
-        }
-        double start(){
-            pthread_getcpuclockid(this->thread_,&this->cid_);
-            struct timespec ts;
-            clock_gettime(this->cid_, &ts);
-            return parse(ts);
-        }
-        double stop(){
-            struct timespec ts;
-            clock_gettime(this->cid_, &ts);
-            return parse(ts);
-        }
-        pthread_t thread_; 
-        clockid_t cid_;
-    };
-    #endif
-
-    class async_timer : public time {
+    class async_timer {
     public:
         async_timer(std::string name): val(0.0), name(name), count(0){}
-       ~async_timer(){ report(); }
-
-        double get_time() const {
-            return val;
-        }
-        void report(){
+       ~async_timer(){
             std::cout << "R" << ambient::rank() << ": " << name << " " << val << ", count : " << count << "\n";
         }
-        void reset(){
-            this->val = 0;
-        }
         void begin(){
-            this->t0 = this->start();
-        }    
+            this->t0 = std::chrono::system_clock::now();
+        }
         void end(){
-            this->val += this->stop() - this->t0;
+            this->val += std::chrono::duration<double>(std::chrono::system_clock::now() - this->t0).count();
             count++;
         }
     private:
-        double val, t0;
+        double val;
+        std::chrono::time_point<std::chrono::system_clock> t0;
         unsigned long long count;
         std::string name;
     };
@@ -99,7 +59,7 @@ namespace ambient {
         void begin(){
             ambient::sync();
             async_timer::begin();
-        }    
+        }
         void end(){
             ambient::sync();
             async_timer::end();
