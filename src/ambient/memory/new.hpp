@@ -25,10 +25,10 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef AMBIENT_MEMORY_NEW_HPP
-#define AMBIENT_MEMORY_NEW_HPP
+#ifndef AMBIENT_MEMORY_CPU_NEW_HPP
+#define AMBIENT_MEMORY_CPU_NEW_HPP
 
-namespace ambient { namespace memory {
+namespace ambient { namespace memory { namespace cpu {
 
     template<class T>
     void* use_fixed_new<T>::operator new (size_t sz){ assert(sz == sizeof(T)); return ambient::pool::malloc<fixed,T>(); }
@@ -42,6 +42,6 @@ namespace ambient { namespace memory {
     template<class T>
     void use_bulk_new<T>::operator delete(void* ptr){ }
     
-} }
+} } }
 
 #endif

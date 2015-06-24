@@ -35,7 +35,7 @@ namespace ambient { namespace controllers { namespace ssm {
     template<class T> class get {};
 
     template<>
-    class get<transformable> : public functor, public memory::use_bulk_new<get<transformable> > {
+    class get<transformable> : public functor, public memory::cpu::use_bulk_new<get<transformable> > {
     public:
         template<class T> using collective = controller::channel_type::collective_type<T>;
         static void spawn(transformable& v);
@@ -47,7 +47,7 @@ namespace ambient { namespace controllers { namespace ssm {
     };
 
     template<>
-    class get<revision> : public functor, public memory::use_bulk_new<get<revision> >  {
+    class get<revision> : public functor, public memory::cpu::use_bulk_new<get<revision> >  {
     public:
         template<class T> using collective = controller::channel_type::collective_type<T>;
         static void spawn(revision& r);

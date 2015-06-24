@@ -32,7 +32,7 @@
 
 namespace ambient { namespace models { namespace ssm {
 
-    class revision : public memory::use_fixed_new<revision> {
+    class revision : public memory::cpu::use_fixed_new<revision> {
     public:
         template<typename T> operator T* (){ return (T*)data; }
         operator revision* (){ return NULL; }

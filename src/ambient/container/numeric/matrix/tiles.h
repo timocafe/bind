@@ -38,7 +38,7 @@
 namespace ambient { namespace numeric {
 
     template <class Matrix, int IB = AMBIENT_DEFAULT_IB>
-    class tiles : public ambient::memory::use_fixed_new<tiles<Matrix,IB> > {
+    class tiles : public ambient::memory::cpu::use_fixed_new<tiles<Matrix,IB> > {
     public:
         typedef typename Matrix::value_type  value_type;
         typedef typename Matrix::size_type   size_type;
@@ -200,7 +200,7 @@ namespace ambient { namespace numeric {
     };
 
     template <typename T, int IB>
-    class tiles<diagonal_matrix<T>, IB> : public ambient::memory::use_fixed_new<tiles<diagonal_matrix<T>, IB> > {
+    class tiles<diagonal_matrix<T>, IB> : public ambient::memory::cpu::use_fixed_new<tiles<diagonal_matrix<T>, IB> > {
     public:
         typedef typename diagonal_matrix<T>::value_type  value_type;
         typedef typename diagonal_matrix<T>::size_type   size_type;

@@ -25,10 +25,10 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef AMBIENT_MEMORY_NEW_H
-#define AMBIENT_MEMORY_NEW_H
+#ifndef AMBIENT_MEMORY_CPU_NEW_H
+#define AMBIENT_MEMORY_CPU_NEW_H
 
-namespace ambient { namespace memory {
+namespace ambient { namespace memory { namespace cpu {
 
     template<class T>
     class use_fixed_new {
@@ -44,6 +44,6 @@ namespace ambient { namespace memory {
         void operator delete (void* ptr);
     };
 
-} }
+} } }
 
 #endif

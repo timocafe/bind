@@ -30,7 +30,7 @@
 
 namespace ambient { namespace controllers { namespace ssm {
 
-    class meta : public functor, public memory::use_bulk_new<meta> {
+    class meta : public functor, public memory::cpu::use_bulk_new<meta> {
     public:
         enum class type { get, set };
         static void spawn(revision& r, type t);

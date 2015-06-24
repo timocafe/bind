@@ -31,7 +31,7 @@
 // revision tracking mechanism (target selector)
 namespace ambient { namespace models { namespace ssm {
 
-    class history : public memory::use_fixed_new<history> {
+    class history : public memory::cpu::use_fixed_new<history> {
     public:
         history(dim2,size_t);
         void init_state();

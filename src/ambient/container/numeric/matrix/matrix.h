@@ -34,7 +34,7 @@
 namespace ambient { namespace numeric {
 
     template <typename T, class Allocator = ambient::default_allocator<T> >
-    class matrix : public ambient::block<T>, public ambient::memory::use_fixed_new<matrix<T,Allocator> > {
+    class matrix : public ambient::block<T>, public ambient::memory::cpu::use_fixed_new<matrix<T,Allocator> > {
     public:
         typedef T value_type;
         typedef size_t size_type;
@@ -97,7 +97,7 @@ namespace ambient { namespace numeric {
     };
 
     template <class Matrix>
-    class transpose_view : public ambient::proxy<Matrix>, public ambient::memory::use_fixed_new<transpose_view<Matrix> > {
+    class transpose_view : public ambient::proxy<Matrix>, public ambient::memory::cpu::use_fixed_new<transpose_view<Matrix> > {
     public:
         typedef typename Matrix::real_type real_type;
         typedef typename Matrix::size_type size_type; 
