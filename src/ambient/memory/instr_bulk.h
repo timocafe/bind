@@ -25,10 +25,10 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef AMBIENT_MEMORY_INSTR_BULK_H
-#define AMBIENT_MEMORY_INSTR_BULK_H
+#ifndef AMBIENT_MEMORY_CPU_INSTR_BULK_H
+#define AMBIENT_MEMORY_CPU_INSTR_BULK_H
 
-namespace ambient { namespace memory {
+namespace ambient { namespace memory { namespace cpu {
 
     struct instr_bulk {
         template<size_t S> 
@@ -37,7 +37,7 @@ namespace ambient { namespace memory {
         static void drop();
     };
 
-} }
+} } }
 
 #endif
 

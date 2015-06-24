@@ -40,7 +40,7 @@ namespace ambient {
     void default_allocator<T>::free(void* ptr, memory::descriptor& spec){ ambient::memory::free(ptr, spec); }
 
     template <class T>
-    T* bulk_allocator<T>::allocate(std::size_t n){ return (T*)ambient::memory::malloc<memory::instr_bulk>(n*sizeof(T)); }
+    T* bulk_allocator<T>::allocate(std::size_t n){ return (T*)ambient::memory::malloc<memory::cpu::instr_bulk>(n*sizeof(T)); }
 
     template <class T>
     void bulk_allocator<T>::deallocate(T* p, std::size_t n){ }
