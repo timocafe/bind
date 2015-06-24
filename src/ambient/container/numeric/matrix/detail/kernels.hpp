@@ -672,21 +672,17 @@ namespace ambient { namespace numeric { namespace kernels {
             int m = a.num_rows();
             int info, lwork = -1;
             T wkopt;
-            T* work;
             T* ad = a.data();
             typename real_type<T>::type* wd = w.data();
-       
             mkl::lapack<T>::heev("V","U",&m,ad,&m,wd,&wkopt,&lwork,&info);
-       
+
             typename real_type<T>::type s;
             for(int i = 0; i < (int)(m/2); i++){
-                s = wd[i];
-                wd[i] = wd[m-i-1];
-                wd[m-i-1] = s;
-            } 
+                s = wd[i]; wd[i] = wd[m-1-i]; wd[m-1-i] = s;
+            }
             // reversing eigenvectors
             size_t len = m*sizeof(T);
-            work = (T*)std::malloc(len);
+            T* work = (T*)std::malloc(len);
             for (int i = 0; i < (int)(m/2); i++){
                 std::memcpy(work, &ad[i*m], len);
                 std::memcpy(&ad[i*m], &ad[(m-1-i)*m], len);
@@ -694,7 +690,6 @@ namespace ambient { namespace numeric { namespace kernels {
             }
             std::free(work);
         }
-    
     }
 
     AMBIENT_EXPORT_TEMPLATE(detail::geqrt, geqrt)

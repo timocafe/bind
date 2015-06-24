@@ -27,8 +27,6 @@
 
 namespace ambient { namespace models { namespace ssm {
 
-    using ambient::memory::fixed;
-
     template<typename T> constexpr T op_sqrt (T a) { return std::sqrt(a); }
     template<typename T> constexpr T op_plus (T a, T b){ return a + b; }
     template<typename T> constexpr T op_minus(T a, T b){ return a - b; }
@@ -61,15 +59,15 @@ namespace ambient { namespace models { namespace ssm {
     inline transformable& transformable_value<T>::operator += (transformable& r){ 
         return *new(this)transformable_expr<T, decltype(&op_plus<T>), op_plus>(
                    &r, 
-                   new (ambient::memory::calloc<fixed,sizeof_transformable()>()) transformable_value(*this)
+                   new (ambient::memory::calloc<memory::cpu::fixed,sizeof_transformable()>()) transformable_value(*this)
                );
     }
 
     template <typename T, typename FP, FP OP>
     inline transformable::numeric_union transformable_expr<T,FP,OP>::eval() const {
         this->v = OP(this->l->eval(), this->r->eval());
-        ambient::memory::free<fixed,sizeof_transformable()>((void*)this->l);
-        ambient::memory::free<fixed,sizeof_transformable()>((void*)this->r);
+        ambient::memory::free<memory::cpu::fixed,sizeof_transformable()>((void*)this->l);
+        ambient::memory::free<memory::cpu::fixed,sizeof_transformable()>((void*)this->r);
         new((void*)this)transformable_value<T>(*(transformable_value<T>*)this);
         return this->v;
     }
@@ -78,7 +76,7 @@ namespace ambient { namespace models { namespace ssm {
     inline transformable& transformable_expr<T,FP,OP>::operator += (transformable& r){ 
         return *new(this)transformable_expr<T, decltype(&op_plus<T>), op_plus>(
                    &r, 
-                   new (ambient::memory::calloc<fixed,sizeof_transformable()>()) transformable_expr<T,FP,OP>(*this)
+                   new (ambient::memory::calloc<memory::cpu::fixed,sizeof_transformable()>()) transformable_expr<T,FP,OP>(*this)
                ); 
     }
 

@@ -31,10 +31,10 @@
 namespace ambient { namespace memory { namespace cpu {
 
     template<class T>
-    void* use_fixed_new<T>::operator new (size_t sz){ assert(sz == sizeof(T)); return ambient::memory::malloc<fixed,T>(); }
+    void* use_fixed_new<T>::operator new (size_t sz){ assert(sz == sizeof(T)); return ambient::memory::malloc<memory::cpu::fixed,T>(); }
 
     template<class T>
-    void use_fixed_new<T>::operator delete (void* ptr){ ambient::memory::free<fixed,sizeof(T)>(ptr); }
+    void use_fixed_new<T>::operator delete (void* ptr){ ambient::memory::free<memory::cpu::fixed,sizeof(T)>(ptr); }
 
     template<class T>
     void* use_bulk_new<T>::operator new (size_t sz){ assert(sz == sizeof(T)); return ambient::memory::malloc<memory::cpu::instr_bulk,T>(); }

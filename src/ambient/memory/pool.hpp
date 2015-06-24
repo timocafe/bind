@@ -46,6 +46,10 @@ namespace ambient { namespace memory {
         }
     };
 
+} }
+
+namespace ambient { namespace memory { namespace cpu {
+
     struct fixed {
         // boost::singleton_pool<fixed,S> can be used instead (implicit mutex)
         template<size_t S> static void* malloc(){ return std::malloc(S);   }
@@ -53,12 +57,11 @@ namespace ambient { namespace memory {
         template<size_t S> static void free(void* ptr){ std::free(ptr);    }
     };
 
-} }
+} } }
 
 namespace ambient { namespace memory {
 
     using ambient::memory::data_bulk;
-    using ambient::memory::fixed;
     using ambient::memory::standard;
 
     struct descriptor {

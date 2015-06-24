@@ -75,7 +75,7 @@ namespace ambient { namespace memory {
     }
 
     inline void collector::delete_ptr::operator()( transformable* e ) const {
-        ambient::memory::free<fixed,sizeof_transformable()>(e);
+        ambient::memory::free<memory::cpu::fixed,sizeof_transformable()>(e);
     } 
 
     inline void collector::clear(){
