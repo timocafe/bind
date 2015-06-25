@@ -80,7 +80,7 @@
 #include "ambient/utils/io.hpp"
 
 #include "ambient/memory/pool.hpp"
-#include "ambient/memory/new.h"
+#include "ambient/memory/cpu/new.h"
 #include "ambient/memory/allocator.h"
 
 #include "ambient/models/ssm/locality.h"
@@ -112,10 +112,10 @@
 
 #include "ambient/utils/auxiliary.hpp"
 
-#include "ambient/memory/new.hpp"
+#include "ambient/memory/cpu/new.hpp"
 #include "ambient/memory/allocator.hpp"
-#include "ambient/memory/data_bulk.hpp"
-#include "ambient/memory/instr_bulk.hpp"
+#include "ambient/memory/cpu/data_bulk.hpp"
+#include "ambient/memory/cpu/instr_bulk.hpp"
 
 #include "ambient/models/ssm/revision.hpp"
 #include "ambient/models/ssm/history.hpp"
