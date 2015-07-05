@@ -33,9 +33,9 @@
 namespace ambient {
     template<typename T> class future;
     template<typename T> class default_allocator;
-    using ambient::controllers::ssm::functor;
-    using ambient::models::ssm::history;
-    using ambient::models::ssm::revision;
+    using ambient::controllers::functor;
+    using ambient::models::history;
+    using ambient::models::revision;
 
     // {{{ compile-time type info: singular types + inplace and future specializations
     template <typename T> struct singular_info {

@@ -25,8 +25,8 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef AMBIENT_CONTROLLERS_SSM_BACKBONE_HPP
-#define AMBIENT_CONTROLLERS_SSM_BACKBONE_HPP
+#ifndef AMBIENT_CONTROLLERS_BACKBONE_HPP
+#define AMBIENT_CONTROLLERS_BACKBONE_HPP
 
 namespace ambient { 
 
@@ -96,10 +96,10 @@ namespace ambient {
         inline bool backbone::tunable(){
             return (!get_controller().is_serial() && !has_nested_actor());
         }
-        inline void backbone::intend_read(models::ssm::revision* r){
+        inline void backbone::intend_read(models::revision* r){
             base_actor->intend_read(r); 
         }
-        inline void backbone::intend_write(models::ssm::revision* r){
+        inline void backbone::intend_write(models::revision* r){
             base_actor->intend_write(r); 
         }
         inline void backbone::schedule(){

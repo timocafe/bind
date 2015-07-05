@@ -25,41 +25,36 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef AMBIENT_CONTROLLERS_SSM_SET
-#define AMBIENT_CONTROLLERS_SSM_SET
+namespace ambient { namespace models {
 
-namespace ambient { namespace controllers { namespace ssm {
+    template<ambient::locality L, typename G>
+    void model::add_revision(history* o, G g){
+        o->add_state<L>(g);
+    }
 
-    template<class T> class set {};
+    inline void model::use_revision(history* o){
+        o->back()->use();
+    }
 
-    template<>
-    class set<transformable> : public functor, public memory::cpu::use_bulk_new<set<transformable> > {
-    public:
-        template<class T> using collective = controller::channel_type::collective_type<T>;
-        static void spawn(transformable& v);
-        set(transformable& v);
-        virtual void invoke();
-        virtual bool ready();
-    private:
-        collective<transformable>* handle;
-        transformable& t;
-    };
+    inline void model::touch(const history* o){
+        if(o->back() == NULL)
+            const_cast<history*>(o)->init_state();
+    }
 
-    template<>
-    class set<revision> : public functor, public memory::cpu::use_bulk_new<set<revision> > {
-    public:
-        template<class T> using collective = controller::channel_type::collective_type<T>;
-        static void spawn(revision& r);
-        set(revision& r);
-        virtual void invoke();
-        virtual bool ready();
-        void operator += (rank_t rank);
-    private:
-        collective<revision>* handle;
-        revision& t;
-    };
+    inline bool model::feeds(const revision* r){
+        return (r->state == ambient::locality::local);
+    }
 
-} } }
+    inline bool model::remote(const revision* r){
+        return (r->state == ambient::locality::remote);
+    }
 
-#endif
+    inline bool model::common(const revision* r){
+        return (r->state == ambient::locality::common);
+    }
 
+    inline rank_t model::owner(const revision* r){
+        return r->owner;
+    }
+
+} }

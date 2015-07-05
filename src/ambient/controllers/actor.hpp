@@ -25,8 +25,8 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef AMBIENT_CONTROLLERS_SSM_ACTOR_HPP
-#define AMBIENT_CONTROLLERS_SSM_ACTOR_HPP
+#ifndef AMBIENT_CONTROLLERS_ACTOR_HPP
+#define AMBIENT_CONTROLLERS_ACTOR_HPP
 
 namespace ambient {
 
@@ -84,11 +84,11 @@ namespace ambient {
         this->rank = r;
         this->state = (this->rank == controller->get_rank()) ? ambient::locality::local : ambient::locality::remote;
     }
-    inline void actor_auto::intend_read(models::ssm::revision* r){
+    inline void actor_auto::intend_read(models::revision* r){
         if(r == NULL || model_type::common(r)) return;
         this->scores[model_type::owner(r)] += r->spec.extent;
     }
-    inline void actor_auto::intend_write(models::ssm::revision* r){
+    inline void actor_auto::intend_write(models::revision* r){
         if(r == NULL || model_type::common(r)) return;
         this->stakeholders.push_back(model_type::owner(r));
     }

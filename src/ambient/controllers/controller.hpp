@@ -27,7 +27,7 @@
 
 #include "utils/mem.hpp"
 
-namespace ambient { namespace controllers { namespace ssm {
+namespace ambient { namespace controllers {
 
     inline controller::~controller(){ 
         if(!chains->empty()) printf("Ambient:: exiting with operations still in queue!\n");
@@ -178,4 +178,4 @@ namespace ambient { namespace controllers { namespace ssm {
         return channel;
     }
 
-} } }
+} }

@@ -25,31 +25,32 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifdef AMBIENT_SERIAL_COLLECTION
-#ifndef AMBIENT_CONTROLLERS_SSM_CONTEXT_SERIAL
-#define AMBIENT_CONTROLLERS_SSM_CONTEXT_SERIAL
+#ifndef AMBIENT_CONTROLLERS_SCOPE
+#define AMBIENT_CONTROLLERS_SCOPE
 
-namespace ambient { 
+namespace ambient {
 
-    struct context_serial {
-        typedef controllers::ssm::controller controller_type;
-
-        controller_type controller;
-        std::stack<actor*, std::vector<actor*> > actors;
-        std::stack<scope*, std::vector<scope*> > scopes;
-
-        context_serial& get();
-        void delay_transfer(controllers::ssm::meta* m);
-        bool threaded() const;
-        void init(actor*);
-        void sync();
-        void fork(void*);
-        void join();
-        void diverge(int);
+    class scope {
+    public:
+        typedef std::vector<int> container;
+        typedef container::const_iterator const_iterator;
+        static const_iterator balance(int k, int max_k);
+        static const_iterator permute(int k, const std::vector<int>& s, size_t granularity = 1);
+        static bool nested();
+        static bool local();
+        static scope& top();
+        static size_t size();
+        static const_iterator begin();
+        static const_iterator end();
+       ~scope();
+        scope(const_iterator first, const_iterator last);
+        scope(const_iterator first, size_t size);
+    private:
+        container provision;
+        friend class backbone;
+        scope(size_t np);
     };
 
-    typedef context_serial context;
 }
 
-#endif
 #endif

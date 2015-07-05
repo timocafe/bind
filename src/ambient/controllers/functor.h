@@ -25,21 +25,21 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-namespace ambient { namespace controllers { namespace ssm {
+#ifndef AMBIENT_CONTROLLERS_FUNCTOR
+#define AMBIENT_CONTROLLERS_FUNCTOR
 
-    inline void meta::spawn(revision& r, type t){
-        meta* m = new meta(r, ambient::which(), t);
-        if(t == type::get) r.generator = m;
-        ambient::select().delay_transfer(m);
-    }
-    inline meta::meta(revision& r, rank_t w, type t)
-    : r(r), which(w), t(t)
-    {
-    }
-    inline bool meta::ready(){
-        return false;
-    }
-    inline void meta::invoke(){
-    }
+namespace ambient { namespace controllers {
+    
+    class functor {
+        typedef ambient::bulk_allocator<functor*> allocator;
+    public:
+        virtual void invoke() = 0;
+        virtual bool ready() = 0;
+        void queue(functor* d){ deps.push_back(d); }
+        std::vector<functor*, allocator> deps;
+        void* arguments[1]; // note: trashing the vtptr of derived object
+    };
 
-} } }
+} }
+
+#endif

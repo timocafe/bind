@@ -25,42 +25,11 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifdef AMBIENT_SERIAL_COLLECTION
-#ifndef AMBIENT_CONTROLLERS_SSM_CONTEXT_SERIAL_HPP
-#define AMBIENT_CONTROLLERS_SSM_CONTEXT_SERIAL_HPP
+#ifndef AMBIENT_MODELS_LOCALITY
+#define AMBIENT_MODELS_LOCALITY
 
-namespace ambient { 
-
-    inline void context_serial::init(actor* base_actor){
-        actors.push(base_actor);
-    }
-
-    inline void context_serial::sync(){
-        controller.flush();
-        controller.clear();
-    }
-
-    inline context_serial& context_serial::get(){
-        return *this;
-    }
-
-    inline bool context_serial::threaded() const {
-        return false;
-    }
-
-    inline void context_serial::delay_transfer(controllers::ssm::meta* m){
-    }
-
-    inline void context_serial::fork(void*){
-    }
-
-    inline void context_serial::join(){
-    }
-
-    inline void context_serial::diverge(int){
-    }
-
+namespace ambient {
+    enum class locality { remote, local, common };
 }
 
-#endif
 #endif

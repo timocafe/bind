@@ -25,20 +25,20 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef AMBIENT_CONTROLLERS_SSM_CONTROLLER
-#define AMBIENT_CONTROLLERS_SSM_CONTROLLER
+#ifndef AMBIENT_CONTROLLERS_CONTROLLER
+#define AMBIENT_CONTROLLERS_CONTROLLER
 
 #define AMBIENT_STACK_RESERVE 65536
 
-namespace ambient { namespace controllers { namespace ssm {
+namespace ambient { namespace controllers {
 
-    using ambient::models::ssm::history;
-    using ambient::models::ssm::revision;
-    using ambient::models::ssm::transformable;
+    using ambient::models::history;
+    using ambient::models::revision;
+    using ambient::models::transformable;
 
     class controller {
     public:
-        typedef models::ssm::model model_type;
+        typedef models::model model_type;
         typedef channels::AMBIENT_CHANNEL_NAME::channel channel_type;
         typedef ambient::memory::private_region<AMBIENT_INSTR_BULK_CHUNK, 
                                                ambient::memory::private_factory<AMBIENT_INSTR_BULK_CHUNK> 
@@ -88,6 +88,6 @@ namespace ambient { namespace controllers { namespace ssm {
         ambient::memory::collector garbage;
     };
     
-} } }
+} }
 
 #endif

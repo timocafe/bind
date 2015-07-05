@@ -25,23 +25,36 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef AMBIENT_CONTROLLERS_SSM_META
-#define AMBIENT_CONTROLLERS_SSM_META
+#ifndef AMBIENT_CONTROLLERS_COLLECTOR
+#define AMBIENT_CONTROLLERS_COLLECTOR
 
-namespace ambient { namespace controllers { namespace ssm {
+namespace ambient{ namespace memory {
 
-    class meta : public functor, public memory::cpu::use_bulk_new<meta> {
+    using ambient::models::history;
+    using ambient::models::revision;
+    using ambient::models::transformable;
+
+    class collector {
     public:
-        enum class type { get, set };
-        static void spawn(revision& r, type t);
-        meta(revision& r, rank_t w, type t);
-        virtual void invoke();
-        virtual bool ready();
-        revision& r;
-        rank_t which;
-        type t;
+        struct delete_ptr {
+            void operator()( history* element ) const;
+            void operator()( revision* element ) const;
+            void operator()( transformable* element ) const;
+        };
+
+        void reserve(size_t n);
+        void push_back(history* o);
+        void push_back(revision* o);
+        void push_back(transformable* o);
+        void clear();
+    private:
+        size_t reserve_limit;
+        std::vector< history* >       str;
+        std::vector< revision* >      rev;
+        std::vector< transformable* > raw;
     };
 
-} } }
+} }
 
 #endif
+

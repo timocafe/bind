@@ -25,7 +25,7 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-namespace ambient { namespace controllers { namespace ssm {
+namespace ambient { namespace controllers {
 
     // {{{ transformable
 
@@ -69,4 +69,4 @@ namespace ambient { namespace controllers { namespace ssm {
 
     // }}}
 
-} } }
+} }

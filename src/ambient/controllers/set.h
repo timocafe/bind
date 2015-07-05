@@ -25,25 +25,40 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef AMBIENT_MODELS_SSM_MODEL
-#define AMBIENT_MODELS_SSM_MODEL
+#ifndef AMBIENT_CONTROLLERS_SET
+#define AMBIENT_CONTROLLERS_SET
 
-namespace ambient { namespace models { namespace ssm {
+namespace ambient { namespace controllers {
 
-    class model {
+    template<class T> class set {};
+
+    template<>
+    class set<transformable> : public functor, public memory::cpu::use_bulk_new<set<transformable> > {
     public:
-        model() : clock(1) {}
-        template<ambient::locality L, typename G> 
-        static void add_revision(history* o, G g);
-        static void use_revision(history* o);
-        static bool feeds(const revision* r);
-        static bool remote(const revision* r);
-        static bool common(const revision* r);
-        static void touch(const history* o);
-        static rank_t owner(const revision* r);
-        size_t clock;
+        template<class T> using collective = controller::channel_type::collective_type<T>;
+        static void spawn(transformable& v);
+        set(transformable& v);
+        virtual void invoke();
+        virtual bool ready();
+    private:
+        collective<transformable>* handle;
+        transformable& t;
     };
 
-} } }
+    template<>
+    class set<revision> : public functor, public memory::cpu::use_bulk_new<set<revision> > {
+    public:
+        template<class T> using collective = controller::channel_type::collective_type<T>;
+        static void spawn(revision& r);
+        set(revision& r);
+        virtual void invoke();
+        virtual bool ready();
+        void operator += (rank_t rank);
+    private:
+        collective<revision>* handle;
+        revision& t;
+    };
+
+} }
 
 #endif

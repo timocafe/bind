@@ -25,53 +25,25 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-namespace ambient { namespace models { namespace ssm {
+#ifndef AMBIENT_MODELS_HISTORY
+#define AMBIENT_MODELS_HISTORY
 
-    inline revision::revision(size_t extent, void* g, ambient::locality l, rank_t owner)
-    : spec(extent), generator(g), state(l), 
-      data(NULL), users(0), owner(owner)
-    {
-    }
+// revision tracking mechanism (target selector)
+namespace ambient { namespace models {
 
-    inline void revision::embed(void* ptr){
-        data = ptr;
-    }
+    class history : public memory::cpu::use_fixed_new<history> {
+    public:
+        history(dim2,size_t);
+        void init_state();
+        template<ambient::locality L> void add_state(void* g);
+        template<ambient::locality L> void add_state(rank_t g);
+        revision* back() const;
+        bool weak() const;
+        revision* current;
+        size_t extent;
+        dim2 dim;
+    };
 
-    inline void revision::reuse(revision& r){
-        data = r.data;
-        spec.reuse(r.spec);
-    }
+} }
 
-    inline void revision::use(){
-        ++users;
-    }
-
-    inline void revision::release(){
-        --users;
-    }
-
-    inline void revision::complete(){
-        generator = NULL;
-    }
-
-    inline void revision::invalidate(){
-        data = NULL;
-    }
-
-    inline bool revision::locked() const {
-        return (users != 0);
-    }
-
-    inline bool revision::locked_once() const {
-        return (users == 1);
-    }
-
-    inline bool revision::valid() const {
-        return (data != NULL);
-    }
-
-    inline bool revision::referenced() const {
-        return (spec.crefs != 0);
-    }
-
-} } }
+#endif

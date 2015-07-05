@@ -69,6 +69,7 @@
 #include <type_traits>
 #include <functional>
 #include <utility>
+#include <atomic>
 // }}}
 
 #include "ambient/utils/dim2.hpp"
@@ -83,11 +84,11 @@
 #include "ambient/memory/cpu/new.h"
 #include "ambient/memory/allocator.h"
 
-#include "ambient/models/ssm/locality.h"
-#include "ambient/models/ssm/revision.h"
-#include "ambient/models/ssm/history.h"
-#include "ambient/models/ssm/transformable.h"
-#include "ambient/models/ssm/model.h"
+#include "ambient/models/locality.h"
+#include "ambient/models/revision.h"
+#include "ambient/models/history.h"
+#include "ambient/models/transformable.h"
+#include "ambient/models/model.h"
 
 #ifdef MPI_VERSION
 #include "ambient/channels/mpi/group.h"
@@ -98,17 +99,17 @@
 #include "ambient/channels/nop/channel.h"
 #endif
 
-#include "ambient/controllers/ssm/functor.h"
-#include "ambient/controllers/ssm/collector.h"
-#include "ambient/controllers/ssm/controller.h"
-#include "ambient/controllers/ssm/meta.h"
-#include "ambient/controllers/ssm/get.h"
-#include "ambient/controllers/ssm/set.h"
-#include "ambient/controllers/ssm/scope.h"
-#include "ambient/controllers/ssm/actor.h"
-#include "ambient/controllers/ssm/context_mt.h"
-#include "ambient/controllers/ssm/context_serial.h"
-#include "ambient/controllers/ssm/backbone.h"
+#include "ambient/controllers/functor.h"
+#include "ambient/controllers/collector.h"
+#include "ambient/controllers/controller.h"
+#include "ambient/controllers/meta.h"
+#include "ambient/controllers/get.h"
+#include "ambient/controllers/set.h"
+#include "ambient/controllers/scope.h"
+#include "ambient/controllers/actor.h"
+#include "ambient/controllers/context_mt.h"
+#include "ambient/controllers/context_serial.h"
+#include "ambient/controllers/backbone.h"
 
 #include "ambient/utils/auxiliary.hpp"
 
@@ -117,10 +118,10 @@
 #include "ambient/memory/cpu/data_bulk.hpp"
 #include "ambient/memory/cpu/instr_bulk.hpp"
 
-#include "ambient/models/ssm/revision.hpp"
-#include "ambient/models/ssm/history.hpp"
-#include "ambient/models/ssm/transformable.hpp"
-#include "ambient/models/ssm/model.hpp"
+#include "ambient/models/revision.hpp"
+#include "ambient/models/history.hpp"
+#include "ambient/models/transformable.hpp"
+#include "ambient/models/model.hpp"
 
 #ifdef MPI_VERSION
 #include "ambient/channels/mpi/group.hpp"
@@ -129,16 +130,16 @@
 #include "ambient/channels/mpi/collective.hpp"
 #endif
 
-#include "ambient/controllers/ssm/meta.hpp"
-#include "ambient/controllers/ssm/get.hpp"
-#include "ambient/controllers/ssm/set.hpp"
-#include "ambient/controllers/ssm/collector.hpp"
-#include "ambient/controllers/ssm/controller.hpp"
-#include "ambient/controllers/ssm/scope.hpp"
-#include "ambient/controllers/ssm/actor.hpp"
-#include "ambient/controllers/ssm/context_mt.hpp"
-#include "ambient/controllers/ssm/context_serial.hpp"
-#include "ambient/controllers/ssm/backbone.hpp"
+#include "ambient/controllers/meta.hpp"
+#include "ambient/controllers/get.hpp"
+#include "ambient/controllers/set.hpp"
+#include "ambient/controllers/collector.hpp"
+#include "ambient/controllers/controller.hpp"
+#include "ambient/controllers/scope.hpp"
+#include "ambient/controllers/actor.hpp"
+#include "ambient/controllers/context_mt.hpp"
+#include "ambient/controllers/context_serial.hpp"
+#include "ambient/controllers/backbone.hpp"
 
 #include "ambient/interface/typed.hpp"
 #include "ambient/interface/kernel.hpp"

@@ -25,25 +25,42 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef AMBIENT_MODELS_SSM_HISTORY
-#define AMBIENT_MODELS_SSM_HISTORY
+#ifdef AMBIENT_SERIAL_COLLECTION
+#ifndef AMBIENT_CONTROLLERS_CONTEXT_SERIAL_HPP
+#define AMBIENT_CONTROLLERS_CONTEXT_SERIAL_HPP
 
-// revision tracking mechanism (target selector)
-namespace ambient { namespace models { namespace ssm {
+namespace ambient { 
 
-    class history : public memory::cpu::use_fixed_new<history> {
-    public:
-        history(dim2,size_t);
-        void init_state();
-        template<ambient::locality L> void add_state(void* g);
-        template<ambient::locality L> void add_state(rank_t g);
-        revision* back() const;
-        bool weak() const;
-        revision* current;
-        size_t extent;
-        dim2 dim;
-    };
+    inline void context_serial::init(actor* base_actor){
+        actors.push(base_actor);
+    }
 
-} } }
+    inline void context_serial::sync(){
+        controller.flush();
+        controller.clear();
+    }
 
+    inline context_serial& context_serial::get(){
+        return *this;
+    }
+
+    inline bool context_serial::threaded() const {
+        return false;
+    }
+
+    inline void context_serial::delay_transfer(controllers::meta* m){
+    }
+
+    inline void context_serial::fork(void*){
+    }
+
+    inline void context_serial::join(){
+    }
+
+    inline void context_serial::diverge(int){
+    }
+
+}
+
+#endif
 #endif

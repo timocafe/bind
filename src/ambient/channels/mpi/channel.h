@@ -41,8 +41,8 @@ namespace ambient { namespace channels { namespace mpi {
 
     class channel {
     public:
-        typedef typename ambient::models::ssm::revision block_type;
-        typedef typename ambient::models::ssm::transformable scalar_type;
+        typedef typename ambient::models::revision block_type;
+        typedef typename ambient::models::transformable scalar_type;
         template<class T> using collective_type = collective<T>;
         struct mount {
             mount(); 

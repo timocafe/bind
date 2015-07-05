@@ -26,8 +26,8 @@
  */
 
 #ifndef AMBIENT_SERIAL_COLLECTION
-#ifndef AMBIENT_CONTROLLERS_SSM_CONTEXT_MT_HPP
-#define AMBIENT_CONTROLLERS_SSM_CONTEXT_MT_HPP
+#ifndef AMBIENT_CONTROLLERS_CONTEXT_MT_HPP
+#define AMBIENT_CONTROLLERS_CONTEXT_MT_HPP
 
 namespace ambient { 
 
@@ -94,7 +94,7 @@ namespace ambient {
         }
     }
 
-    inline void context_mt::delay_transfer(controllers::ssm::meta* m){
+    inline void context_mt::delay_transfer(controllers::meta* m){
         threaded_region->transfers[get().offset].push_back(m);
     }
 
@@ -105,14 +105,14 @@ namespace ambient {
         ambient::select().join();
         for(auto& transfers_part : transfers) for(auto& transfer : transfers_part){
             if(!ambient::select().has_nested_actor()) ambient::select().get_base_actor().set(transfer->which);
-            if(transfer->t == controllers::ssm::meta::type::set)
-                controllers::ssm::set<models::ssm::revision>::spawn(transfer->r);
+            if(transfer->t == controllers::meta::type::set)
+                controllers::set<models::revision>::spawn(transfer->r);
             else
-                controllers::ssm::get<models::ssm::revision>::spawn(transfer->r);
+                controllers::get<models::revision>::spawn(transfer->r);
         }
         for(auto& transfers_part : transfers) for(auto& transfer : transfers_part)
-        if(transfer->t == controllers::ssm::meta::type::get){
-            for(auto d : transfer->deps) ((controllers::ssm::functor*)transfer->r.generator.load())->queue(d);
+        if(transfer->t == controllers::meta::type::get){
+            for(auto d : transfer->deps) ((controllers::functor*)transfer->r.generator.load())->queue(d);
         }
     }
 }

@@ -32,7 +32,7 @@
 
 namespace ambient {
 
-    using ambient::models::ssm::revision;
+    using ambient::models::revision;
 
     template<typename V>
     inline void merge(const V& src, V& dst){
@@ -45,7 +45,7 @@ namespace ambient {
             assert(r->spec.region != region_t::delegated);
             r->spec.protect();
         }
-        assert(!r->valid() || !r->spec.bulked() || ambient::models::ssm::model::remote(r)); // can't rely on bulk memory
+        assert(!r->valid() || !r->spec.bulked() || ambient::models::model::remote(r)); // can't rely on bulk memory
         r->spec.crefs++;
     }
 

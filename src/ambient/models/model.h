@@ -25,36 +25,25 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-namespace ambient { namespace models { namespace ssm {
+#ifndef AMBIENT_MODELS_MODEL
+#define AMBIENT_MODELS_MODEL
 
-    template<ambient::locality L, typename G>
-    void model::add_revision(history* o, G g){
-        o->add_state<L>(g);
-    }
+namespace ambient { namespace models {
 
-    inline void model::use_revision(history* o){
-        o->back()->use();
-    }
+    class model {
+    public:
+        model() : clock(1) {}
+        template<ambient::locality L, typename G> 
+        static void add_revision(history* o, G g);
+        static void use_revision(history* o);
+        static bool feeds(const revision* r);
+        static bool remote(const revision* r);
+        static bool common(const revision* r);
+        static void touch(const history* o);
+        static rank_t owner(const revision* r);
+        size_t clock;
+    };
 
-    inline void model::touch(const history* o){
-        if(o->back() == NULL)
-            const_cast<history*>(o)->init_state();
-    }
+} }
 
-    inline bool model::feeds(const revision* r){
-        return (r->state == ambient::locality::local);
-    }
-
-    inline bool model::remote(const revision* r){
-        return (r->state == ambient::locality::remote);
-    }
-
-    inline bool model::common(const revision* r){
-        return (r->state == ambient::locality::common);
-    }
-
-    inline rank_t model::owner(const revision* r){
-        return r->owner;
-    }
-
-} } }
+#endif

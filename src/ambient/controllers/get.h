@@ -25,32 +25,40 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef AMBIENT_CONTROLLERS_SSM_SCOPE
-#define AMBIENT_CONTROLLERS_SSM_SCOPE
+#ifndef AMBIENT_CONTROLLERS_GET
+#define AMBIENT_CONTROLLERS_GET
 
-namespace ambient {
+namespace ambient { namespace controllers {
+    
+    template<class T> class get {};
 
-    class scope {
+    template<>
+    class get<transformable> : public functor, public memory::cpu::use_bulk_new<get<transformable> > {
     public:
-        typedef std::vector<int> container;
-        typedef container::const_iterator const_iterator;
-        static const_iterator balance(int k, int max_k);
-        static const_iterator permute(int k, const std::vector<int>& s, size_t granularity = 1);
-        static bool nested();
-        static bool local();
-        static scope& top();
-        static size_t size();
-        static const_iterator begin();
-        static const_iterator end();
-       ~scope();
-        scope(const_iterator first, const_iterator last);
-        scope(const_iterator first, size_t size);
+        template<class T> using collective = controller::channel_type::collective_type<T>;
+        static void spawn(transformable& v);
+        get(transformable& v);
+        virtual void invoke();
+        virtual bool ready();
     private:
-        container provision;
-        friend class backbone;
-        scope(size_t np);
+        collective<transformable>* handle;
     };
 
-}
+    template<>
+    class get<revision> : public functor, public memory::cpu::use_bulk_new<get<revision> >  {
+    public:
+        template<class T> using collective = controller::channel_type::collective_type<T>;
+        static void spawn(revision& r);
+        get(revision& r);
+        virtual void invoke();
+        virtual bool ready();
+        void operator += (rank_t rank);
+    private:
+        collective<revision>* handle;
+        revision& t;
+    };
+
+} }
 
 #endif
+

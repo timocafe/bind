@@ -25,33 +25,53 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-namespace ambient { namespace models { namespace ssm {
+namespace ambient { namespace models {
 
-    inline history::history(dim2 dim, size_t ts) : current(NULL), dim(dim), extent(ambient::memory::aligned_64(dim.square()*ts)) { }
-
-    inline void history::init_state(){
-        revision* r = new revision(extent, NULL, ambient::locality::common, ambient::rank());
-        this->current = r;
+    inline revision::revision(size_t extent, void* g, ambient::locality l, rank_t owner)
+    : spec(extent), generator(g), state(l), 
+      data(NULL), users(0), owner(owner)
+    {
     }
 
-    template<ambient::locality L>
-    inline void history::add_state(void* g){
-        revision* r = new revision(extent, g, L, ambient::rank());
-        this->current = r;
+    inline void revision::embed(void* ptr){
+        data = ptr;
     }
 
-    template<ambient::locality L>
-    inline void history::add_state(rank_t g){
-        revision* r = new revision(extent, NULL, L, g);
-        this->current = r;
+    inline void revision::reuse(revision& r){
+        data = r.data;
+        spec.reuse(r.spec);
     }
 
-    inline revision* history::back() const {
-        return this->current;
+    inline void revision::use(){
+        ++users;
     }
 
-    inline bool history::weak() const {
-        return (this->back() == NULL);
+    inline void revision::release(){
+        --users;
     }
 
-} } }
+    inline void revision::complete(){
+        generator = NULL;
+    }
+
+    inline void revision::invalidate(){
+        data = NULL;
+    }
+
+    inline bool revision::locked() const {
+        return (users != 0);
+    }
+
+    inline bool revision::locked_once() const {
+        return (users == 1);
+    }
+
+    inline bool revision::valid() const {
+        return (data != NULL);
+    }
+
+    inline bool revision::referenced() const {
+        return (spec.crefs != 0);
+    }
+
+} }

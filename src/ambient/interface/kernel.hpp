@@ -33,7 +33,7 @@
 
 namespace ambient {
 
-    using ambient::controllers::ssm::functor;
+    using ambient::controllers::functor;
 
     template<class K>
     class kernel : public functor {

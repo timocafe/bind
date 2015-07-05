@@ -25,21 +25,39 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef AMBIENT_CONTROLLERS_SSM_FUNCTOR
-#define AMBIENT_CONTROLLERS_SSM_FUNCTOR
+#ifndef AMBIENT_MODELS_REVISION
+#define AMBIENT_MODELS_REVISION
 
-namespace ambient { namespace controllers { namespace ssm {
-    
-    class functor {
-        typedef ambient::bulk_allocator<functor*> allocator;
+namespace ambient { namespace models {
+
+    class revision : public memory::cpu::use_fixed_new<revision> {
     public:
-        virtual void invoke() = 0;
-        virtual bool ready() = 0;
-        void queue(functor* d){ deps.push_back(d); }
-        std::vector<functor*, allocator> deps;
-        void* arguments[1]; // note: trashing the vtptr of derived object
+        template<typename T> operator T* (){ return (T*)data; }
+        operator revision* (){ return NULL; }
+        revision(size_t extent, void* g, ambient::locality l, rank_t owner);
+
+        void embed(void* ptr);
+        void reuse(revision& r);
+
+        void use();
+        void release();
+        void complete();
+        void invalidate();
+
+        bool locked() const;
+        bool locked_once() const;
+        bool valid() const;
+        bool referenced() const;
+
+        std::atomic<void*> generator;
+        void* data;
+        rank_t owner;
+        std::atomic<int> users;
+        ambient::locality state;
+        std::pair<size_t, void*> assist;
+        ambient::memory::descriptor spec;
     };
 
-} } }
+} }
 
 #endif

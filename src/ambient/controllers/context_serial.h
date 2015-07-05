@@ -25,40 +25,31 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef AMBIENT_CONTROLLERS_SSM_GET
-#define AMBIENT_CONTROLLERS_SSM_GET
+#ifdef AMBIENT_SERIAL_COLLECTION
+#ifndef AMBIENT_CONTROLLERS_CONTEXT_SERIAL
+#define AMBIENT_CONTROLLERS_CONTEXT_SERIAL
 
-namespace ambient { namespace controllers { namespace ssm {
-    
-    template<class T> class get {};
+namespace ambient { 
 
-    template<>
-    class get<transformable> : public functor, public memory::cpu::use_bulk_new<get<transformable> > {
-    public:
-        template<class T> using collective = controller::channel_type::collective_type<T>;
-        static void spawn(transformable& v);
-        get(transformable& v);
-        virtual void invoke();
-        virtual bool ready();
-    private:
-        collective<transformable>* handle;
+    struct context_serial {
+        typedef controllers::controller controller_type;
+
+        controller_type controller;
+        std::stack<actor*, std::vector<actor*> > actors;
+        std::stack<scope*, std::vector<scope*> > scopes;
+
+        context_serial& get();
+        void delay_transfer(controllers::meta* m);
+        bool threaded() const;
+        void init(actor*);
+        void sync();
+        void fork(void*);
+        void join();
+        void diverge(int);
     };
 
-    template<>
-    class get<revision> : public functor, public memory::cpu::use_bulk_new<get<revision> >  {
-    public:
-        template<class T> using collective = controller::channel_type::collective_type<T>;
-        static void spawn(revision& r);
-        get(revision& r);
-        virtual void invoke();
-        virtual bool ready();
-        void operator += (rank_t rank);
-    private:
-        collective<revision>* handle;
-        revision& t;
-    };
-
-} } }
+    typedef context_serial context;
+}
 
 #endif
-
+#endif

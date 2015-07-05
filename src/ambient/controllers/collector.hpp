@@ -27,10 +27,10 @@
 
 namespace ambient { namespace memory {
 
-    using ambient::models::ssm::history;
-    using ambient::models::ssm::revision;
-    using ambient::models::ssm::transformable;
-    using ambient::models::ssm::sizeof_transformable;
+    using ambient::models::history;
+    using ambient::models::revision;
+    using ambient::models::transformable;
+    using ambient::models::sizeof_transformable;
 
     inline void collector::reserve(size_t n){
         this->rev.reserve(n);

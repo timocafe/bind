@@ -25,8 +25,8 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef AMBIENT_CONTROLLERS_SSM_BACKBONE
-#define AMBIENT_CONTROLLERS_SSM_BACKBONE
+#ifndef AMBIENT_CONTROLLERS_BACKBONE
+#define AMBIENT_CONTROLLERS_BACKBONE
 
 namespace ambient {
 
@@ -51,8 +51,8 @@ namespace ambient {
         int  generate_sid();
         bool tunable();
         void schedule();
-        void intend_read(models::ssm::revision* o);
-        void intend_write(models::ssm::revision* o);
+        void intend_read(models::revision* o);
+        void intend_write(models::revision* o);
         bool has_nested_actor();
         void pop_scope();
         void push_scope(scope* s);

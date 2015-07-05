@@ -25,45 +25,51 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef AMBIENT_SERIAL_COLLECTION
-#ifndef AMBIENT_CONTROLLERS_SSM_CONTEXT_MT
-#define AMBIENT_CONTROLLERS_SSM_CONTEXT_MT
+#ifndef AMBIENT_CONTROLLERS_ACTOR
+#define AMBIENT_CONTROLLERS_ACTOR
 
-namespace ambient { 
+namespace ambient {
 
-    struct context_mt {
-        typedef controllers::ssm::controller controller_type;
 
-        struct thread_context {
-            controller_type controller;
-            std::stack<actor*, std::vector<actor*> > actors;
-            std::stack<scope*, std::vector<scope*> > scopes;
-            int offset;
-        };
-        
-        struct divergence_guard {
-           ~divergence_guard();
-            divergence_guard(size_t length);
-            std::vector< std::vector<controllers::ssm::meta*> > transfers;
-        };
-
-        context_mt();
-        thread_context& get();
-        const thread_context& get() const;
-        void delay_transfer(controllers::ssm::meta* m);
-        bool threaded() const;
-        void init(actor*);
-        void sync();
-        void fork(divergence_guard*);
-        void join();
-        void diverge(int o);
-
-        std::vector<thread_context> thread_context_lane;
-        divergence_guard* threaded_region;
+    class actor {
+    protected:
+        typedef models::model model_type;
+        typedef controllers::controller controller_type;
+        actor(){}
+    public:
+       ~actor();
+        actor(scope::const_iterator it);
+        bool remote() const;
+        bool local()  const;
+        bool common() const;
+        rank_t which()  const;
+        friend class context_mt;
+        friend class backbone;
+    protected:
+        int factor;
+        int round;
+        rank_t rank;
+        ambient::locality state;
+        controller_type* controller;
     };
 
-    typedef context_mt context;
+    class actor_common : public actor {
+    public:
+        actor_common();
+    };
+
+    class actor_auto : public actor {
+    public:
+        actor_auto(typename actor::controller_type* c);
+        void set(rank_t r);
+        void set(scope::const_iterator it);
+        void schedule();
+        void intend_read(models::revision* o);
+        void intend_write(models::revision* o);
+        mutable std::vector<rank_t> stakeholders;
+        mutable std::vector<int> scores;
+    };
+
 }
 
-#endif
 #endif
