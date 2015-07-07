@@ -27,7 +27,7 @@
 
 namespace ambient { namespace model {
 
-    template<ambient::locality L, typename G>
+    template<locality L, typename G>
     void add_revision(history* o, G g){
         o->add_state<L>(g);
     }
@@ -42,15 +42,15 @@ namespace ambient { namespace model {
     }
 
     inline bool local(const revision* r){
-        return (r->state == ambient::locality::local);
+        return (r->state == locality::local);
     }
 
     inline bool remote(const revision* r){
-        return (r->state == ambient::locality::remote);
+        return (r->state == locality::remote);
     }
 
     inline bool common(const revision* r){
-        return (r->state == ambient::locality::common);
+        return (r->state == locality::common);
     }
 
     inline rank_t owner(const revision* r){

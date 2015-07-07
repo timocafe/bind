@@ -25,36 +25,12 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef AMBIENT_UTILS_TREE
-#define AMBIENT_UTILS_TREE
+#ifndef AMBIENT_CHANNELS_MPI_TREE
+#define AMBIENT_CHANNELS_MPI_TREE
 
 #define BOUNDARY_OVERFLOW -1
 
 namespace ambient {
-
-    /* 
-    // compile-time
-    // full binary tree
-    struct node {
-        constexpr node(int n, node const* left = nullptr, node const* right = nullptr) : n{n}, left{left}, right{right} { }
-        node const* left;
-        node const* right;
-        int n;
-    };
-    constexpr node const* algo(int start, int N, int L){
-        return (N <= 0 || start >= L) ? nullptr : new node(start+N/2, algo(start, N/2, L), algo(start+N/2+1, N-N/2-1, L));
-    }
-
-    // search for rank in binary tree
-    constexpr int algo(int start, int N, int L){
-        return (N <= 0 || start >= L) ? BOUNDARY_OVERFLOW : start+N/2;
-    }
-    constexpr std::pair<int,int> search(int W, int N, int L, int start = 0){
-        return (W == start+N/2) ? std::make_pair(algo(start, N/2, L), algo(start+N/2+1, N-N/2-1, L)) 
-                                : (W < start+N/2 ? search(W, N/2, L, start) 
-                                                 : search(W, N-N/2-1, L, start+N/2+1));
-    }
-    */
 
     template<typename T>
     class binary_tree {

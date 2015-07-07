@@ -73,7 +73,6 @@
 // }}}
 
 #include "ambient/utils/dim2.hpp"
-#include "ambient/utils/tree.hpp"
 #include "ambient/utils/guard_once.hpp"
 #include "ambient/utils/threads.hpp"
 #include "ambient/utils/math.hpp"

@@ -40,16 +40,16 @@ namespace ambient {
         if(! (this->controller = ambient::select().activate(this)) ) return;
         this->round = this->controller->get_num_procs();
         this->rank = (*it) % this->round;
-        this->state = (this->rank == controller->get_rank()) ? ambient::locality::local : ambient::locality::remote;
+        this->state = (this->rank == controller->get_rank()) ? locality::local : locality::remote;
     }
     inline bool actor::remote() const {
-        return (state == ambient::locality::remote);
+        return (state == locality::remote);
     }
     inline bool actor::local() const {
-        return (state == ambient::locality::local);
+        return (state == locality::local);
     }
     inline bool actor::common() const {
-        return (state == ambient::locality::common);
+        return (state == locality::common);
     }
     inline rank_t actor::which() const {
         return this->rank;
@@ -64,7 +64,7 @@ namespace ambient {
             return;
         }
         this->rank = controller->get_shared_rank();
-        this->state = ambient::locality::common;
+        this->state = locality::common;
     }
 
     // }}}
@@ -82,7 +82,7 @@ namespace ambient {
     }
     inline void actor_auto::set(rank_t r){
         this->rank = r;
-        this->state = (this->rank == controller->get_rank()) ? ambient::locality::local : ambient::locality::remote;
+        this->state = (this->rank == controller->get_rank()) ? locality::local : locality::remote;
     }
     inline void actor_auto::intend_read(model::revision* r){
         if(r == NULL || model::common(r)) return;

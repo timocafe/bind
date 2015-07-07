@@ -115,12 +115,12 @@ namespace ambient { namespace controllers {
 
     inline void controller::squeeze(revision* r) const {
         if(r->valid() && !r->referenced() && r->locked_once()){
-            if(r->spec.region == ambient::region_t::standard){
+            if(r->spec.region == region_t::standard){
                 ambient::memory::free(r->data, r->spec);
-                r->spec.region = ambient::region_t::delegated;
-            }else if(r->spec.region == ambient::region_t::bulk){
+                r->spec.region = region_t::delegated;
+            }else if(r->spec.region == region_t::bulk){
                 ambient::memory::cpu::data_bulk::reuse(r->data);
-                r->spec.region = ambient::region_t::delegated;
+                r->spec.region = region_t::delegated;
             }
         }
     }
@@ -133,7 +133,7 @@ namespace ambient { namespace controllers {
         model::use_revision(o);
     }
 
-    template<ambient::locality L, typename G>
+    template<locality L, typename G>
     void controller::add_revision(history* o, G g){
         model::add_revision<L>(o, g);
     }

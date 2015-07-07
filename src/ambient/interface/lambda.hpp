@@ -31,7 +31,7 @@
 namespace ambient {
 
     template<typename F, typename... T>
-    struct lambda_kernel : public ambient::kernel< lambda_kernel<F, T...> > {
+    struct lambda_kernel : public kernel< lambda_kernel<F, T...> > {
         typedef void(*ftype)(T..., F&);
         static void fw(T... args, F& func){ func(args...); }
         static constexpr ftype c = &fw;

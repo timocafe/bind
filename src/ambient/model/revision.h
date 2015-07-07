@@ -34,7 +34,7 @@ namespace ambient { namespace model {
     public:
         template<typename T> operator T* (){ return (T*)data; }
         operator revision* (){ return NULL; }
-        revision(size_t extent, void* g, ambient::locality l, rank_t owner);
+        revision(size_t extent, void* g, locality l, rank_t owner);
 
         void embed(void* ptr);
         void reuse(revision& r);
@@ -53,7 +53,7 @@ namespace ambient { namespace model {
         void* data;
         rank_t owner;
         std::atomic<int> users;
-        ambient::locality state;
+        locality state;
         std::pair<size_t, void*> assist;
         ambient::memory::descriptor spec;
     };

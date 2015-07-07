@@ -30,7 +30,7 @@
 
 namespace ambient {
 
-    using ambient::model::revision;
+    using model::revision;
 
     inline void sync(){
         ambient::select().sync();

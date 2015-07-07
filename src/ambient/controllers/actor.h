@@ -48,7 +48,7 @@ namespace ambient {
         int factor;
         int round;
         rank_t rank;
-        ambient::locality state;
+        locality state;
         controller_type* controller;
     };
 

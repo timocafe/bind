@@ -33,9 +33,9 @@
 namespace ambient {
     template<typename T> class future;
     template<typename T> class default_allocator;
-    using ambient::controllers::functor;
-    using ambient::model::history;
-    using ambient::model::revision;
+    using controllers::functor;
+    using model::history;
+    using model::revision;
 
     // {{{ compile-time type info: singular types + inplace and future specializations
     template <typename T> struct singular_info {
@@ -103,7 +103,7 @@ namespace ambient {
             if(o->back()->owner != ambient::which())
                 ambient::select().get_controller().rsync(o->back());
             ambient::select().get_controller().collect(o->back());
-            ambient::select().get_controller().add_revision<ambient::locality::remote>(o, ambient::which()); 
+            ambient::select().get_controller().add_revision<locality::remote>(o, ambient::which()); 
         }
         template<size_t arg>
         static void modify_local(T& obj, functor* m){
@@ -117,7 +117,7 @@ namespace ambient {
             var->ambient_before = o->current;
             if(o->current->generator != m){
                 ambient::select().get_controller().collect(o->back());
-                ambient::select().get_controller().add_revision<ambient::locality::local>(o, m);
+                ambient::select().get_controller().add_revision<locality::local>(o, m);
             }
             ambient::select().get_controller().use_revision(o);
             var->ambient_after = o->current;
@@ -133,7 +133,7 @@ namespace ambient {
             var->ambient_before = o->current;
             if(o->current->generator != m){
                 ambient::select().get_controller().collect(o->back());
-                ambient::select().get_controller().add_revision<ambient::locality::common>(o, m); 
+                ambient::select().get_controller().add_revision<locality::common>(o, m); 
             }
             ambient::select().get_controller().use_revision(o);
             var->ambient_after = o->current;
@@ -220,7 +220,7 @@ namespace ambient {
             decltype(obj.ambient_rc.desc) o = obj.ambient_rc.desc;
             ambient::select().get_controller().touch(o);
             ambient::select().get_controller().collect(o->back());
-            ambient::select().get_controller().add_revision<ambient::locality::remote>(o, ambient::which()); 
+            ambient::select().get_controller().add_revision<locality::remote>(o, ambient::which()); 
         }
         template<size_t arg> static void modify_local(T& obj, functor* m){
             decltype(obj.ambient_rc.desc) o = obj.ambient_rc.desc;
@@ -231,7 +231,7 @@ namespace ambient {
             ambient::select().get_controller().collect(o->back());
 
             var->ambient_before = o->current;
-            ambient::select().get_controller().add_revision<ambient::locality::local>(o, m); 
+            ambient::select().get_controller().add_revision<locality::local>(o, m); 
             ambient::select().get_controller().use_revision(o);
             var->ambient_after = o->current;
         }
@@ -243,7 +243,7 @@ namespace ambient {
             ambient::select().get_controller().collect(o->back());
 
             var->ambient_before = o->current;
-            ambient::select().get_controller().add_revision<ambient::locality::common>(o, m); 
+            ambient::select().get_controller().add_revision<locality::common>(o, m); 
             ambient::select().get_controller().use_revision(o);
             var->ambient_after = o->current;
         }

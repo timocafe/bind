@@ -32,9 +32,9 @@
 
 namespace ambient { namespace controllers {
 
-    using ambient::model::history;
-    using ambient::model::revision;
-    using ambient::model::transformable;
+    using model::history;
+    using model::revision;
+    using model::transformable;
 
     class controller {
     public:
@@ -60,7 +60,7 @@ namespace ambient { namespace controllers {
 
         void touch(const history* o);
         void use_revision(history* o);
-        template<ambient::locality L, typename G>
+        template<locality L, typename G>
         void add_revision(history* o, G g);
 
         void fence() const;

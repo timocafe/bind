@@ -40,8 +40,8 @@ namespace ambient { namespace channels { namespace nop {
 
     class channel {
     public:
-        typedef typename ambient::model::revision block_type;
-        typedef typename ambient::model::transformable scalar_type;
+        typedef typename model::revision block_type;
+        typedef typename model::transformable scalar_type;
         template<class T> using collective_type = collective<T>;
         size_t dim() const { return 1; }
         static void barrier(){}

@@ -27,10 +27,10 @@
 
 namespace ambient { namespace memory {
 
-    using ambient::model::history;
-    using ambient::model::revision;
-    using ambient::model::transformable;
-    using ambient::model::sizeof_transformable;
+    using model::history;
+    using model::revision;
+    using model::transformable;
+    using model::sizeof_transformable;
 
     inline void collector::reserve(size_t n){
         this->rev.reserve(n);
@@ -42,16 +42,16 @@ namespace ambient { namespace memory {
     }
 
     inline void collector::push_back(revision* r){
-        if(!r->valid() && r->state != ambient::locality::remote){
+        if(!r->valid() && r->state != locality::remote){
             assert(r->spec.region != region_t::bulk);
             assert(r->spec.region != region_t::delegated);
             r->spec.weaken();
         }
         r->spec.crefs--;
         if(!r->referenced()){ // squeeze
-            if(r->valid() && !r->locked() && r->spec.region == ambient::region_t::standard){
+            if(r->valid() && !r->locked() && r->spec.region == region_t::standard){
                 ambient::memory::free(r->data, r->spec); // artifacts or last one
-                r->spec.region = ambient::region_t::delegated;
+                r->spec.region = region_t::delegated;
             }
             this->rev.push_back(r);
         }
@@ -63,9 +63,9 @@ namespace ambient { namespace memory {
     }
 
     inline void collector::delete_ptr::operator()( revision* r ) const {
-        if(r->valid() && r->spec.region == ambient::region_t::standard){
+        if(r->valid() && r->spec.region == region_t::standard){
             ambient::memory::free(r->data, r->spec); // artifacts
-            r->spec.region = ambient::region_t::delegated;
+            r->spec.region = region_t::delegated;
         }
         delete r; 
     }

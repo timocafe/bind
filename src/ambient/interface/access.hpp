@@ -32,7 +32,7 @@
 
 namespace ambient {
 
-    using ambient::model::revision;
+    using model::revision;
 
     namespace ext {
 
@@ -44,11 +44,11 @@ namespace ambient {
             ambient::select().get_controller().touch(obj.ambient_rc.desc);
             revision& c = *obj.ambient_rc.desc->current;
             if(ambient::select().get_actor().remote()){
-                c.state = ambient::locality::remote;
+                c.state = locality::remote;
                 c.owner = ambient::which();
                 return true;
             }else{
-                c.state = ambient::locality::local;
+                c.state = locality::local;
                 if(!c.valid()) c.embed(get_allocator<T>::type::alloc(c.spec));
                 return false;
             }
@@ -75,7 +75,7 @@ namespace ambient {
         revision* r = src.ambient_rc.desc->back();
         dst.ambient_rc.desc->current = r;
         // do not deallocate or reuse
-        if(!r->valid() && r->state != ambient::locality::remote){
+        if(!r->valid() && r->state != locality::remote){
             assert(r->spec.region != region_t::delegated);
             r->spec.protect();
         }
@@ -87,7 +87,7 @@ namespace ambient {
         ambient::select().get_controller().touch(obj.ambient_rc.desc);
         ambient::sync(); 
         revision& c = *obj.ambient_rc.desc->current;
-        assert(c.state == ambient::locality::local || c.state == ambient::locality::common);
+        assert(c.state == locality::local || c.state == locality::common);
         if(!c.valid()) c.embed(get_allocator<T>::type::calloc(c.spec));
         obj.ambient_after = obj.ambient_rc.desc->current;
         return obj;

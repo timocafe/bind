@@ -35,8 +35,8 @@ namespace ambient { namespace model {
     public:
         history(dim2,size_t);
         void init_state();
-        template<ambient::locality L> void add_state(void* g);
-        template<ambient::locality L> void add_state(rank_t g);
+        template<locality L> void add_state(void* g);
+        template<locality L> void add_state(rank_t g);
         revision* back() const;
         bool weak() const;
         revision* current;
