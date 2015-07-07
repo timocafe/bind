@@ -25,8 +25,8 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef AMBIENT_UTILS_THREADS
-#define AMBIENT_UTILS_THREADS
+#ifndef AMBIENT_UTILS_THREADING
+#define AMBIENT_UTILS_THREADING
 
 #define CILK    1
 #define OPENMP  2
@@ -41,11 +41,37 @@
 #endif
 
 #if AMBIENT_THREADING == CILK
-#include "ambient/utils/threads/cilk.hpp"
+  #include <cilk/cilk.h>
+  #include <cilk/cilk_api.h>
+  #define AMBIENT_CILK
+  #define AMBIENT_THREADING_TAGLINE "using cilk"
+  #define AMBIENT_NUM_THREADS __cilkrts_get_nworkers()
+  #define AMBIENT_THREAD_ID __cilkrts_get_worker_number()
+  #define AMBIENT_THREAD cilk_spawn
+  #define AMBIENT_SMP_ENABLE
+  #define AMBIENT_SMP_DISABLE cilk_sync;
+  #define AMBIENT_PARALLEL_FOR(...) cilk_for(__VA_ARGS__)
 #elif AMBIENT_THREADING == OPENMP
-#include "ambient/utils/threads/openmp.hpp"
+  #include <omp.h>
+  #define AMBIENT_OMP
+  #define AMBIENT_THREADING_TAGLINE "using openmp"
+  #define AMBIENT_THREAD_ID omp_get_thread_num()
+  #define AMBIENT_PRAGMA(a) _Pragma( #a )
+  #define AMBIENT_THREAD AMBIENT_PRAGMA(omp task untied)
+  #define AMBIENT_PARALLEL_FOR(...) AMBIENT_PRAGMA(omp parallel for schedule(dynamic, 1)) for(__VA_ARGS__)
+  #define AMBIENT_SMP_ENABLE AMBIENT_PRAGMA(omp parallel) { AMBIENT_PRAGMA(omp single nowait)
+  #define AMBIENT_SMP_DISABLE }
+  #define AMBIENT_NUM_THREADS [&]()->int{ int n; AMBIENT_SMP_ENABLE \
+                              { n = omp_get_num_threads(); } \
+                              AMBIENT_SMP_DISABLE return n; }()
 #else
-#include "ambient/utils/threads/serial.hpp"
+  #define AMBIENT_PARALLEL_FOR(...) for(__VA_ARGS__)
+  #define AMBIENT_THREADING_TAGLINE "no threading"
+  #define AMBIENT_NUM_THREADS 1
+  #define AMBIENT_THREAD_ID   0
+  #define AMBIENT_THREAD
+  #define AMBIENT_SMP_ENABLE
+  #define AMBIENT_SMP_DISABLE
 #endif
 
 namespace ambient {
@@ -55,4 +81,3 @@ namespace ambient {
 }
 
 #endif
-
