@@ -33,7 +33,6 @@ namespace ambient {
 
     class actor {
     protected:
-        typedef models::model model_type;
         typedef controllers::controller controller_type;
         actor(){}
     public:
@@ -64,8 +63,8 @@ namespace ambient {
         void set(rank_t r);
         void set(scope::const_iterator it);
         void schedule();
-        void intend_read(models::revision* o);
-        void intend_write(models::revision* o);
+        void intend_read(model::revision* o);
+        void intend_write(model::revision* o);
         mutable std::vector<rank_t> stakeholders;
         mutable std::vector<int> scores;
     };

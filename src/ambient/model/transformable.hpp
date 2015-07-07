@@ -25,7 +25,7 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-namespace ambient { namespace models {
+namespace ambient { namespace model {
 
     template<typename T> constexpr T op_sqrt (T a) { return std::sqrt(a); }
     template<typename T> constexpr T op_plus (T a, T b){ return a + b; }

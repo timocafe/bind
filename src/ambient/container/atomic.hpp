@@ -28,6 +28,8 @@
 #ifndef AMBIENT_CONTAINER_ATOMIC_HPP
 #define AMBIENT_CONTAINER_ATOMIC_HPP
 
+#include "utils/export.hpp"
+
 namespace ambient {
 
     // atomic: single value of T that has versioning symantics
@@ -111,7 +113,7 @@ namespace ambient {
 
     template<class T, class Allocator>
     void atomic<T,Allocator>::swap(atomic<T,Allocator>& r){
-        ambient::swap_with(*this, r);
+        ambient::ext::swap(*this, r);
     }
 
     template<typename T, class Allocator>

@@ -30,11 +30,11 @@
 
 namespace ambient {
 
-    using ambient::models::transformable;
-    using ambient::models::transformable_expr;
-    using ambient::models::transformable_value;
-    using ambient::models::sizeof_transformable;
-    using ambient::models::op_plus;
+    using ambient::model::transformable;
+    using ambient::model::transformable_expr;
+    using ambient::model::transformable_value;
+    using ambient::model::sizeof_transformable;
+    using ambient::model::op_plus;
 
     template <typename T>
     class future {

@@ -51,8 +51,8 @@ namespace ambient {
         int  generate_sid();
         bool tunable();
         void schedule();
-        void intend_read(models::revision* o);
-        void intend_write(models::revision* o);
+        void intend_read(model::revision* o);
+        void intend_write(model::revision* o);
         bool has_nested_actor();
         void pop_scope();
         void push_scope(scope* s);

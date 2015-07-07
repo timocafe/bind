@@ -25,23 +25,23 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef AMBIENT_MODELS_MODEL
-#define AMBIENT_MODELS_MODEL
+#ifndef AMBIENT_MODEL_HISTORY
+#define AMBIENT_MODEL_HISTORY
 
-namespace ambient { namespace models {
+// revision tracking mechanism (target selector)
+namespace ambient { namespace model {
 
-    class model {
+    class history : public memory::cpu::use_fixed_new<history> {
     public:
-        model() : clock(1) {}
-        template<ambient::locality L, typename G> 
-        static void add_revision(history* o, G g);
-        static void use_revision(history* o);
-        static bool feeds(const revision* r);
-        static bool remote(const revision* r);
-        static bool common(const revision* r);
-        static void touch(const history* o);
-        static rank_t owner(const revision* r);
-        size_t clock;
+        history(dim2,size_t);
+        void init_state();
+        template<ambient::locality L> void add_state(void* g);
+        template<ambient::locality L> void add_state(rank_t g);
+        revision* back() const;
+        bool weak() const;
+        revision* current;
+        size_t extent;
+        dim2 dim;
     };
 
 } }

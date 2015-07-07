@@ -34,8 +34,8 @@ namespace ambient {
     template<typename T> class future;
     template<typename T> class default_allocator;
     using ambient::controllers::functor;
-    using ambient::models::history;
-    using ambient::models::revision;
+    using ambient::model::history;
+    using ambient::model::revision;
 
     // {{{ compile-time type info: singular types + inplace and future specializations
     template <typename T> struct singular_info {
@@ -140,7 +140,7 @@ namespace ambient {
         }
         template<size_t arg>
         static T& revised(functor* m){ 
-            EXTRACT(o); revise(*o); transform(*o);
+            EXTRACT(o); revise(*o);
             return *o;
         }
         template<size_t arg> 

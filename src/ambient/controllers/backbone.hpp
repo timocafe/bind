@@ -96,10 +96,10 @@ namespace ambient {
         inline bool backbone::tunable(){
             return (!get_controller().is_serial() && !has_nested_actor());
         }
-        inline void backbone::intend_read(models::revision* r){
+        inline void backbone::intend_read(model::revision* r){
             base_actor->intend_read(r); 
         }
-        inline void backbone::intend_write(models::revision* r){
+        inline void backbone::intend_write(model::revision* r){
             base_actor->intend_write(r); 
         }
         inline void backbone::schedule(){

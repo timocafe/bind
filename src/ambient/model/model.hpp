@@ -25,15 +25,36 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef AMBIENT_UTILS_TRACE
-#define AMBIENT_UTILS_TRACE
+namespace ambient { namespace model {
 
-namespace ambient {
-
-    inline void trace(){ 
-        void* b[15]; backtrace_symbols_fd(b,backtrace(b,15),2);
+    template<ambient::locality L, typename G>
+    void add_revision(history* o, G g){
+        o->add_state<L>(g);
     }
 
-}
+    inline void use_revision(history* o){
+        o->back()->use();
+    }
 
-#endif
+    inline void touch(const history* o){
+        if(o->back() == NULL)
+            const_cast<history*>(o)->init_state();
+    }
+
+    inline bool local(const revision* r){
+        return (r->state == ambient::locality::local);
+    }
+
+    inline bool remote(const revision* r){
+        return (r->state == ambient::locality::remote);
+    }
+
+    inline bool common(const revision* r){
+        return (r->state == ambient::locality::common);
+    }
+
+    inline rank_t owner(const revision* r){
+        return r->owner;
+    }
+
+} }

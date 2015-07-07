@@ -28,6 +28,8 @@
 #ifndef AMBIENT_CONTAINER_BLOCK
 #define AMBIENT_CONTAINER_BLOCK
 
+#include "utils/export.hpp"
+
 namespace ambient {
      
     template<typename T> class block;

@@ -32,13 +32,12 @@
 
 namespace ambient { namespace controllers {
 
-    using ambient::models::history;
-    using ambient::models::revision;
-    using ambient::models::transformable;
+    using ambient::model::history;
+    using ambient::model::revision;
+    using ambient::model::transformable;
 
     class controller {
     public:
-        typedef models::model model_type;
         typedef channels::AMBIENT_CHANNEL_NAME::channel channel_type;
         typedef ambient::memory::private_region<AMBIENT_INSTR_BULK_CHUNK, 
                                                ambient::memory::private_factory<AMBIENT_INSTR_BULK_CHUNK> 
@@ -77,7 +76,7 @@ namespace ambient { namespace controllers {
 
         memory_type memory;
     private:
-        model_type model;
+        size_t clock;
         channel_type channel;
         std::vector< functor* > stack_m;
         std::vector< functor* > stack_s;

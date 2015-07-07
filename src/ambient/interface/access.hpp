@@ -32,7 +32,41 @@
 
 namespace ambient {
 
-    using ambient::models::revision;
+    using ambient::model::revision;
+
+    namespace ext {
+
+        template <typename T> static revision& naked(T& obj){
+            return *obj.ambient_rc.desc->current;
+        }
+
+        template <typename T> static bool exclusive(T& obj){
+            ambient::select().get_controller().touch(obj.ambient_rc.desc);
+            revision& c = *obj.ambient_rc.desc->current;
+            if(ambient::select().get_actor().remote()){
+                c.state = ambient::locality::remote;
+                c.owner = ambient::which();
+                return true;
+            }else{
+                c.state = ambient::locality::local;
+                if(!c.valid()) c.embed(get_allocator<T>::type::alloc(c.spec));
+                return false;
+            }
+        }
+
+        template<typename V>
+        void swap(V& left, V& right){
+            // swapping allocators should be better
+            std::swap(left.ambient_rc.desc, right.ambient_rc.desc);
+            left.ambient_after = left.ambient_rc.desc->current;
+            right.ambient_after = right.ambient_rc.desc->current;
+        }
+
+        template <typename T> static void transform(const T& obj){
+            if(!is_polymorphic<T>::value) return;
+            new ((void*)&obj) typename get_async_type<T>::type();
+        }
+    }
 
     template<typename V>
     inline void merge(const V& src, V& dst){
@@ -45,33 +79,8 @@ namespace ambient {
             assert(r->spec.region != region_t::delegated);
             r->spec.protect();
         }
-        assert(!r->valid() || !r->spec.bulked() || ambient::models::model::remote(r)); // can't rely on bulk memory
+        assert(!r->valid() || !r->spec.bulked() || model::remote(r)); // can't rely on bulk memory
         r->spec.crefs++;
-    }
-
-    template<typename V>
-    inline void swap_with(V& left, V& right){
-        std::swap(left.ambient_rc.desc, right.ambient_rc.desc);
-        left.ambient_after = left.ambient_rc.desc->current;
-        right.ambient_after = right.ambient_rc.desc->current;
-    }
-
-    template <typename T> static revision& naked(T& obj){
-        return *obj.ambient_rc.desc->current;
-    }
-
-    template <typename T> static bool exclusive(T& obj){
-        ambient::select().get_controller().touch(obj.ambient_rc.desc);
-        revision& c = *obj.ambient_rc.desc->current;
-        if(ambient::select().get_actor().remote()){
-            c.state = ambient::locality::remote;
-            c.owner = ambient::which();
-            return true;
-        }else{
-            c.state = ambient::locality::local;
-            if(!c.valid()) c.embed(get_allocator<T>::type::alloc(c.spec));
-            return false;
-        }
     }
 
     template <typename T> static T& load(T& obj){ 
@@ -88,17 +97,14 @@ namespace ambient {
         return *(mapping*)(*obj.ambient_after);
     }
 
-    template <typename T> static void transform(const T& obj){
-        if(!is_polymorphic<T>::value) return;
-        new ((void*)&obj) typename get_async_type<T>::type();
-    }
-
     template <typename T> static void revise(const T& obj){
+        ext::transform(obj);
         revision& c = *obj.ambient_before; if(c.valid()) return;
         c.embed(get_allocator<T>::type::calloc(c.spec));
     }
 
     template <typename T> static void revise(volatile T& obj){
+        ext::transform(obj);
         revision& c = *obj.ambient_after; if(c.valid()) return;
         revision& p = *obj.ambient_before;
         if(p.valid() && p.locked_once() && !p.referenced() && c.spec.conserves(p.spec)) c.reuse(p);
@@ -106,6 +112,7 @@ namespace ambient {
     }
 
     template <typename T> static void revise(T& obj){
+        ext::transform(obj);
         revision& c = *obj.ambient_after; if(c.valid()) return;
         revision& p = *obj.ambient_before;
         if(!p.valid()) c.embed(get_allocator<T>::type::calloc(c.spec));

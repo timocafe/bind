@@ -106,9 +106,9 @@ namespace ambient {
         for(auto& transfers_part : transfers) for(auto& transfer : transfers_part){
             if(!ambient::select().has_nested_actor()) ambient::select().get_base_actor().set(transfer->which);
             if(transfer->t == controllers::meta::type::set)
-                controllers::set<models::revision>::spawn(transfer->r);
+                controllers::set<model::revision>::spawn(transfer->r);
             else
-                controllers::get<models::revision>::spawn(transfer->r);
+                controllers::get<model::revision>::spawn(transfer->r);
         }
         for(auto& transfers_part : transfers) for(auto& transfer : transfers_part)
         if(transfer->t == controllers::meta::type::get){

@@ -34,6 +34,8 @@
 #include "ambient/container/numeric/bindings/mkl.hpp"
 #include "ambient/container/numeric/bindings/plasma.hpp"
 
+#include "utils/export.hpp"
+
 namespace ambient { namespace numeric { namespace kernels {
     namespace detail {
 

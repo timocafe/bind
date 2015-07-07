@@ -1,5 +1,6 @@
 #include "ambient/ambient.hpp"
 #include "ambient/utils/math.hpp"
+#include "utils/export.hpp"
 #include "utils/timer.hpp"
 #define IB 256
 

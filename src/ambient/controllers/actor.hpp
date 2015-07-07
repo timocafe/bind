@@ -84,13 +84,13 @@ namespace ambient {
         this->rank = r;
         this->state = (this->rank == controller->get_rank()) ? ambient::locality::local : ambient::locality::remote;
     }
-    inline void actor_auto::intend_read(models::revision* r){
-        if(r == NULL || model_type::common(r)) return;
-        this->scores[model_type::owner(r)] += r->spec.extent;
+    inline void actor_auto::intend_read(model::revision* r){
+        if(r == NULL || model::common(r)) return;
+        this->scores[model::owner(r)] += r->spec.extent;
     }
-    inline void actor_auto::intend_write(models::revision* r){
-        if(r == NULL || model_type::common(r)) return;
-        this->stakeholders.push_back(model_type::owner(r));
+    inline void actor_auto::intend_write(model::revision* r){
+        if(r == NULL || model::common(r)) return;
+        this->stakeholders.push_back(model::owner(r));
     }
     inline void actor_auto::schedule(){
         int max = 0;

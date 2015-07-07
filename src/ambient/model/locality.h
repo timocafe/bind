@@ -25,25 +25,11 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef AMBIENT_MODELS_HISTORY
-#define AMBIENT_MODELS_HISTORY
+#ifndef AMBIENT_MODEL_LOCALITY
+#define AMBIENT_MODEL_LOCALITY
 
-// revision tracking mechanism (target selector)
-namespace ambient { namespace models {
-
-    class history : public memory::cpu::use_fixed_new<history> {
-    public:
-        history(dim2,size_t);
-        void init_state();
-        template<ambient::locality L> void add_state(void* g);
-        template<ambient::locality L> void add_state(rank_t g);
-        revision* back() const;
-        bool weak() const;
-        revision* current;
-        size_t extent;
-        dim2 dim;
-    };
-
-} }
+namespace ambient {
+    enum class locality { remote, local, common };
+}
 
 #endif

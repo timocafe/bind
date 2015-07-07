@@ -28,6 +28,8 @@
 #ifndef AMBIENT_CONTAINER_VECTOR_DETAIL_HPP
 #define AMBIENT_CONTAINER_VECTOR_DETAIL_HPP
 
+#include "utils/export.hpp"
+
 namespace ambient {
      
     template<class T, class Allocator> class vector;

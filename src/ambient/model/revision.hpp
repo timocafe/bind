@@ -25,36 +25,53 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-namespace ambient { namespace models {
+namespace ambient { namespace model {
 
-    template<ambient::locality L, typename G>
-    void model::add_revision(history* o, G g){
-        o->add_state<L>(g);
+    inline revision::revision(size_t extent, void* g, ambient::locality l, rank_t owner)
+    : spec(extent), generator(g), state(l), 
+      data(NULL), users(0), owner(owner)
+    {
     }
 
-    inline void model::use_revision(history* o){
-        o->back()->use();
+    inline void revision::embed(void* ptr){
+        data = ptr;
     }
 
-    inline void model::touch(const history* o){
-        if(o->back() == NULL)
-            const_cast<history*>(o)->init_state();
+    inline void revision::reuse(revision& r){
+        data = r.data;
+        spec.reuse(r.spec);
     }
 
-    inline bool model::feeds(const revision* r){
-        return (r->state == ambient::locality::local);
+    inline void revision::use(){
+        ++users;
     }
 
-    inline bool model::remote(const revision* r){
-        return (r->state == ambient::locality::remote);
+    inline void revision::release(){
+        --users;
     }
 
-    inline bool model::common(const revision* r){
-        return (r->state == ambient::locality::common);
+    inline void revision::complete(){
+        generator = NULL;
     }
 
-    inline rank_t model::owner(const revision* r){
-        return r->owner;
+    inline void revision::invalidate(){
+        data = NULL;
+    }
+
+    inline bool revision::locked() const {
+        return (users != 0);
+    }
+
+    inline bool revision::locked_once() const {
+        return (users == 1);
+    }
+
+    inline bool revision::valid() const {
+        return (data != NULL);
+    }
+
+    inline bool revision::referenced() const {
+        return (spec.crefs != 0);
     }
 
 } }

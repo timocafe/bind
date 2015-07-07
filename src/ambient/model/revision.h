@@ -25,33 +25,39 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-namespace ambient { namespace models {
+#ifndef AMBIENT_MODEL_REVISION
+#define AMBIENT_MODEL_REVISION
 
-    inline history::history(dim2 dim, size_t ts) : current(NULL), dim(dim), extent(ambient::memory::aligned_64(dim.square()*ts)) { }
+namespace ambient { namespace model {
 
-    inline void history::init_state(){
-        revision* r = new revision(extent, NULL, ambient::locality::common, ambient::rank());
-        this->current = r;
-    }
+    class revision : public memory::cpu::use_fixed_new<revision> {
+    public:
+        template<typename T> operator T* (){ return (T*)data; }
+        operator revision* (){ return NULL; }
+        revision(size_t extent, void* g, ambient::locality l, rank_t owner);
 
-    template<ambient::locality L>
-    inline void history::add_state(void* g){
-        revision* r = new revision(extent, g, L, ambient::rank());
-        this->current = r;
-    }
+        void embed(void* ptr);
+        void reuse(revision& r);
 
-    template<ambient::locality L>
-    inline void history::add_state(rank_t g){
-        revision* r = new revision(extent, NULL, L, g);
-        this->current = r;
-    }
+        void use();
+        void release();
+        void complete();
+        void invalidate();
 
-    inline revision* history::back() const {
-        return this->current;
-    }
+        bool locked() const;
+        bool locked_once() const;
+        bool valid() const;
+        bool referenced() const;
 
-    inline bool history::weak() const {
-        return (this->back() == NULL);
-    }
+        std::atomic<void*> generator;
+        void* data;
+        rank_t owner;
+        std::atomic<int> users;
+        ambient::locality state;
+        std::pair<size_t, void*> assist;
+        ambient::memory::descriptor spec;
+    };
 
 } }
+
+#endif

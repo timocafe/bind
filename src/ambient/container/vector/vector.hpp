@@ -124,7 +124,7 @@ namespace ambient {
 
     template<class T, class Allocator>
     void vector<T,Allocator>::swap(vector<T,Allocator>& r){
-        ambient::swap_with(*this, r);
+        ambient::ext::swap(*this, r);
         std::swap(this->cached_size_, r.cached_size_);
     }
 

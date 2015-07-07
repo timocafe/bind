@@ -84,11 +84,10 @@
 #include "ambient/memory/cpu/new.h"
 #include "ambient/memory/allocator.h"
 
-#include "ambient/models/locality.h"
-#include "ambient/models/revision.h"
-#include "ambient/models/history.h"
-#include "ambient/models/transformable.h"
-#include "ambient/models/model.h"
+#include "ambient/model/locality.h"
+#include "ambient/model/revision.h"
+#include "ambient/model/history.h"
+#include "ambient/model/transformable.h"
 
 #ifdef MPI_VERSION
 #include "ambient/channels/mpi/group.h"
@@ -118,10 +117,10 @@
 #include "ambient/memory/cpu/data_bulk.hpp"
 #include "ambient/memory/cpu/instr_bulk.hpp"
 
-#include "ambient/models/revision.hpp"
-#include "ambient/models/history.hpp"
-#include "ambient/models/transformable.hpp"
-#include "ambient/models/model.hpp"
+#include "ambient/model/revision.hpp"
+#include "ambient/model/history.hpp"
+#include "ambient/model/transformable.hpp"
+#include "ambient/model/model.hpp"
 
 #ifdef MPI_VERSION
 #include "ambient/channels/mpi/group.hpp"

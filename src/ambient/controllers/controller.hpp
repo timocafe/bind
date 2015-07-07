@@ -34,7 +34,7 @@ namespace ambient { namespace controllers {
         this->clear();
     }
 
-    inline controller::controller() : chains(&stack_m), mirror(&stack_s) {}
+    inline controller::controller() : chains(&stack_m), mirror(&stack_s), clock(1) {}
 
     inline void controller::reserve(){
         this->stack_m.reserve(AMBIENT_STACK_RESERVE);
@@ -56,7 +56,7 @@ namespace ambient { namespace controllers {
             std::swap(chains,mirror);
         }
         AMBIENT_SMP_DISABLE
-        model.clock++;
+        clock++;
         fence();
     }
 
@@ -75,8 +75,8 @@ namespace ambient { namespace controllers {
     }
 
     inline bool controller::update(revision& r){
-        if(r.assist.first != model.clock){
-            r.assist.first = model.clock;
+        if(r.assist.first != clock){
+            r.assist.first = clock;
             return true;
         }
         return false;
@@ -84,19 +84,19 @@ namespace ambient { namespace controllers {
 
     inline void controller::sync(revision* r){
         if(is_serial()) return;
-        if(model.common(r)) return;
-        if(model.feeds(r)) set<revision>::spawn(*r);
+        if(model::common(r)) return;
+        if(model::local(r)) set<revision>::spawn(*r);
         else get<revision>::spawn(*r);
     }
 
     inline void controller::lsync(revision* r){
-        if(model.common(r)) return;
-        if(!model.feeds(r)) get<revision>::spawn(*r);
+        if(model::common(r)) return;
+        if(!model::local(r)) get<revision>::spawn(*r);
     }
 
     inline void controller::rsync(revision* r){
-        if(model.common(r)) return;
-        if(model.feeds(r)) set<revision>::spawn(*r);
+        if(model::common(r)) return;
+        if(model::local(r)) set<revision>::spawn(*r);
         else get<revision>::spawn(*r); // assist
     }
 
@@ -126,16 +126,16 @@ namespace ambient { namespace controllers {
     }
 
     inline void controller::touch(const history* o){
-        model.touch(o);
+        model::touch(o);
     }
 
     inline void controller::use_revision(history* o){
-        model.use_revision(o);
+        model::use_revision(o);
     }
 
     template<ambient::locality L, typename G>
     void controller::add_revision(history* o, G g){
-        model.add_revision<L>(o, g);
+        model::add_revision<L>(o, g);
     }
 
     inline int controller::get_tag_ub() const {

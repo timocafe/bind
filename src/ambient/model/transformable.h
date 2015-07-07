@@ -25,10 +25,10 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef AMBIENT_MODELS_TRANSFORMABLE
-#define AMBIENT_MODELS_TRANSFORMABLE
+#ifndef AMBIENT_MODEL_TRANSFORMABLE
+#define AMBIENT_MODEL_TRANSFORMABLE
 
-namespace ambient { namespace models {
+namespace ambient { namespace model {
 
     template<typename T> constexpr T op_single (T a){ return T(); }
     template<typename T> constexpr T op_double (T a, T b){ return T(); }

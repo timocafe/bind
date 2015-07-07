@@ -30,9 +30,9 @@
 
 namespace ambient{ namespace memory {
 
-    using ambient::models::history;
-    using ambient::models::revision;
-    using ambient::models::transformable;
+    using ambient::model::history;
+    using ambient::model::revision;
+    using ambient::model::transformable;
 
     class collector {
     public:
