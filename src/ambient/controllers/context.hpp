@@ -25,9 +25,9 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
+#ifndef AMBIENT_CONTROLLERS_CONTEXT_HPP
+#define AMBIENT_CONTROLLERS_CONTEXT_HPP
 #ifndef AMBIENT_SERIAL_COLLECTION
-#ifndef AMBIENT_CONTROLLERS_CONTEXT_MT_HPP
-#define AMBIENT_CONTROLLERS_CONTEXT_MT_HPP
 
 namespace ambient { 
 
@@ -117,6 +117,41 @@ namespace ambient {
             for(auto d : transfer->deps) (transfer->r.generator.load())->queue(d);
         }
     }
+}
+
+#else
+
+namespace ambient { 
+
+    inline void context_serial::init(actor* base_actor){
+        actors.push(base_actor);
+    }
+
+    inline void context_serial::sync(){
+        controller.flush();
+        controller.clear();
+    }
+
+    inline context_serial& context_serial::get(){
+        return *this;
+    }
+
+    inline bool context_serial::threaded() const {
+        return false;
+    }
+
+    inline void context_serial::delay_transfer(controllers::meta* m){
+    }
+
+    inline void context_serial::fork(void*){
+    }
+
+    inline void context_serial::join(){
+    }
+
+    inline void context_serial::diverge(int){
+    }
+
 }
 
 #endif

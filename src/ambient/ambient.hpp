@@ -105,8 +105,7 @@
 #include "ambient/controllers/set.h"
 #include "ambient/controllers/scope.h"
 #include "ambient/controllers/actor.h"
-#include "ambient/controllers/context_mt.h"
-#include "ambient/controllers/context_serial.h"
+#include "ambient/controllers/context.h"
 #include "ambient/controllers/backbone.h"
 
 #include "ambient/utils/auxiliary.hpp"
@@ -135,8 +134,7 @@
 #include "ambient/controllers/controller.hpp"
 #include "ambient/controllers/scope.hpp"
 #include "ambient/controllers/actor.hpp"
-#include "ambient/controllers/context_mt.hpp"
-#include "ambient/controllers/context_serial.hpp"
+#include "ambient/controllers/context.hpp"
 #include "ambient/controllers/backbone.hpp"
 
 #include "ambient/interface/typed.hpp"

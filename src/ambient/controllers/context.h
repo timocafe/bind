@@ -25,9 +25,47 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifdef AMBIENT_SERIAL_COLLECTION
-#ifndef AMBIENT_CONTROLLERS_CONTEXT_SERIAL
-#define AMBIENT_CONTROLLERS_CONTEXT_SERIAL
+#ifndef AMBIENT_CONTROLLERS_CONTEXT
+#define AMBIENT_CONTROLLERS_CONTEXT
+#ifndef AMBIENT_SERIAL_COLLECTION
+
+namespace ambient { 
+
+    struct context_mt {
+        typedef controllers::controller controller_type;
+
+        struct thread_context {
+            controller_type controller;
+            std::stack<actor*, std::vector<actor*> > actors;
+            std::stack<scope*, std::vector<scope*> > scopes;
+            int offset;
+        };
+        
+        struct divergence_guard {
+           ~divergence_guard();
+            divergence_guard(size_t length);
+            std::vector< std::vector<controllers::meta*> > transfers;
+        };
+
+        context_mt();
+        thread_context& get();
+        const thread_context& get() const;
+        void delay_transfer(controllers::meta* m);
+        bool threaded() const;
+        void init(actor*);
+        void sync();
+        void fork(divergence_guard*);
+        void join();
+        void diverge(int o);
+
+        std::vector<thread_context> thread_context_lane;
+        divergence_guard* threaded_region;
+    };
+
+    typedef context_mt context;
+}
+
+#else
 
 namespace ambient { 
 
