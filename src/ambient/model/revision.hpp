@@ -27,7 +27,7 @@
 
 namespace ambient { namespace model {
 
-    inline revision::revision(size_t extent, void* g, locality l, rank_t owner)
+    inline revision::revision(size_t extent, functor* g, locality l, rank_t owner)
     : spec(extent), generator(g), state(l), 
       data(NULL), users(0), owner(owner)
     {

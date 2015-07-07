@@ -30,7 +30,7 @@ namespace ambient { namespace controllers {
     // {{{ transformable
 
     inline void set<transformable>::spawn(transformable& t){
-        ((functor*)t.generator)->queue(new set(t));
+        t.generator->queue(new set(t));
     }
     inline set<transformable>::set(transformable& t) : t(t) {
         handle = ambient::select().get_controller().get_channel().bcast(t, ambient::which());
@@ -53,7 +53,7 @@ namespace ambient { namespace controllers {
     inline set<revision>::set(revision& r) : t(r) {
         t.use();
         handle = ambient::select().get_controller().get_channel().set(t);
-        if(t.generator != NULL) ((functor*)t.generator.load())->queue(this);
+        if(t.generator != NULL) (t.generator.load())->queue(this);
         else ambient::select().get_controller().queue(this);
     }
     inline void set<revision>::operator += (rank_t rank){

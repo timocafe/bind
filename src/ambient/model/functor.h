@@ -25,10 +25,10 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef AMBIENT_CONTROLLERS_FUNCTOR
-#define AMBIENT_CONTROLLERS_FUNCTOR
+#ifndef AMBIENT_MODEL_FUNCTOR
+#define AMBIENT_MODEL_FUNCTOR
 
-namespace ambient { namespace controllers {
+namespace ambient { namespace model {
     
     class functor {
         typedef ambient::bulk_allocator<functor*> allocator;

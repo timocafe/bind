@@ -35,7 +35,7 @@ namespace ambient { namespace model {
     }
 
     template<locality L>
-    inline void history::add_state(void* g){
+    inline void history::add_state(functor* g){
         revision* r = new revision(extent, g, L, ambient::rank());
         this->current = r;
     }

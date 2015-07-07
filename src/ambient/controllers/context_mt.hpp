@@ -31,6 +31,8 @@
 
 namespace ambient { 
 
+    using model::functor;
+
     inline context_mt::context_mt()
     : thread_context_lane(ambient::num_threads()), threaded_region(NULL)
     {
@@ -112,7 +114,7 @@ namespace ambient {
         }
         for(auto& transfers_part : transfers) for(auto& transfer : transfers_part)
         if(transfer->t == controllers::meta::type::get){
-            for(auto d : transfer->deps) ((controllers::functor*)transfer->r.generator.load())->queue(d);
+            for(auto d : transfer->deps) (transfer->r.generator.load())->queue(d);
         }
     }
 }

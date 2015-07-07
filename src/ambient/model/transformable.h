@@ -59,7 +59,7 @@ namespace ambient { namespace model {
         const transformable* l;
         const transformable* r;
         mutable numeric_union v;
-        void* generator;
+        functor* generator;
     };
 
     template <typename T>

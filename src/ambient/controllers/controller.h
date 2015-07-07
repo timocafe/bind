@@ -35,6 +35,7 @@ namespace ambient { namespace controllers {
     using model::history;
     using model::revision;
     using model::transformable;
+    using model::functor;
 
     class controller {
     public:

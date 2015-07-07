@@ -34,7 +34,7 @@ namespace ambient {
 
     template <typename T>
     using remove_reference = typename std::remove_reference<T>::type;
-    using controllers::functor;
+    using model::functor;
 
     template<typename T>
     struct check_if_not_reference {

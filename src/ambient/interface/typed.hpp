@@ -33,7 +33,7 @@
 namespace ambient {
     template<typename T> class future;
     template<typename T> class default_allocator;
-    using controllers::functor;
+    using model::functor;
     using model::history;
     using model::revision;
 
@@ -148,7 +148,7 @@ namespace ambient {
             EXTRACT(o);
             revision& r = *o->ambient_before;
             if(r.generator != NULL && r.generator != m){
-                ((functor*)r.generator.load())->queue(m);
+                (r.generator.load())->queue(m);
                 return true;
             }
             return false;
@@ -209,7 +209,7 @@ namespace ambient {
             revision& r = *o->ambient_before;
             if(r.generator != NULL){
                 ambient::guard<ambient::mutex> g(ambient::select().get_mutex());
-                ((functor*)r.generator.load())->queue(m);
+                (r.generator.load())->queue(m);
                 return true;
             }
             return false;

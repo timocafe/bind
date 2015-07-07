@@ -84,6 +84,7 @@
 #include "ambient/memory/allocator.h"
 
 #include "ambient/model/locality.h"
+#include "ambient/model/functor.h"
 #include "ambient/model/revision.h"
 #include "ambient/model/history.h"
 #include "ambient/model/transformable.h"
@@ -97,7 +98,6 @@
 #include "ambient/channels/nop/channel.h"
 #endif
 
-#include "ambient/controllers/functor.h"
 #include "ambient/controllers/collector.h"
 #include "ambient/controllers/controller.h"
 #include "ambient/controllers/meta.h"
