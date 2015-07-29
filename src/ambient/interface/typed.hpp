@@ -97,7 +97,7 @@ namespace ambient {
         }
         template<size_t arg>
         static void modify_remote(T& obj){
-            decltype(obj.ambient_allocator.desc) o = obj.ambient_allocator.desc;
+            auto o = obj.ambient_allocator.desc;
             ambient::select().get_controller().touch(o);
             if(o->back()->owner != ambient::which())
                 ambient::select().get_controller().rsync(o->back());
@@ -106,7 +106,7 @@ namespace ambient {
         }
         template<size_t arg>
         static void modify_local(T& obj, functor* m){
-            decltype(obj.ambient_allocator.desc) o = obj.ambient_allocator.desc;
+            auto o = obj.ambient_allocator.desc;
             ambient::select().get_controller().touch(o);
             T* var = (T*)ambient::memory::malloc<memory::cpu::instr_bulk,T>(); memcpy((void*)var, &obj, sizeof(T)); 
             m->arguments[arg] = (void*)var;
@@ -123,7 +123,7 @@ namespace ambient {
         }
         template<size_t arg>
         static void modify(T& obj, functor* m){
-            decltype(obj.ambient_allocator.desc) o = obj.ambient_allocator.desc;
+            auto o = obj.ambient_allocator.desc;
             ambient::select().get_controller().touch(o);
             T* var = (T*)ambient::memory::malloc<memory::cpu::instr_bulk,T>(); memcpy((void*)var, &obj, sizeof(T)); m->arguments[arg] = (void*)var;
             ambient::select().get_controller().sync(o->back());
@@ -177,13 +177,13 @@ namespace ambient {
             r.release();
         }
         template<size_t arg> static void modify_remote(T& obj){
-            decltype(obj.ambient_allocator.desc) o = obj.ambient_allocator.desc;
+            auto o = obj.ambient_allocator.desc;
             ambient::select().get_controller().touch(o);
             if(o->back()->owner != ambient::which())
                 ambient::select().get_controller().rsync(o->back());
         }
         template<size_t arg> static void modify_local(T& obj, functor* m){
-            decltype(obj.ambient_allocator.desc) o = obj.ambient_allocator.desc;
+            auto o = obj.ambient_allocator.desc;
             ambient::select().get_controller().touch(o);
             T* var = (T*)ambient::memory::malloc<memory::cpu::instr_bulk,T>(); memcpy((void*)var, &obj, sizeof(T)); m->arguments[arg] = (void*)var;
             var->ambient_before = var->ambient_after = o->current;
@@ -191,7 +191,7 @@ namespace ambient {
             ambient::select().get_controller().use_revision(o);
         }
         template<size_t arg> static void modify(T& obj, functor* m){
-            decltype(obj.ambient_allocator.desc) o = obj.ambient_allocator.desc;
+            auto o = obj.ambient_allocator.desc;
             ambient::select().get_controller().touch(o);
             T* var = (T*)ambient::memory::malloc<memory::cpu::instr_bulk,T>(); memcpy((void*)var, &obj, sizeof(T)); m->arguments[arg] = (void*)var;
             var->ambient_before = var->ambient_after = o->current;
@@ -216,13 +216,13 @@ namespace ambient {
     };
     template <typename T> struct write_iteratable_info : public iteratable_info<T> {
         template<size_t arg> static void modify_remote(T& obj){
-            decltype(obj.ambient_allocator.desc) o = obj.ambient_allocator.desc;
+            auto o = obj.ambient_allocator.desc;
             ambient::select().get_controller().touch(o);
             ambient::select().get_controller().collect(o->back());
             ambient::select().get_controller().add_revision<locality::remote>(o, ambient::which()); 
         }
         template<size_t arg> static void modify_local(T& obj, functor* m){
-            decltype(obj.ambient_allocator.desc) o = obj.ambient_allocator.desc;
+            auto o = obj.ambient_allocator.desc;
             ambient::select().get_controller().touch(o);
             T* var = (T*)ambient::memory::malloc<memory::cpu::instr_bulk,T>(); memcpy((void*)var, (void*)&obj, sizeof(T)); m->arguments[arg] = (void*)var;
 
@@ -235,7 +235,7 @@ namespace ambient {
             var->ambient_after = o->current;
         }
         template<size_t arg> static void modify(T& obj, functor* m){
-            decltype(obj.ambient_allocator.desc) o = obj.ambient_allocator.desc;
+            auto o = obj.ambient_allocator.desc;
             ambient::select().get_controller().touch(o);
             T* var = (T*)ambient::memory::malloc<memory::cpu::instr_bulk,T>(); memcpy((void*)var, (void*)&obj, sizeof(T)); m->arguments[arg] = (void*)var;
             ambient::select().get_controller().use_revision(o);
