@@ -48,20 +48,6 @@ namespace ambient {
         static void free(void* ptr, memory::descriptor& spec);
     };
 
-    template <class T>
-    class bulk_allocator {
-    public:
-        typedef T value_type;
-        template <class U> struct rebind { typedef bulk_allocator<U> other; };
-        bulk_allocator() throw() { }
-        bulk_allocator(const bulk_allocator&) throw() { }
-        template<typename U> bulk_allocator(const bulk_allocator<U>&) throw() { }
-       ~bulk_allocator() throw() { }
-
-        static T* allocate(std::size_t n); 
-        static void deallocate(T* p, std::size_t n);
-    };
-
 }
 
 #endif

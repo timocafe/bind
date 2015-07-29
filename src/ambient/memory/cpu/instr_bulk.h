@@ -35,6 +35,19 @@ namespace ambient { namespace memory { namespace cpu {
         static void* malloc();
         static void* malloc(size_t s);
         static void drop();
+
+        template<class T>
+        class allocator {
+        public:
+            typedef T value_type;
+            template <class U> struct rebind { typedef allocator<U> other; };
+            allocator() throw() { }
+            allocator(const allocator&) throw() { }
+            template<typename U> allocator(const allocator<U>&) throw() { }
+           ~allocator() throw() { }
+            static void deallocate(T* p, size_t n){ }
+            static T* allocate(size_t n); 
+        };
     };
 
 } } }

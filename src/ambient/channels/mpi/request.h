@@ -45,7 +45,7 @@ namespace ambient { namespace channels { namespace mpi {
     };
 
     class request {
-        typedef ambient::bulk_allocator<request_impl*> allocator;
+        typedef memory::cpu::instr_bulk::allocator<request_impl*> allocator;
     public:
         bool operator()();
         void operator &= (request_impl* r);

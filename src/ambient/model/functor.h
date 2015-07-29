@@ -31,7 +31,7 @@
 namespace ambient { namespace model {
     
     class functor {
-        typedef ambient::bulk_allocator<functor*> allocator;
+        typedef memory::cpu::instr_bulk::allocator<functor*> allocator;
     public:
         virtual void invoke() = 0;
         virtual bool ready() = 0;

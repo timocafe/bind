@@ -32,7 +32,7 @@ namespace ambient { namespace channels { namespace mpi {
 
     template<typename T>
     class bcast {
-        typedef ambient::bulk_allocator<int> allocator;
+        typedef memory::cpu::instr_bulk::allocator<int> allocator;
     public:
         void dispatch();
         bcast(T& o, rank_t root) : object(o), root(root), self(0) {}
@@ -53,7 +53,7 @@ namespace ambient { namespace channels { namespace mpi {
     template<>
     class collective<typename channel::block_type> : public bcast<typename channel::block_type>, 
                                                      public memory::cpu::use_bulk_new<collective<typename channel::block_type> > {
-        typedef ambient::bulk_allocator<int> allocator;
+        typedef memory::cpu::instr_bulk::allocator<int> allocator;
     public:
         collective(typename channel::block_type& r, rank_t root);
         void operator += (rank_t rank);

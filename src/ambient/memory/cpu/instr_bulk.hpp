@@ -33,6 +33,9 @@ namespace ambient { namespace memory { namespace cpu {
         template<size_t S> void* instr_bulk::malloc()         { return ambient::select().get_controller().memory.malloc(S); }
                    inline  void* instr_bulk::malloc(size_t s) { return ambient::select().get_controller().memory.malloc(s); }
 
+        template<class T>
+        T* instr_bulk::allocator<T>::allocate(size_t n){ return (T*)instr_bulk::malloc(n*sizeof(T)); }
+
 } } }
 
 #endif
