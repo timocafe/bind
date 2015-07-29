@@ -49,7 +49,7 @@ namespace ambient {
     class block {
     public:
         typedef T value_type;
-        block(size_t m, size_t n) : AMBIENT_ALLOC_2D(m, n, sizeof(T)) {}
+        block(size_t m, size_t n) : AMBIENT_ALLOC_2D(sizeof(T), m, n) {}
         size_t lda() const {
             return ambient::get_dim(*this).y;
         }

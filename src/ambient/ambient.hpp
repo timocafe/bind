@@ -138,6 +138,7 @@
 #include "ambient/controllers/backbone.hpp"
 
 #include "ambient/interface/typed.hpp"
+#include "ambient/interface/allocator.hpp"
 #include "ambient/interface/kernel.hpp"
 #include "ambient/interface/access.hpp"
 #include "ambient/interface/lambda.hpp"

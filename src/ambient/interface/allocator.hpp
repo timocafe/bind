@@ -25,22 +25,36 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef AMBIENT_CONTAINER_PROXY
-#define AMBIENT_CONTAINER_PROXY
+#ifndef AMBIENT_INTERFACE_ALLOCATOR
+#define AMBIENT_INTERFACE_ALLOCATOR
 
 namespace ambient {
 
-    template <class T>
-    class proxy {
-        typedef typename T::value_type value_type;
-    public:
-        proxy(const T& p) : ambient_allocator(p.ambient_allocator) {}
-        size_t lda() const {
-            return ambient::get_dim(*this).y;
+    using model::history;
+
+    template<typename Mapping, bool Proxy>
+    struct allocator {
+        typedef Mapping mapping;
+        allocator(const allocator&) = delete;
+        allocator& operator=(const allocator&) = delete;
+        allocator(){ }
+        allocator(size_t ts, size_t m = 1, size_t n = 1){
+            desc = new history(dim2(n,m),ts);
         }
-        AMBIENT_PROXY_DELEGATE(T)
+        ~allocator(){
+            if(desc->weak()) delete desc;
+            else destroy(desc);
+        }
+        history* desc;
     };
 
+    template<typename Mapping>
+    struct allocator<Mapping, true> {
+        typedef Mapping mapping;
+        allocator() = delete;
+        allocator(const allocator<Mapping, false>& other) : desc(other.desc) { }
+        history* desc; // non-owning proxy
+    };
 }
 
 #endif

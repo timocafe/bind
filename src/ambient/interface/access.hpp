@@ -28,21 +28,24 @@
 #ifndef AMBIENT_INTERFACE_ACCESS
 #define AMBIENT_INTERFACE_ACCESS
 
-#define mapping typename T::ambient_desc::mapping
-
 namespace ambient {
 
     using model::revision;
 
     namespace ext {
 
+        template<typename Allocator>
+        struct get_mapping {
+            typedef typename Allocator::mapping type;
+        };
+
         template <typename T> static revision& naked(T& obj){
-            return *obj.ambient_rc.desc->current;
+            return *obj.ambient_allocator.desc->current;
         }
 
         template <typename T> static bool exclusive(T& obj){
-            ambient::select().get_controller().touch(obj.ambient_rc.desc);
-            revision& c = *obj.ambient_rc.desc->current;
+            ambient::select().get_controller().touch(obj.ambient_allocator.desc);
+            revision& c = *obj.ambient_allocator.desc->current;
             if(ambient::select().get_actor().remote()){
                 c.state = locality::remote;
                 c.owner = ambient::which();
@@ -57,9 +60,9 @@ namespace ambient {
         template<typename V>
         void swap(V& left, V& right){
             // swapping allocators should be better
-            std::swap(left.ambient_rc.desc, right.ambient_rc.desc);
-            left.ambient_after = left.ambient_rc.desc->current;
-            right.ambient_after = right.ambient_rc.desc->current;
+            std::swap(left.ambient_allocator.desc, right.ambient_allocator.desc);
+            left.ambient_after = left.ambient_allocator.desc->current;
+            right.ambient_after = right.ambient_allocator.desc->current;
         }
 
         template <typename T> static void transform(const T& obj){
@@ -70,10 +73,10 @@ namespace ambient {
 
     template<typename V>
     inline void merge(const V& src, V& dst){
-        assert(dst.ambient_rc.desc->current == NULL);
+        assert(dst.ambient_allocator.desc->current == NULL);
         if(weak(src)) return;
-        revision* r = src.ambient_rc.desc->back();
-        dst.ambient_rc.desc->current = r;
+        revision* r = src.ambient_allocator.desc->back();
+        dst.ambient_allocator.desc->current = r;
         // do not deallocate or reuse
         if(!r->valid() && r->state != locality::remote){
             assert(r->spec.region != region_t::delegated);
@@ -84,17 +87,17 @@ namespace ambient {
     }
 
     template <typename T> static T& load(T& obj){ 
-        ambient::select().get_controller().touch(obj.ambient_rc.desc);
+        ambient::select().get_controller().touch(obj.ambient_allocator.desc);
         ambient::sync(); 
-        revision& c = *obj.ambient_rc.desc->current;
+        revision& c = *obj.ambient_allocator.desc->current;
         assert(c.state == locality::local || c.state == locality::common);
         if(!c.valid()) c.embed(get_allocator<T>::type::calloc(c.spec));
-        obj.ambient_after = obj.ambient_rc.desc->current;
+        obj.ambient_after = obj.ambient_allocator.desc->current;
         return obj;
     }
 
-    template <typename T> static mapping& delegated(T& obj){
-        return *(mapping*)(*obj.ambient_after);
+    template <typename T> static auto delegated(T& obj) -> typename ext::get_mapping<decltype(obj.ambient_allocator)>::type& {
+        return *(typename ext::get_mapping<decltype(obj.ambient_allocator)>::type*)(*obj.ambient_after);
     }
 
     template <typename T> static void revise(const T& obj){
@@ -124,5 +127,4 @@ namespace ambient {
     }
 }
 
-#undef mapping
 #endif
