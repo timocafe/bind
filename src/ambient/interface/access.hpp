@@ -52,7 +52,7 @@ namespace ambient {
                 return true;
             }else{
                 c.state = locality::local;
-                if(!c.valid()) c.embed(get_allocator<T>::type::alloc(c.spec));
+                if(!c.valid()) c.embed(obj.ambient_allocator.alloc(c.spec));
                 return false;
             }
         }
@@ -91,7 +91,7 @@ namespace ambient {
         ambient::sync(); 
         revision& c = *obj.ambient_allocator.desc->current;
         assert(c.state == locality::local || c.state == locality::common);
-        if(!c.valid()) c.embed(get_allocator<T>::type::calloc(c.spec));
+        if(!c.valid()) c.embed(obj.ambient_allocator.calloc(c.spec));
         obj.ambient_after = obj.ambient_allocator.desc->current;
         return obj;
     }
@@ -103,7 +103,7 @@ namespace ambient {
     template <typename T> static void revise(const T& obj){
         ext::transform(obj);
         revision& c = *obj.ambient_before; if(c.valid()) return;
-        c.embed(get_allocator<T>::type::calloc(c.spec));
+        c.embed(obj.ambient_allocator.calloc(c.spec));
     }
 
     template <typename T> static void revise(volatile T& obj){
@@ -111,17 +111,17 @@ namespace ambient {
         revision& c = *obj.ambient_after; if(c.valid()) return;
         revision& p = *obj.ambient_before;
         if(p.valid() && p.locked_once() && !p.referenced() && c.spec.conserves(p.spec)) c.reuse(p);
-        else c.embed(get_allocator<T>::type::alloc(c.spec));
+        else c.embed(obj.ambient_allocator.alloc(c.spec));
     }
 
     template <typename T> static void revise(T& obj){
         ext::transform(obj);
         revision& c = *obj.ambient_after; if(c.valid()) return;
         revision& p = *obj.ambient_before;
-        if(!p.valid()) c.embed(get_allocator<T>::type::calloc(c.spec));
+        if(!p.valid()) c.embed(obj.ambient_allocator.calloc(c.spec));
         else if(p.locked_once() && !p.referenced() && c.spec.conserves(p.spec)) c.reuse(p);
         else{
-            c.embed(get_allocator<T>::type::alloc(c.spec));
+            c.embed(obj.ambient_allocator.alloc(c.spec));
             memcpy((T*)c, (T*)p, p.spec.extent);
         }
     }

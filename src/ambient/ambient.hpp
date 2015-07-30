@@ -81,7 +81,6 @@
 
 #include "ambient/memory/pool.hpp"
 #include "ambient/memory/cpu/new.h"
-#include "ambient/memory/allocator.h"
 
 #include "ambient/model/locality.h"
 #include "ambient/model/functor.h"
@@ -111,7 +110,6 @@
 #include "ambient/utils/auxiliary.hpp"
 
 #include "ambient/memory/cpu/new.hpp"
-#include "ambient/memory/allocator.hpp"
 #include "ambient/memory/cpu/data_bulk.hpp"
 #include "ambient/memory/cpu/instr_bulk.hpp"
 

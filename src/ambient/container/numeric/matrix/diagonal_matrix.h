@@ -77,7 +77,7 @@ namespace ambient {
     template <typename S>
     struct info < const numeric::diagonal_matrix<S> > {
         typedef const numeric::diagonal_matrix<S> type;
-        template <typename U> static const numeric::matrix<S, ambient::default_allocator<S> >& unfold(type& folded){ return folded.get_data(); }
+        template <typename U> static const numeric::matrix<S>& unfold(type& folded){ return folded.get_data(); }
     };
 }
 

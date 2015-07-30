@@ -32,8 +32,28 @@ namespace ambient {
 
     using model::history;
 
+    class default_allocator {
+    public:
+        static void* alloc(memory::descriptor& spec){ return ambient::memory::malloc(spec); }
+        static void* calloc(memory::descriptor& spec){ void* m = alloc(spec); memset(m, 0, spec.extent); return m; }
+        static void free(void* ptr, memory::descriptor& spec){ ambient::memory::free(ptr, spec); }
+    };
+
+    namespace detail {
+        template <typename T>
+        struct has_allocator {
+            template <typename T1> static typename T1::allocator_base_type test(int);
+            template <typename>    static void test(...);
+            enum { value = !std::is_void<decltype(test<T>(0))>::value };
+        };
+        template <bool HAS, typename T> struct checked_get_allocator {};
+        template <typename T> struct checked_get_allocator<true, T> { typedef typename T::allocator_base_type type; };
+        template <typename T> struct checked_get_allocator<false, T> { typedef default_allocator type; };
+        template <typename T> struct get_allocator { typedef typename checked_get_allocator<has_allocator<T>::value, T>::type type; };
+    }
+
     template<typename Mapping, bool Proxy>
-    struct allocator {
+    struct allocator : public detail::get_allocator<Mapping>::type {
         typedef Mapping mapping;
         allocator(const allocator&) = delete;
         allocator& operator=(const allocator&) = delete;
@@ -49,7 +69,7 @@ namespace ambient {
     };
 
     template<typename Mapping>
-    struct allocator<Mapping, true> {
+    struct allocator<Mapping, true> : public detail::get_allocator<Mapping>::type {
         typedef Mapping mapping;
         allocator() = delete;
         allocator(const allocator<Mapping, false>& other) : desc(other.desc) { }

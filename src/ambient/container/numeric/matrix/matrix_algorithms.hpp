@@ -74,7 +74,7 @@ namespace ambient { namespace numeric {
 
     template <typename T>
     inline void touch(const diagonal_matrix<T>& a){
-        kernels::template touch<T,ambient::default_allocator<T> >(a); 
+        kernels::template touch<T,default_allocator>(a); 
     }
 
     template <typename T, class A>
@@ -84,7 +84,7 @@ namespace ambient { namespace numeric {
 
     template <typename T>
     inline void migrate(diagonal_matrix<T>& a){
-        kernels::template migrate<T,ambient::default_allocator<T> >(a); 
+        kernels::template migrate<T,default_allocator>(a); 
     }
 
     template <typename T, class A>
@@ -94,7 +94,7 @@ namespace ambient { namespace numeric {
 
     template <typename T>
     inline void hint(const diagonal_matrix<T>& a){
-        kernels::template hint<T,ambient::default_allocator<T> >(a); 
+        kernels::template hint<T,default_allocator>(a); 
     }
 
     template<class MatrixViewA, class MatrixViewB, typename T, class A>

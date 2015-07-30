@@ -33,8 +33,8 @@
 
 namespace ambient { namespace numeric {
 
-    template <typename T, class Allocator = ambient::default_allocator<T> >
-    class matrix : public ambient::block<T>, public ambient::memory::cpu::use_fixed_new<matrix<T,Allocator> > {
+    template <typename T, class Allocator = default_allocator>
+    class matrix : public ambient::block<T,Allocator>, public ambient::memory::cpu::use_fixed_new<matrix<T,Allocator> > {
     public:
         typedef T value_type;
         typedef size_t size_type;

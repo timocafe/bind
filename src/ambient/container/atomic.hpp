@@ -35,7 +35,7 @@ namespace ambient {
     // atomic: single value of T that has versioning symantics
     // note: do not use it unless you know what you are doing
 
-    template <class T, class Allocator = ambient::default_allocator<T> >
+    template <class T, class Allocator = default_allocator>
     class atomic {
     public:
         typedef Allocator allocator_type;
@@ -58,6 +58,7 @@ namespace ambient {
     public:
     AMBIENT_DELEGATE
     (
+        typedef Allocator allocator_base_type;
         value_type value;
     )};
 
@@ -77,12 +78,12 @@ namespace ambient {
 
 
     template<class T, class Allocator>
-    atomic<T,Allocator>::atomic(T value) : AMBIENT_ALLOC(sizeof(T)) {
+    atomic<T,Allocator>::atomic(T value) : ambient_allocator(sizeof(T)) {
         this->init(value);
     }
 
     template <typename T, class Allocator>
-    atomic<T,Allocator>::atomic(const atomic& a) : AMBIENT_ALLOC(sizeof(T)) {
+    atomic<T,Allocator>::atomic(const atomic& a) : ambient_allocator(sizeof(T)) {
         ambient::merge(a, *this);
     }
     

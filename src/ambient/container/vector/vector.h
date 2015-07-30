@@ -35,7 +35,7 @@ namespace ambient {
     template<class T, class Allocator>
     class vector_async;
 
-    template <class T, class Allocator = ambient::default_allocator<T> >
+    template <class T, class Allocator = default_allocator>
     class vector : public ambient::allow_vt_override<vector<T,Allocator> > {
     public:
         typedef vector_async<T,Allocator> async_type;
@@ -101,6 +101,7 @@ namespace ambient {
     public:
     AMBIENT_DELEGATE
     (
+        typedef Allocator allocator_base_type;
         size_t size_;
         value_type data[ AMBIENT_VAR_LENGTH ]; 
     )};

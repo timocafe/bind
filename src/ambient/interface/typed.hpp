@@ -32,7 +32,6 @@
 
 namespace ambient {
     template<typename T> class future;
-    template<typename T> class default_allocator;
     using model::functor;
     using model::revision;
 
@@ -266,18 +265,6 @@ namespace ambient {
     template <typename T> struct checked_get_async_type<true, T>  { typedef typename T::async_type type; };
     template <typename T> struct get_async_type { typedef typename checked_get_async_type<is_polymorphic<T>::value, T>::type type; };
 
-
-    template <typename T>
-    struct has_allocator {
-        template <typename T1> static typename T1::allocator_type test(int);
-        template <typename>    static void test(...);
-        enum { value = !std::is_void<decltype(test<T>(0))>::value };
-    };
-    template <bool HAS, typename T> struct checked_get_allocator {};
-    template <typename T> struct checked_get_allocator<true, T> { typedef typename T::allocator_type type; };
-    template <typename T> struct checked_get_allocator<false, T> { typedef typename ambient::default_allocator<typename T::value_type> type; };
-    template <typename T> struct get_allocator { typedef typename checked_get_allocator<has_allocator<T>::value, T>::type type; };
-
     template<typename T> struct has_versioning {
         template<std::size_t V> struct valuekeeper {};
         template<typename R, typename C> static char helper(R(C::*)());
@@ -334,20 +321,16 @@ namespace ambient {
 
     // }}}
 
-    #define AMBIENT_DELEGATE(...)       void        ambient_enable_versioning();                                          \
-                                        mutable     ambient::revision* ambient_before;                                     \
-                                        mutable     ambient::revision* ambient_after;                                       \
-                                        struct      ambient_type_structure { __VA_ARGS__ };                                  \
+    #define AMBIENT_DELEGATE(...)       void        ambient_enable_versioning();                                         \
+                                        mutable     ambient::revision* ambient_before;                                    \
+                                        mutable     ambient::revision* ambient_after;                                      \
+                                        struct      ambient_type_structure { __VA_ARGS__ };                                 \
                                         ambient::allocator<ambient_type_structure, false> ambient_allocator;
 
     #define AMBIENT_PROXY_DELEGATE(T)   void        ambient_enable_versioning();                                         \
                                         mutable     ambient::revision* ambient_before;                                    \
                                         mutable     ambient::revision* ambient_after;                                      \
                                         ambient::allocator<typename ambient::ext::get_mapping<decltype(T::ambient_allocator)>::type, true> ambient_allocator;
-
-    #define AMBIENT_ALLOC(BYTES)              ambient_allocator(BYTES)
-    #define AMBIENT_ALLOC_1D(TYPE_SIZE, N)    ambient_allocator(TYPE_SIZE, N)
-    #define AMBIENT_ALLOC_2D(TYPE_SIZE, M, N) ambient_allocator(TYPE_SIZE, M, N)
     #define AMBIENT_VAR_LENGTH 1
 }
 
