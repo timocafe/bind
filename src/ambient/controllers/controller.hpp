@@ -118,9 +118,6 @@ namespace ambient { namespace controllers {
             if(r->spec.region == region_t::standard){
                 ambient::memory::free(r->data, r->spec);
                 r->spec.region = region_t::delegated;
-            }else if(r->spec.region == region_t::bulk){
-                ambient::memory::cpu::data_bulk::reuse(r->data);
-                r->spec.region = region_t::delegated;
             }
         }
     }

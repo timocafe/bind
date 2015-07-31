@@ -88,30 +88,11 @@ namespace ambient { namespace memory {
         typedef ambient::guard<mutex> guard;
         typedef serial_region<S,Factory> base;
 
-        region() : count(0) {}
-    private:
-        void realloc(){
-            if(this->count){
-                Factory::collect(this->buffer, this->count);
-                this->count = 0;
-            }
-            base::realloc();
-        }
-    public:
         void* malloc(size_t sz){
             guard g(this->mtx);
-            if(((size_t)this->iterator + sz - (size_t)this->buffer) >= S) realloc();
-            this->count++;
-            void* m = (void*)this->iterator;
-            this->iterator += aligned_64(sz);
-            return m;
-        }
-        void reset(){
-            base::reset();
-            this->count = 0; 
+            return base::malloc(sz);
         }
     private:
-        long int count;
         mutex mtx;
     };
 

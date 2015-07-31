@@ -38,7 +38,6 @@ namespace ambient { namespace memory { namespace cpu {
     }
 
     inline data_bulk::data_bulk(){
-        this->reuse_enabled = ambient::isset("AMBIENT_BULK_REUSE") ? true : false; 
         this->reset_enabled = ambient::isset("AMBIENT_BULK_FORCE_FREE") ? true : false; 
         this->soft_limit = (ambient::isset("AMBIENT_BULK_LIMIT") ? ambient::getint("AMBIENT_BULK_LIMIT") : FORCE_DROP_CRITERIA) * 
                            ((double)getRSSLimit() / AMBIENT_DATA_BULK_CHUNK / 100);
@@ -52,10 +51,6 @@ namespace ambient { namespace memory { namespace cpu {
     inline void* data_bulk::soft_malloc(size_t s){
         if(instance().soft_limit < factory<AMBIENT_DATA_BULK_CHUNK>::size() || s > AMBIENT_DATA_BULK_CHUNK) return NULL;
         return malloc(s);
-    }
-
-    inline void data_bulk::reuse(void* ptr){
-        if(instance().reuse_enabled) factory<AMBIENT_DATA_BULK_CHUNK>::reuse(ptr); 
     }
 
     inline void data_bulk::drop(){

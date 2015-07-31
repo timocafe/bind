@@ -52,8 +52,6 @@ namespace ambient { namespace numeric { namespace kernels {
                                      a.data(), a.num_rows(),
                                      t_.data(), t_.num_rows(),
                                      tau, work);
-            data_bulk::reuse(tau); 
-            data_bulk::reuse(work); 
         }
        
         template<typename T, typename TR, typename IB>
@@ -64,7 +62,6 @@ namespace ambient { namespace numeric { namespace kernels {
                                      t.data(), t.num_rows(),
                                      c.data(), c.num_rows(),
                                      work, IB::value);
-            data_bulk::reuse(work);
         }
        
         template<typename T, typename IB>
@@ -77,8 +74,6 @@ namespace ambient { namespace numeric { namespace kernels {
                                      a2.data(), a2.num_rows(),
                                      t_.data(), t_.num_rows(),
                                      tau, work);
-            data_bulk::reuse(tau); 
-            data_bulk::reuse(work); 
         }
        
         template<typename T, typename TR, typename IB>
@@ -91,7 +86,6 @@ namespace ambient { namespace numeric { namespace kernels {
                                      (T*)v.data(), v.num_rows(), // warning: const v might be modified
                                      (T*)t.data(), t.num_rows(), // warning: const t might be modified
                                      work, PLASMA_IB);
-            data_bulk::reuse(work); 
         }
        
         template<typename T, typename IB>
@@ -103,8 +97,6 @@ namespace ambient { namespace numeric { namespace kernels {
                                      a.data(), a.num_rows(), 
                                      t_.data(), t_.num_rows(),
                                      tau, work);
-            data_bulk::reuse(tau); 
-            data_bulk::reuse(work); 
         }
        
         template<typename T, typename TR, typename IB>
@@ -116,7 +108,6 @@ namespace ambient { namespace numeric { namespace kernels {
                                      t.data(), t.num_rows(),
                                      c.data(), c.num_rows(),
                                      work, IB::value);
-            data_bulk::reuse(work); 
         }
        
         template<typename T, typename IB>
@@ -129,8 +120,6 @@ namespace ambient { namespace numeric { namespace kernels {
                                      a2.data(), a2.num_rows(),
                                      t_.data(), t_.num_rows(),
                                      tau, work);
-            data_bulk::reuse(tau); 
-            data_bulk::reuse(work); 
         }
        
         template<typename T, typename TR, typename IB>
@@ -143,7 +132,6 @@ namespace ambient { namespace numeric { namespace kernels {
                                      (T*)v.data(), v.num_rows(), // warning: const v might be modified
                                      (T*)t.data(), t.num_rows(), // warning: const t might be modified
                                      work, IB::value);
-            data_bulk::reuse(work); 
         }
        
         template<class ViewA, class ViewB, class ViewC, typename T>

@@ -41,7 +41,6 @@ namespace ambient { namespace memory { namespace cpu {
                            static void* soft_malloc(size_t s);
         template<size_t S> static void* calloc();
                            static void* calloc(size_t s);
-                           static void reuse(void* ptr);
         template<size_t S> static void free(void* ptr){}
                            static void free(void* ptr){}
 
@@ -49,7 +48,6 @@ namespace ambient { namespace memory { namespace cpu {
         static region_t signature();
     private:
         region<AMBIENT_DATA_BULK_CHUNK, factory<AMBIENT_DATA_BULK_CHUNK> > memory;
-        bool reuse_enabled;
         bool reset_enabled;
         size_t soft_limit;
     };
