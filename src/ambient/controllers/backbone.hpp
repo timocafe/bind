@@ -44,7 +44,6 @@ namespace ambient {
         }
         inline void backbone::info(){
             if(ambient::isset("AMBIENT_BULK_LIMIT")) std::cout << "ambient: max share of data bulk: " << ambient::getint("AMBIENT_BULK_LIMIT") << "%\n";
-            if(ambient::isset("AMBIENT_BULK_FORCE_FREE")) std::cout << "ambient: enabled bulk deallocation\n";
             #ifdef MPI_VERSION
             std::cout << "ambient: number of procs: " << num_procs << "\n";
             #endif

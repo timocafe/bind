@@ -14,7 +14,7 @@ Compilation of the target application against Ambient's include folder with C++1
 
 To enforce threading backend or MPI mode use the following knobs:
 
-    -DAMBIENT_THREADING [CILK, OPENMP or SERIAL]  
+    -DAMBIENT_THREADING [CILK, OPENMP or NONE]  
     -DAMBIENT_MPI [MPI_DISABLE or the desired MPI threading level]
 
 (Set AMBIENT_VERBOSE environment variable to see the resulting configuration).

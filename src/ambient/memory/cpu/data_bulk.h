@@ -48,7 +48,6 @@ namespace ambient { namespace memory { namespace cpu {
         static region_t signature();
     private:
         region<AMBIENT_DATA_BULK_CHUNK, factory<AMBIENT_DATA_BULK_CHUNK> > memory;
-        bool reset_enabled;
         size_t soft_limit;
     };
 

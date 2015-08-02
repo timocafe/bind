@@ -29,7 +29,7 @@
 #define AMBIENT_MEMORY_CPU_DATA_BULK_HPP
 
 #include "utils/mem.hpp"
-#define FORCE_DROP_CRITERIA 60
+#define DEFAULT_BULK_LIMIT 30
 
 namespace ambient { namespace memory { namespace cpu {
 
@@ -38,8 +38,7 @@ namespace ambient { namespace memory { namespace cpu {
     }
 
     inline data_bulk::data_bulk(){
-        this->reset_enabled = ambient::isset("AMBIENT_BULK_FORCE_FREE") ? true : false; 
-        this->soft_limit = (ambient::isset("AMBIENT_BULK_LIMIT") ? ambient::getint("AMBIENT_BULK_LIMIT") : FORCE_DROP_CRITERIA) * 
+        this->soft_limit = (ambient::isset("AMBIENT_BULK_LIMIT") ? ambient::getint("AMBIENT_BULK_LIMIT") : DEFAULT_BULK_LIMIT) * 
                            ((double)getRSSLimit() / AMBIENT_DATA_BULK_CHUNK / 100);
     }
 
@@ -55,11 +54,9 @@ namespace ambient { namespace memory { namespace cpu {
 
     inline void data_bulk::drop(){
         instance().memory.reset();
-        if(!instance().reset_enabled){
-            double peak = (double)getPeakRSS()*100 / (double)getRSSLimit();
-            if(peak > FORCE_DROP_CRITERIA) instance().reset_enabled = true;
+        if(instance().soft_limit < factory<AMBIENT_DATA_BULK_CHUNK>::size()){
+            factory<AMBIENT_DATA_BULK_CHUNK>::deallocate();
         }
-        if(instance().reset_enabled) factory<AMBIENT_DATA_BULK_CHUNK>::deallocate();
         factory<AMBIENT_DATA_BULK_CHUNK>::reset();
     }
 
@@ -69,6 +66,5 @@ namespace ambient { namespace memory { namespace cpu {
 
 } } }
 
-#undef FORCE_DROP_CRITERIA
+#undef DEFAULT_BULK_LIMIT
 #endif
-
