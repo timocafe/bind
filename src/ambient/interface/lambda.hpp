@@ -67,13 +67,13 @@ namespace ambient {
     }
 
     template <class L, class... Args>
-    void async(L l, Args&& ... args){
+    void bind(L l, Args&& ... args){
         lambda(l)(std::forward<Args>(args)...);
     }
 
     template <class... L, class... Args>
-    void async(void(*l)(L...), Args&& ... args){
-        async(std::function<void(L...)>(l), std::forward<Args>(args)...);
+    void bind(void(*l)(L...), Args&& ... args){
+        ambient::bind(std::function<void(L...)>(l), std::forward<Args>(args)...);
     }
 
 }

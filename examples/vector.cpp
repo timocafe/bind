@@ -11,9 +11,9 @@ void reverse(ambient::vector<T>& vec){
 }
 
 int main(){
-    ambient::vector<int> a(100);      // zero initialised vector
-    ambient::async(reverse<int>, a);  // reverse vector asynchronously
-    ambient::async([](ambient::vector<int>& vec){ reverse(vec); }, a);
-    ambient::sync();                  // wait for operations to finish
+    ambient::vector<int> a(100);     // zero initialised vector
+    ambient::bind(reverse<int>, a);  // reverse vector asynchronously
+    ambient::bind([](ambient::vector<int>& vec){ reverse(vec); }, a);
+    ambient::sync();                 // wait for operations to finish
     return 0;
 }
