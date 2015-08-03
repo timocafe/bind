@@ -28,7 +28,7 @@
 #ifndef AMBIENT_CONTAINER_ATOMIC_HPP
 #define AMBIENT_CONTAINER_ATOMIC_HPP
 
-#include "utils/export.hpp"
+#include "utils/static_bind.hpp"
 
 namespace ambient {
 
@@ -73,8 +73,8 @@ namespace ambient {
         }
     }
 
-    AMBIENT_EXPORT_TEMPLATE(detail::init_value_atomic, init_value_atomic)
-    AMBIENT_EXPORT_TEMPLATE(detail::copy_atomic,       copy_atomic)
+    AMBIENT_STATIC_BIND_TEMPLATE(detail::init_value_atomic, init_value_atomic)
+    AMBIENT_STATIC_BIND_TEMPLATE(detail::copy_atomic,       copy_atomic)
 
 
     template<class T, class Allocator>

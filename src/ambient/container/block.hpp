@@ -28,7 +28,7 @@
 #ifndef AMBIENT_CONTAINER_BLOCK
 #define AMBIENT_CONTAINER_BLOCK
 
-#include "utils/export.hpp"
+#include "utils/static_bind.hpp"
 
 namespace ambient {
      
@@ -43,7 +43,7 @@ namespace ambient {
         }
     }
 
-    AMBIENT_EXPORT_TEMPLATE(detail::fill_value, fill_value)
+    AMBIENT_STATIC_BIND_TEMPLATE(detail::fill_value, fill_value)
 
     template <class T, class Allocator>
     class block {
