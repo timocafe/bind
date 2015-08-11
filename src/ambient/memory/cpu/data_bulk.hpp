@@ -29,7 +29,7 @@
 #define AMBIENT_MEMORY_CPU_DATA_BULK_HPP
 
 #include "utils/mem.hpp"
-#define DEFAULT_BULK_LIMIT 30
+#define DEFAULT_BULK_LIMIT 20
 
 namespace ambient { namespace memory { namespace cpu {
 

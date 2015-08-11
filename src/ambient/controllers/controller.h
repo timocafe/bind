@@ -28,8 +28,6 @@
 #ifndef AMBIENT_CONTROLLERS_CONTROLLER
 #define AMBIENT_CONTROLLERS_CONTROLLER
 
-#define AMBIENT_STACK_RESERVE 65536
-
 namespace ambient { namespace controllers {
 
     using model::history;

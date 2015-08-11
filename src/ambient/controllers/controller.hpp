@@ -26,6 +26,7 @@
  */
 
 #include "utils/mem.hpp"
+#define STACK_RESERVE 65536
 
 namespace ambient { namespace controllers {
 
@@ -37,9 +38,9 @@ namespace ambient { namespace controllers {
     inline controller::controller() : chains(&stack_m), mirror(&stack_s), clock(1) {}
 
     inline void controller::reserve(){
-        this->stack_m.reserve(AMBIENT_STACK_RESERVE);
-        this->stack_s.reserve(AMBIENT_STACK_RESERVE);
-        this->garbage.reserve(AMBIENT_STACK_RESERVE);
+        this->stack_m.reserve(STACK_RESERVE);
+        this->stack_s.reserve(STACK_RESERVE);
+        this->garbage.reserve(STACK_RESERVE);
     }
 
     inline void controller::flush(){
@@ -176,3 +177,5 @@ namespace ambient { namespace controllers {
     }
 
 } }
+
+#undef STACK_RESERVE

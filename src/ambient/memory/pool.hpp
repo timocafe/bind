@@ -86,10 +86,8 @@ namespace ambient { namespace memory {
     static void* malloc(descriptor& d){
         assert(d.region != region_t::delegated);
         if(d.region == region_t::bulk){
-            #ifdef AMBIENT_USE_DATA_BULK
             void* ptr = cpu::data_bulk::soft_malloc(d.extent);
             if(ptr) return ptr;
-            #endif
             d.region = region_t::standard;
         }
         return malloc<cpu::standard>(d.extent);
