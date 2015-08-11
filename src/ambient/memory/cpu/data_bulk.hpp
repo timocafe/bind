@@ -29,7 +29,7 @@
 #define AMBIENT_MEMORY_CPU_DATA_BULK_HPP
 
 #include "utils/mem.hpp"
-#define DEFAULT_BULK_LIMIT 20
+#define DEFAULT_LIMIT 10
 
 namespace ambient { namespace memory { namespace cpu {
 
@@ -38,25 +38,19 @@ namespace ambient { namespace memory { namespace cpu {
     }
 
     inline data_bulk::data_bulk(){
-        this->soft_limit = (ambient::isset("AMBIENT_BULK_LIMIT") ? ambient::getint("AMBIENT_BULK_LIMIT") : DEFAULT_BULK_LIMIT) * 
+        this->soft_limit = (ambient::isset("AMBIENT_DATA_BULK_LIMIT") ? ambient::getint("AMBIENT_DATA_BULK_LIMIT") : DEFAULT_LIMIT) * 
                            ((double)getRSSLimit() / AMBIENT_DATA_BULK_CHUNK / 100);
     }
 
-    template<size_t S> void* data_bulk::malloc()         { return instance().memory.malloc(S);     }
-                inline void* data_bulk::malloc(size_t s) { return instance().memory.malloc(s);     }
-    template<size_t S> void* data_bulk::calloc()         { void* m = malloc<S>(); memset(m, 0, S); return m; }
-                inline void* data_bulk::calloc(size_t s) { void* m = malloc(s);   memset(m, 0, s); return m; }
-
     inline void* data_bulk::soft_malloc(size_t s){
         if(instance().soft_limit < factory<AMBIENT_DATA_BULK_CHUNK>::size() || s > AMBIENT_DATA_BULK_CHUNK) return NULL;
-        return malloc(s);
+        return instance().memory.malloc(s);
     }
 
     inline void data_bulk::drop(){
         instance().memory.reset();
-        if(instance().soft_limit < factory<AMBIENT_DATA_BULK_CHUNK>::size()){
+        if(instance().soft_limit < factory<AMBIENT_DATA_BULK_CHUNK>::size())
             factory<AMBIENT_DATA_BULK_CHUNK>::deallocate();
-        }
         factory<AMBIENT_DATA_BULK_CHUNK>::reset();
     }
 
@@ -66,5 +60,5 @@ namespace ambient { namespace memory { namespace cpu {
 
 } } }
 
-#undef DEFAULT_BULK_LIMIT
+#undef DEFAULT_LIMIT
 #endif

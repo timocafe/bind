@@ -59,7 +59,7 @@ namespace ambient { namespace controllers {
         if(handle->involved() && !t.valid()){
             t.use();
             t.generator = this;
-            t.embed(ambient::memory::malloc<memory::cpu::data_bulk>(t.spec)); 
+            t.embed(ambient::memory::malloc<memory::cpu::comm_bulk>(t.spec)); 
             ambient::select().get_controller().queue(this);
         }
     }

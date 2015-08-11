@@ -36,13 +36,7 @@ namespace ambient { namespace memory { namespace cpu {
         data_bulk();
     public:
         static data_bulk& instance();
-        template<size_t S> static void* malloc();
-                           static void* malloc(size_t s);
-                           static void* soft_malloc(size_t s);
-        template<size_t S> static void* calloc();
-                           static void* calloc(size_t s);
-        template<size_t S> static void free(void* ptr){}
-                           static void free(void* ptr){}
+        static void* soft_malloc(size_t s);
 
         static void drop();
         static region_t signature();
@@ -54,4 +48,3 @@ namespace ambient { namespace memory { namespace cpu {
 } } }
 
 #endif
-

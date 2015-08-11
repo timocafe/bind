@@ -34,6 +34,7 @@
 #include "ambient/memory/types.h"
 #include "ambient/memory/region.hpp"
 #include "ambient/memory/cpu/data_bulk.h"
+#include "ambient/memory/cpu/comm_bulk.h"
 #include "ambient/memory/cpu/instr_bulk.h"
 #include "ambient/memory/cpu/standard.hpp"
 #include "ambient/memory/cpu/fixed.hpp"
@@ -94,8 +95,7 @@ namespace ambient { namespace memory {
     }
     static void free(void* ptr, descriptor& d){ 
         if(ptr == NULL || d.region == region_t::delegated) return;
-        if(d.region == region_t::bulk) free<cpu::data_bulk>(ptr);
-        else free<cpu::standard>(ptr);
+        if(d.region == region_t::standard) free<cpu::standard>(ptr);
     }
 
 } }

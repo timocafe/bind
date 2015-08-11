@@ -43,7 +43,8 @@ namespace ambient {
             if(ambient::isset("AMBIENT_VERBOSE")) this->info();
         }
         inline void backbone::info(){
-            if(ambient::isset("AMBIENT_BULK_LIMIT")) std::cout << "ambient: max share of data bulk: " << ambient::getint("AMBIENT_BULK_LIMIT") << "%\n";
+            if(ambient::isset("AMBIENT_DATA_BULK_LIMIT")) std::cout << "ambient: max share of data bulk: " << ambient::getint("AMBIENT_DATA_BULK_LIMIT") << "%\n";
+            if(ambient::isset("AMBIENT_COMM_BULK_LIMIT")) std::cout << "ambient: max share of comm bulk: " << ambient::getint("AMBIENT_COMM_BULK_LIMIT") << "%\n";
             #ifdef MPI_VERSION
             std::cout << "ambient: number of procs: " << num_procs << "\n";
             #endif
@@ -75,6 +76,7 @@ namespace ambient {
         inline void backbone::sync(){
             context::sync();
             memory::cpu::data_bulk::drop();
+            memory::cpu::comm_bulk::drop();
         }
         inline actor& backbone::get_actor(){
             return *context::get().actors.top();

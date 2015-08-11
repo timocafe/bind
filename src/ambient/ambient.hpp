@@ -37,6 +37,9 @@
 #ifndef AMBIENT_DATA_BULK_CHUNK
 #define AMBIENT_DATA_BULK_CHUNK      67108864 // 64 MB
 #endif
+#ifndef AMBIENT_COMM_BULK_CHUNK
+#define AMBIENT_COMM_BULK_CHUNK      67108864 // 64 MB
+#endif
 #ifndef AMBIENT_MPI
 #define AMBIENT_MPI                  MPI_THREAD_FUNNELED
 #endif
@@ -111,6 +114,7 @@
 
 #include "ambient/memory/cpu/new.hpp"
 #include "ambient/memory/cpu/data_bulk.hpp"
+#include "ambient/memory/cpu/comm_bulk.hpp"
 #include "ambient/memory/cpu/instr_bulk.hpp"
 
 #include "ambient/model/revision.hpp"
