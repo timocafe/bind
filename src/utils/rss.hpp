@@ -1,5 +1,5 @@
-#ifndef UTILS_MEM_HPP
-#define UTILS_MEM_HPP
+#ifndef UTILS_GET_RSS_HPP
+#define UTILS_GET_RSS_HPP
 
 /* author:  David Robert Nadeau
  * Site:    http://NadeauSoftware.com/

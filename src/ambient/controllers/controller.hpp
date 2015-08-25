@@ -25,7 +25,7 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#include "utils/mem.hpp"
+#include "utils/rss.hpp"
 #define STACK_RESERVE 65536
 
 namespace ambient { namespace controllers {

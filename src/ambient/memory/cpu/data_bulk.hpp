@@ -28,7 +28,7 @@
 #ifndef AMBIENT_MEMORY_CPU_DATA_BULK_HPP
 #define AMBIENT_MEMORY_CPU_DATA_BULK_HPP
 
-#include "utils/mem.hpp"
+#include "utils/rss.hpp"
 #define DEFAULT_LIMIT 10
 
 namespace ambient { namespace memory { namespace cpu {
