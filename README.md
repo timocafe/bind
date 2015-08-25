@@ -1,6 +1,5 @@
 Ambient
 =======
-**C++ framework for application parallelisation under shared/distributed memory systems running Linux/OSX.**
 
 ### Installation
 Ambient is a header-only library (so just installing the sources is enough):  
