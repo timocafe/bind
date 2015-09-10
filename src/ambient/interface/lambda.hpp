@@ -67,13 +67,13 @@ namespace ambient {
     }
 
     template <class L, class... Args>
-    void bind(L l, Args&& ... args){
+    void bind_cpu(L l, Args&& ... args){
         lambda(l)(std::forward<Args>(args)...);
     }
 
     template <class... L, class... Args>
-    void bind(void(*l)(L...), Args&& ... args){
-        ambient::bind(std::function<void(L...)>(l), std::forward<Args>(args)...);
+    void bind_cpu(void(*l)(L...), Args&& ... args){
+        ambient::bind_cpu(std::function<void(L...)>(l), std::forward<Args>(args)...);
     }
 
 }

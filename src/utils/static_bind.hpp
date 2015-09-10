@@ -28,19 +28,19 @@
 #ifndef AMBIENT_UTILS_STATIC_BIND
 #define AMBIENT_UTILS_STATIC_BIND
 
-#define AMBIENT_STATIC_BIND_TEMPLATE(fn, name)  template<typename... TF> \
-                                                struct name ## _kernel : public ambient::kernel< name ## _kernel<TF...> > { \
-                                                    typedef decltype(&fn<TF...>) ftype; \
-                                                    static constexpr ftype c = &fn<TF...>; \
-                                                }; \
-                                                template<typename... TF, typename... Args> \
-                                                void name(Args&... args){ name ## _kernel<TF...>::spawn(args...); }
+#define AMBIENT_STATIC_BIND_CPU_TEMPLATE(fn, name)  template<typename... TF> \
+                                                    struct name ## _kernel : public ambient::kernel< name ## _kernel<TF...> > { \
+                                                        typedef decltype(&fn<TF...>) ftype; \
+                                                        static constexpr ftype c = &fn<TF...>; \
+                                                    }; \
+                                                    template<typename... TF, typename... Args> \
+                                                    void name(Args&... args){ name ## _kernel<TF...>::spawn(args...); }
 
-#define AMBIENT_STATIC_BIND(fn, name)           struct name ## _kernel : public ambient::kernel< name ## _kernel > { \
-                                                    typedef decltype(&fn) ftype; \
-                                                    static constexpr ftype c = &fn; \
-                                                }; \
-                                                template<typename... Args> \
-                                                void name(Args&... args){ name ## _kernel::spawn(args...); }
+#define AMBIENT_STATIC_BIND_CPU(fn, name)           struct name ## _kernel : public ambient::kernel< name ## _kernel > { \
+                                                        typedef decltype(&fn) ftype; \
+                                                        static constexpr ftype c = &fn; \
+                                                    }; \
+                                                    template<typename... Args> \
+                                                    void name(Args&... args){ name ## _kernel::spawn(args...); }
 
 #endif
