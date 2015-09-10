@@ -87,8 +87,8 @@ namespace ambient { namespace utils {
 } }
 
 
-template<class T> using matrix = ambient::numeric::tiles<ambient::numeric::matrix<T> >;
-template<class T> using diagonal = ambient::numeric::tiles<ambient::numeric::diagonal_matrix<T> >;
+template<class T> using matrix = ambient::tiles<ambient::matrix<T> >;
+template<class T> using diagonal = ambient::tiles<ambient::diagonal_matrix<T> >;
 
 #ifdef AMBIENT_ALPS
 template<class T> using matrix_ = alps::numeric::matrix<T>;

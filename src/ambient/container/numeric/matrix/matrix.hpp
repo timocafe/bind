@@ -31,7 +31,7 @@
 #include "ambient/container/numeric/matrix/matrix.h"
 #include "ambient/container/numeric/matrix/matrix_algorithms.hpp"
 
-namespace ambient { namespace numeric {
+namespace ambient { inline namespace numeric {
 
     // {{{ transpose_view
 

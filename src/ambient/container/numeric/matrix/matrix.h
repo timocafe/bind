@@ -31,7 +31,7 @@
 #include "ambient/ambient.hpp"
 #include "ambient/container/future.hpp"
 
-namespace ambient { namespace numeric {
+namespace ambient { inline namespace numeric {
 
     template <typename T, class Allocator = default_allocator>
     class matrix : public ambient::block<T,Allocator>, public ambient::memory::cpu::use_fixed_new<matrix<T,Allocator> > {
@@ -123,14 +123,14 @@ namespace ambient { namespace numeric {
 namespace ambient {
 
     template <class Matrix>
-    struct info < const numeric::transpose_view<Matrix> > {
-        typedef const numeric::transpose_view<Matrix> type;
+    struct info < const transpose_view<Matrix> > {
+        typedef const transpose_view<Matrix> type;
         template <typename U> static const Matrix& unfold(type& folded){ return *(const Matrix*)&folded; }
     };
 
     template <class Matrix>
-    struct info < numeric::transpose_view<Matrix> > {
-        typedef numeric::transpose_view<Matrix> type;
+    struct info < transpose_view<Matrix> > {
+        typedef transpose_view<Matrix> type;
         template <typename U> static Matrix& unfold(type& folded){ return *(Matrix*)&folded; }
     };
 }

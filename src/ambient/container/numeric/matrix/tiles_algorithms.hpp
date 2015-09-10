@@ -38,7 +38,7 @@
 #define scalar_type     typename tiles<Matrix, IB>::scalar_type
 #define allocator_type  typename tiles<Matrix, IB>::allocator_type
 
-namespace ambient { namespace numeric {
+namespace ambient { inline namespace numeric {
 
     template<class Matrix, int IB>
     bool is_hermitian(const tiles<Matrix, IB>& a){

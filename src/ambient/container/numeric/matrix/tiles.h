@@ -35,7 +35,7 @@
 #include <alps/hdf5/complex.hpp>
 #endif
 
-namespace ambient { namespace numeric {
+namespace ambient { inline namespace numeric {
 
     template <class Matrix, int IB = AMBIENT_DEFAULT_IB>
     class tiles : public ambient::memory::cpu::use_fixed_new<tiles<Matrix,IB> > {
@@ -239,7 +239,7 @@ namespace ambient { namespace numeric {
 #ifdef AMBIENT_ALPS_HDF5
 namespace alps { namespace hdf5 {
     template<class Matrix, int IB>
-    struct has_complex_elements<ambient::numeric::tiles<Matrix,IB> >
+    struct has_complex_elements<ambient::tiles<Matrix,IB> >
     : public has_complex_elements<typename alps::detail::remove_cvr<typename Matrix::value_type>::type>
     {};
 } }

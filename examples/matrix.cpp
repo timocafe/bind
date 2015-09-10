@@ -5,7 +5,6 @@
 
 int main(){
     using namespace ambient;
-    using namespace ambient::numeric;
     typedef tiles<matrix<double> > mtx;
 
     size_t m = 16384;

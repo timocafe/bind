@@ -37,7 +37,7 @@
 #define scalar_type     typename matrix<T,A>::scalar_type
 #define difference_type typename matrix<T,A>::difference_type
 
-namespace ambient { namespace numeric {
+namespace ambient { inline namespace numeric {
 
     template<typename T, class A>
     bool is_hermitian(const matrix<T,A>& a)

@@ -174,7 +174,7 @@ namespace ambient {
     }
 }
 
-namespace ambient { namespace numeric {
+namespace ambient { inline namespace numeric {
 
     inline double sqrt(const future<double>& f){ 
         return std::sqrt(f.load());

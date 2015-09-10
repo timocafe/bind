@@ -36,10 +36,10 @@
 
 #include "utils/static_bind.hpp"
 
-namespace ambient { namespace numeric { namespace kernels {
+namespace ambient { inline namespace numeric { namespace kernels {
     namespace detail {
 
-        using ambient::numeric::matrix;
+        using ambient::matrix;
         using ambient::numeric::traits::real_type;
        
         template<typename T, typename IB>
