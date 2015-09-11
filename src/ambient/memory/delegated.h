@@ -25,17 +25,16 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef AMBIENT_MEMORY_CPU_STANDARD_HPP
-#define AMBIENT_MEMORY_CPU_STANDARD_HPP
+#ifndef AMBIENT_MEMORY_DELEGATED_H
+#define AMBIENT_MEMORY_DELEGATED_H
 
-namespace ambient { namespace memory { namespace cpu {
+namespace ambient { namespace memory {
 
-    struct standard {
-        static void* malloc(size_t sz){ return std::malloc(sz); }
-        static void free(void* ptr){ std::free(ptr);  }
-        static constexpr int signature = serial_id<cpu::standard>();
+    class delegated {
+    public:
+        static constexpr int signature = serial_id<delegated>();
     };
 
-} } }
+} }
 
 #endif

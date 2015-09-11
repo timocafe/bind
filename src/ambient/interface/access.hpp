@@ -79,7 +79,7 @@ namespace ambient {
         dst.ambient_allocator.desc->current = r;
         // do not deallocate or reuse
         if(!r->valid() && r->state != locality::remote){
-            assert(r->spec.region != region_t::delegated);
+            assert(r->spec.signature != memory::delegated::signature);
             r->spec.protect();
         }
         assert(!r->valid() || !r->spec.bulked() || model::remote(r)); // can't rely on bulk memory

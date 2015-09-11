@@ -116,9 +116,9 @@ namespace ambient { namespace controllers {
 
     inline void controller::squeeze(revision* r) const {
         if(r->valid() && !r->referenced() && r->locked_once()){
-            if(r->spec.region == region_t::standard){
+            if(r->spec.signature == memory::cpu::standard::signature){
                 ambient::memory::free(r->data, r->spec);
-                r->spec.region = region_t::delegated;
+                r->spec.signature = memory::delegated::signature;
             }
         }
     }

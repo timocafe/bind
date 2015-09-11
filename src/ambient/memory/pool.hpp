@@ -33,6 +33,8 @@
 #include "ambient/memory/factory.hpp"
 #include "ambient/memory/types.h"
 #include "ambient/memory/region.hpp"
+#include "ambient/memory/delegated.h"
+#include "ambient/memory/cpu/bulk.h"
 #include "ambient/memory/cpu/data_bulk.h"
 #include "ambient/memory/cpu/comm_bulk.h"
 #include "ambient/memory/cpu/instr_bulk.h"
@@ -42,28 +44,29 @@
 namespace ambient { namespace memory {
 
     struct descriptor {
+        typedef int memory_id_type;
 
-        descriptor(size_t e, region_t r = region_t::standard) : extent(e), region(r), persistency(1), crefs(1) {}
+        descriptor(size_t e, memory_id_type r = cpu::standard::signature) : extent(e), signature(r), persistency(1), crefs(1) {}
 
         void protect(){
-            if(!(persistency++)) region = region_t::standard;
+            if(!(persistency++)) signature = cpu::standard::signature;
         }
         void weaken(){
-            if(!(--persistency)) region = region_t::bulk;
+            if(!(--persistency)) signature = cpu::bulk::signature;
         }
         void reuse(descriptor& d){
-            region   = d.region;
-            d.region = region_t::delegated;
+            signature = d.signature;
+            d.signature = delegated::signature;
         }
         bool conserves(descriptor& p){
-            assert(p.region != region_t::delegated && region != region_t::delegated);
+            assert(p.signature != delegated::signature && signature != delegated::signature);
             return (!p.bulked() || bulked());
         }
         bool bulked(){
-            return (region == region_t::bulk);
+            return (signature == cpu::bulk::signature);
         }
         size_t extent;
-        region_t region;
+        memory_id_type signature;
         int persistency;
         int crefs;
     };
@@ -80,22 +83,22 @@ namespace ambient { namespace memory {
 
     template<class Memory>
     static void* malloc(descriptor& d){
-        d.region = Memory::signature();
+        d.signature = Memory::signature;
         return Memory::malloc(d.extent);
     }
 
     static void* malloc(descriptor& d){
-        assert(d.region != region_t::delegated);
-        if(d.region == region_t::bulk){
+        assert(d.signature != delegated::signature);
+        if(d.signature == cpu::bulk::signature){
             void* ptr = cpu::data_bulk::soft_malloc(d.extent);
             if(ptr) return ptr;
-            d.region = region_t::standard;
+            d.signature = cpu::standard::signature;
         }
         return malloc<cpu::standard>(d.extent);
     }
     static void free(void* ptr, descriptor& d){ 
-        if(ptr == NULL || d.region == region_t::delegated) return;
-        if(d.region == region_t::standard) free<cpu::standard>(ptr);
+        if(ptr == NULL || d.signature == delegated::signature) return;
+        if(d.signature == cpu::standard::signature) free<cpu::standard>(ptr);
     }
 
 } }

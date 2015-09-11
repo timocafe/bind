@@ -30,16 +30,13 @@
 
 namespace ambient { namespace memory { namespace cpu {
 
-    class data_bulk {
-        data_bulk(const data_bulk&) = delete;
-        data_bulk& operator=(const data_bulk&) = delete;
+    class data_bulk : public bulk {
         data_bulk();
     public:
         static data_bulk& instance();
         static void* soft_malloc(size_t s);
 
         static void drop();
-        static region_t signature();
     private:
         region<AMBIENT_DATA_BULK_CHUNK, factory<AMBIENT_DATA_BULK_CHUNK> > memory;
         size_t soft_limit;

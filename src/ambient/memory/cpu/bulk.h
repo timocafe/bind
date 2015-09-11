@@ -25,15 +25,18 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef AMBIENT_MEMORY_CPU_STANDARD_HPP
-#define AMBIENT_MEMORY_CPU_STANDARD_HPP
+#ifndef AMBIENT_MEMORY_CPU_BULK_H
+#define AMBIENT_MEMORY_CPU_BULK_H
 
 namespace ambient { namespace memory { namespace cpu {
 
-    struct standard {
-        static void* malloc(size_t sz){ return std::malloc(sz); }
-        static void free(void* ptr){ std::free(ptr);  }
-        static constexpr int signature = serial_id<cpu::standard>();
+    class bulk {
+        bulk(const bulk&) = delete;
+        bulk& operator=(const bulk&) = delete;
+    protected:
+        bulk() = default;
+    public:
+        static constexpr int signature = serial_id<cpu::bulk>();
     };
 
 } } }

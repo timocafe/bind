@@ -43,15 +43,15 @@ namespace ambient { namespace memory {
 
     inline void collector::push_back(revision* r){
         if(!r->valid() && r->state != locality::remote){
-            assert(r->spec.region != region_t::bulk);
-            assert(r->spec.region != region_t::delegated);
+            assert(r->spec.signature != cpu::bulk::signature);
+            assert(r->spec.signature != delegated::signature);
             r->spec.weaken();
         }
         r->spec.crefs--;
         if(!r->referenced()){ // squeeze
-            if(r->valid() && !r->locked() && r->spec.region == region_t::standard){
+            if(r->valid() && !r->locked() && r->spec.signature == cpu::standard::signature){
                 ambient::memory::free(r->data, r->spec); // artifacts or last one
-                r->spec.region = region_t::delegated;
+                r->spec.signature = delegated::signature;
             }
             this->rev.push_back(r);
         }
@@ -63,9 +63,9 @@ namespace ambient { namespace memory {
     }
 
     inline void collector::delete_ptr::operator()( revision* r ) const {
-        if(r->valid() && r->spec.region == region_t::standard){
+        if(r->valid() && r->spec.signature == cpu::standard::signature){
             ambient::memory::free(r->data, r->spec); // artifacts
-            r->spec.region = region_t::delegated;
+            r->spec.signature = delegated::signature;
         }
         delete r; 
     }

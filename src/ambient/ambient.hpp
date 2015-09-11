@@ -73,6 +73,7 @@
 #include <functional>
 #include <utility>
 #include <atomic>
+#include <tuple>
 // }}}
 
 #include "ambient/utils/dim2.hpp"

@@ -52,10 +52,6 @@ namespace ambient { namespace memory { namespace cpu {
         factory<AMBIENT_COMM_BULK_CHUNK>::reset();
     }
 
-    inline region_t comm_bulk::signature(){
-        return region_t::bulk;
-    }
-
 } } }
 
 #undef DEFAULT_LIMIT
