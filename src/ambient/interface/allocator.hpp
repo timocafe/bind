@@ -31,7 +31,12 @@
 namespace ambient {
     using model::history;
 
-    struct default_allocator {
+    struct stateful {
+        ambient::revision* before;
+        ambient::revision* after;
+    };
+
+    struct default_allocator : public stateful {
         default_allocator(const default_allocator&) = delete;
         default_allocator& operator=(const default_allocator&) = delete;
         default_allocator(){ }
@@ -54,7 +59,7 @@ namespace ambient {
         history* desc;
     };
 
-    struct allocator_proxy {
+    struct allocator_proxy : public stateful {
         allocator_proxy() = delete;
         template<class OtherAllocator>
         allocator_proxy(const OtherAllocator& other) : desc(other.desc) { }

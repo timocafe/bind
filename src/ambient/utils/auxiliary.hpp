@@ -106,7 +106,7 @@ namespace ambient {
 
     template<typename V>
     inline bool locked_once(const V& o){
-        return o.ambient_before->locked_once();
+        return o.ambient_allocator.before->locked_once();
     }
 
     inline rank_t which(){

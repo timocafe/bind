@@ -56,8 +56,8 @@ namespace ambient {
         void swap(V& left, V& right){
             // swapping allocators should be better
             std::swap(left.ambient_allocator.desc, right.ambient_allocator.desc);
-            left.ambient_after = left.ambient_allocator.desc->current;
-            right.ambient_after = right.ambient_allocator.desc->current;
+            left.ambient_allocator.after = left.ambient_allocator.desc->current;
+            right.ambient_allocator.after = right.ambient_allocator.desc->current;
         }
 
         template <typename T> static void transform(const T& obj){
@@ -87,32 +87,32 @@ namespace ambient {
         revision& c = *obj.ambient_allocator.desc->current;
         assert(c.state == locality::local || c.state == locality::common);
         if(!c.valid()) c.embed(obj.ambient_allocator.calloc(c.spec));
-        obj.ambient_after = obj.ambient_allocator.desc->current;
+        obj.ambient_allocator.after = obj.ambient_allocator.desc->current;
         return obj;
     }
 
     template <typename T> static auto delegated(T& obj) -> typename T::ambient_type_structure& {
-        return *(typename T::ambient_type_structure*)(*obj.ambient_after);
+        return *(typename T::ambient_type_structure*)(*obj.ambient_allocator.after);
     }
 
     template <typename T> static void revise(const T& obj){
         ext::transform(obj);
-        revision& c = *obj.ambient_before; if(c.valid()) return;
+        revision& c = *obj.ambient_allocator.before; if(c.valid()) return;
         c.embed(obj.ambient_allocator.calloc(c.spec));
     }
 
     template <typename T> static void revise(volatile T& obj){
         ext::transform(obj);
-        revision& c = *obj.ambient_after; if(c.valid()) return;
-        revision& p = *obj.ambient_before;
+        revision& c = *obj.ambient_allocator.after; if(c.valid()) return;
+        revision& p = *obj.ambient_allocator.before;
         if(p.valid() && p.locked_once() && !p.referenced() && c.spec.conserves(p.spec)) c.reuse(p);
         else c.embed(obj.ambient_allocator.alloc(c.spec));
     }
 
     template <typename T> static void revise(T& obj){
         ext::transform(obj);
-        revision& c = *obj.ambient_after; if(c.valid()) return;
-        revision& p = *obj.ambient_before;
+        revision& c = *obj.ambient_allocator.after; if(c.valid()) return;
+        revision& p = *obj.ambient_allocator.before;
         if(!p.valid()) c.embed(obj.ambient_allocator.calloc(c.spec));
         else if(p.locked_once() && !p.referenced() && c.spec.conserves(p.spec)) c.reuse(p);
         else{

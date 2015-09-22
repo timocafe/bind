@@ -87,8 +87,8 @@ namespace ambient {
         template<size_t arg> 
         static void deallocate(functor* m){
             EXTRACT(o);
-            revision& parent  = *o->ambient_before;
-            revision& current = *o->ambient_after;
+            revision& parent  = *o->ambient_allocator.before;
+            revision& current = *o->ambient_allocator.after;
             current.complete();
             current.release();
             ambient::select().get_controller().squeeze(&parent);
@@ -112,13 +112,13 @@ namespace ambient {
             ambient::select().get_controller().lsync(o->back());
             ambient::select().get_controller().use_revision(o);
 
-            var->ambient_before = o->current;
+            var->ambient_allocator.before = o->current;
             if(o->current->generator != m){
                 ambient::select().get_controller().collect(o->back());
                 ambient::select().get_controller().add_revision<locality::local>(o, m);
             }
             ambient::select().get_controller().use_revision(o);
-            var->ambient_after = o->current;
+            var->ambient_allocator.after = o->current;
         }
         template<size_t arg>
         static void modify(T& obj, functor* m){
@@ -128,13 +128,13 @@ namespace ambient {
             ambient::select().get_controller().sync(o->back());
             ambient::select().get_controller().use_revision(o);
 
-            var->ambient_before = o->current;
+            var->ambient_allocator.before = o->current;
             if(o->current->generator != m){
                 ambient::select().get_controller().collect(o->back());
                 ambient::select().get_controller().add_revision<locality::common>(o, m); 
             }
             ambient::select().get_controller().use_revision(o);
-            var->ambient_after = o->current;
+            var->ambient_allocator.after = o->current;
         }
         template<size_t arg>
         static T& revised(functor* m){ 
@@ -144,7 +144,7 @@ namespace ambient {
         template<size_t arg> 
         static bool pin(functor* m){ 
             EXTRACT(o);
-            revision& r = *o->ambient_before;
+            revision& r = *o->ambient_allocator.before;
             if(r.generator != NULL && r.generator != m){
                 (r.generator.load())->queue(m);
                 return true;
@@ -159,7 +159,7 @@ namespace ambient {
         template<size_t arg> 
         static bool ready(functor* m){
             EXTRACT(o);
-            revision& r = *o->ambient_before;
+            revision& r = *o->ambient_allocator.before;
             if(r.generator == NULL || r.generator == m) return true;
             return false;
         }
@@ -171,7 +171,7 @@ namespace ambient {
     template <typename T> struct read_iteratable_info : public iteratable_info<T> {
         template<size_t arg> static void deallocate(functor* m){
             EXTRACT(o);
-            revision& r = *o->ambient_before;
+            revision& r = *o->ambient_allocator.before;
             ambient::select().get_controller().squeeze(&r);
             r.release();
         }
@@ -185,7 +185,7 @@ namespace ambient {
             auto o = obj.ambient_allocator.desc;
             ambient::select().get_controller().touch(o);
             T* var = (T*)ambient::memory::malloc<memory::cpu::instr_bulk,T>(); memcpy((void*)var, &obj, sizeof(T)); m->arguments[arg] = (void*)var;
-            var->ambient_before = var->ambient_after = o->current;
+            var->ambient_allocator.before = var->ambient_allocator.after = o->current;
             ambient::select().get_controller().lsync(o->back());
             ambient::select().get_controller().use_revision(o);
         }
@@ -193,7 +193,7 @@ namespace ambient {
             auto o = obj.ambient_allocator.desc;
             ambient::select().get_controller().touch(o);
             T* var = (T*)ambient::memory::malloc<memory::cpu::instr_bulk,T>(); memcpy((void*)var, &obj, sizeof(T)); m->arguments[arg] = (void*)var;
-            var->ambient_before = var->ambient_after = o->current;
+            var->ambient_allocator.before = var->ambient_allocator.after = o->current;
             ambient::select().get_controller().sync(o->back());
             ambient::select().get_controller().use_revision(o);
         }
@@ -204,7 +204,7 @@ namespace ambient {
         template<size_t arg> 
         static bool pin(functor* m){ 
             EXTRACT(o);
-            revision& r = *o->ambient_before;
+            revision& r = *o->ambient_allocator.before;
             if(r.generator != NULL){
                 ambient::guard<ambient::mutex> g(ambient::select().get_mutex());
                 (r.generator.load())->queue(m);
@@ -228,10 +228,10 @@ namespace ambient {
             ambient::select().get_controller().use_revision(o);
             ambient::select().get_controller().collect(o->back());
 
-            var->ambient_before = o->current;
+            var->ambient_allocator.before = o->current;
             ambient::select().get_controller().add_revision<locality::local>(o, m); 
             ambient::select().get_controller().use_revision(o);
-            var->ambient_after = o->current;
+            var->ambient_allocator.after = o->current;
         }
         template<size_t arg> static void modify(T& obj, functor* m){
             auto o = obj.ambient_allocator.desc;
@@ -240,10 +240,10 @@ namespace ambient {
             ambient::select().get_controller().use_revision(o);
             ambient::select().get_controller().collect(o->back());
 
-            var->ambient_before = o->current;
+            var->ambient_allocator.before = o->current;
             ambient::select().get_controller().add_revision<locality::common>(o, m); 
             ambient::select().get_controller().use_revision(o);
-            var->ambient_after = o->current;
+            var->ambient_allocator.after = o->current;
         }
         template<size_t arg> static bool pin(functor* m){ return false; }
         template<size_t arg> static void score(T& obj) {               
@@ -319,15 +319,11 @@ namespace ambient {
 
     // }}}
 
-    #define AMBIENT_DELEGATE(...)       mutable     ambient::revision* ambient_before;                                    \
-                                        mutable     ambient::revision* ambient_after;                                      \
-                                        struct      ambient_type_structure { __VA_ARGS__ };                                 \
-                                        allocator_type ambient_allocator;
+    #define AMBIENT_DELEGATE(...)       struct      ambient_type_structure { __VA_ARGS__ }; \
+                                        mutable allocator_type ambient_allocator;
 
-    #define AMBIENT_PROXY_DELEGATE(T)   mutable     ambient::revision* ambient_before;                                    \
-                                        mutable     ambient::revision* ambient_after;                                      \
-                                        typedef typename T::ambient_type_structure ambient_type_structure;                  \
-                                        ambient::allocator_proxy ambient_allocator;
+    #define AMBIENT_PROXY_DELEGATE(T)   typedef typename T::ambient_type_structure ambient_type_structure; \
+                                        mutable ambient::allocator_proxy ambient_allocator;
     #define AMBIENT_VAR_LENGTH 1
 }
 

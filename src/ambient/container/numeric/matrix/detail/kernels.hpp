@@ -149,7 +149,6 @@ namespace ambient { inline namespace numeric { namespace kernels {
         void gemm_fma(const matrix<T,typename ViewA::allocator_type>& a, 
                       const matrix<T,typename ViewB::allocator_type>& b, 
                             matrix<T,typename ViewC::allocator_type>& c){
-            if(!a.ambient_before->valid() || !b.ambient_before->valid()) return;
             const T* ad = a.data();
             const T* bd = b.data();
             T* cd = c.data();
@@ -169,10 +168,6 @@ namespace ambient { inline namespace numeric { namespace kernels {
                   const matrix<T,typename ViewB::allocator_type>& b, 
                   volatile matrix<T,typename ViewC::allocator_type>& c){
             matrix<T,typename ViewC::allocator_type>& c_ = const_cast<matrix<T,typename ViewC::allocator_type>&>(c);
-            if(!a.ambient_before->valid() || !b.ambient_before->valid()){
-                memset(c_.data(), 0, ambient::extent(c_)); 
-                return;
-            }
             const T* ad = a.data();
             const T* bd = b.data();
             T* cd = c_.data();
