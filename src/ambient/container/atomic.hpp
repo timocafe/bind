@@ -56,9 +56,7 @@ namespace ambient {
         value_type get() const;
         void set(value_type value);
     public:
-    AMBIENT_DELEGATE
-    (
-        typedef Allocator allocator_base_type;
+    AMBIENT_DELEGATE(
         value_type value;
     )};
 

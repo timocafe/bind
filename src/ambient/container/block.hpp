@@ -48,6 +48,7 @@ namespace ambient {
     template <class T, class Allocator>
     class block {
     public:
+        typedef Allocator allocator_type;
         typedef T value_type;
         block(size_t m, size_t n) : ambient_allocator(sizeof(T), m, n) {}
         size_t lda() const {
@@ -68,9 +69,7 @@ namespace ambient {
         const value_type* data() const volatile {
             return ambient::delegated(*this).data;
         }
-    AMBIENT_DELEGATE
-    (
-        typedef Allocator allocator_base_type;
+    AMBIENT_DELEGATE(
         value_type data[ AMBIENT_VAR_LENGTH ]; 
     )};
 

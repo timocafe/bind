@@ -34,11 +34,6 @@ namespace ambient {
 
     namespace ext {
 
-        template<typename Allocator>
-        struct get_mapping {
-            typedef typename Allocator::mapping type;
-        };
-
         template <typename T> static revision& naked(T& obj){
             return *obj.ambient_allocator.desc->current;
         }
@@ -96,8 +91,8 @@ namespace ambient {
         return obj;
     }
 
-    template <typename T> static auto delegated(T& obj) -> typename ext::get_mapping<decltype(obj.ambient_allocator)>::type& {
-        return *(typename ext::get_mapping<decltype(obj.ambient_allocator)>::type*)(*obj.ambient_after);
+    template <typename T> static auto delegated(T& obj) -> typename T::ambient_type_structure& {
+        return *(typename T::ambient_type_structure*)(*obj.ambient_after);
     }
 
     template <typename T> static void revise(const T& obj){

@@ -31,12 +31,12 @@
 namespace ambient { namespace model {
     
     class functor {
-        typedef memory::cpu::instr_bulk::allocator<functor*> allocator;
+        typedef memory::cpu::instr_bulk::allocator<functor*> allocator_type;
     public:
         virtual void invoke() = 0;
         virtual bool ready() = 0;
         void queue(functor* d){ deps.push_back(d); }
-        std::vector<functor*, allocator> deps;
+        std::vector<functor*, allocator_type> deps;
         void* arguments[1]; // note: trashing the vtptr of derived object
     };
 

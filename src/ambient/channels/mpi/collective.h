@@ -32,14 +32,14 @@ namespace ambient { namespace channels { namespace mpi {
 
     template<typename T>
     class bcast {
-        typedef memory::cpu::instr_bulk::allocator<int> allocator;
+        typedef memory::cpu::instr_bulk::allocator<int> allocator_type;
     public:
         void dispatch();
         bcast(T& o, rank_t root) : object(o), root(root), self(0) {}
     private:
         template<class C> friend class collective;
         T& object;
-        std::vector<int,allocator> tags;
+        std::vector<int,allocator_type> tags;
         rank_t root;
         int self;
         int size;
@@ -53,15 +53,15 @@ namespace ambient { namespace channels { namespace mpi {
     template<>
     class collective<typename channel::block_type> : public bcast<typename channel::block_type>, 
                                                      public memory::cpu::use_bulk_new<collective<typename channel::block_type> > {
-        typedef memory::cpu::instr_bulk::allocator<int> allocator;
+        typedef memory::cpu::instr_bulk::allocator<int> allocator_type;
     public:
         collective(typename channel::block_type& r, rank_t root);
         void operator += (rank_t rank);
         bool involved();
         bool test();
     private:
-        std::vector<bool,allocator> states;
-        std::vector<rank_t,allocator> tree;
+        std::vector<bool,allocator_type> states;
+        std::vector<rank_t,allocator_type> tree;
     };
 
     template<>

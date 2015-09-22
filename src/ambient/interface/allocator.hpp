@@ -29,50 +29,35 @@
 #define AMBIENT_INTERFACE_ALLOCATOR
 
 namespace ambient {
-
     using model::history;
 
-    class default_allocator {
-    public:
-        static void* alloc(memory::descriptor& spec){ return ambient::memory::malloc(spec); }
-        static void* calloc(memory::descriptor& spec){ void* m = alloc(spec); memset(m, 0, spec.extent); return m; }
-        static void free(void* ptr, memory::descriptor& spec){ ambient::memory::free(ptr, spec); }
-    };
-
-    namespace detail {
-        template <typename T>
-        struct has_allocator {
-            template <typename T1> static typename T1::allocator_base_type test(int);
-            template <typename>    static void test(...);
-            enum { value = !std::is_void<decltype(test<T>(0))>::value };
-        };
-        template <bool HAS, typename T> struct checked_get_allocator {};
-        template <typename T> struct checked_get_allocator<true, T> { typedef typename T::allocator_base_type type; };
-        template <typename T> struct checked_get_allocator<false, T> { typedef default_allocator type; };
-        template <typename T> struct get_allocator { typedef typename checked_get_allocator<has_allocator<T>::value, T>::type type; };
-    }
-
-    template<typename Mapping, bool Proxy>
-    struct allocator : public detail::get_allocator<Mapping>::type {
-        typedef Mapping mapping;
-        allocator(const allocator&) = delete;
-        allocator& operator=(const allocator&) = delete;
-        allocator(){ }
-        allocator(size_t ts, size_t m = 1, size_t n = 1){
+    struct default_allocator {
+        default_allocator(const default_allocator&) = delete;
+        default_allocator& operator=(const default_allocator&) = delete;
+        default_allocator(){ }
+        default_allocator(size_t ts, size_t m = 1, size_t n = 1){
             desc = new history(dim2(n,m),ts);
         }
-        ~allocator(){
+        ~default_allocator(){
             if(desc->weak()) delete desc;
             else destroy(desc);
+        }
+        static void* alloc(memory::descriptor& spec){
+            return ambient::memory::malloc(spec);
+        }
+        static void* calloc(memory::descriptor& spec){
+            void* m = alloc(spec); memset(m, 0, spec.extent); return m;
+        }
+        static void free(void* ptr, memory::descriptor& spec){
+            ambient::memory::free(ptr, spec);
         }
         history* desc;
     };
 
-    template<typename Mapping>
-    struct allocator<Mapping, true> : public detail::get_allocator<Mapping>::type {
-        typedef Mapping mapping;
-        allocator() = delete;
-        allocator(const allocator<Mapping, false>& other) : desc(other.desc) { }
+    struct allocator_proxy {
+        allocator_proxy() = delete;
+        template<class OtherAllocator>
+        allocator_proxy(const OtherAllocator& other) : desc(other.desc) { }
         history* desc; // non-owning proxy
     };
 }

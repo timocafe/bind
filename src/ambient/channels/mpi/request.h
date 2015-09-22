@@ -45,14 +45,14 @@ namespace ambient { namespace channels { namespace mpi {
     };
 
     class request {
-        typedef memory::cpu::instr_bulk::allocator<request_impl*> allocator;
+        typedef memory::cpu::instr_bulk::allocator<request_impl*> allocator_type;
     public:
         bool operator()();
         void operator &= (request_impl* r);
         void operator += (request_impl* r);
     private:
-        std::vector<request_impl*,allocator> primaries;
-        std::vector<request_impl*,allocator> callbacks;
+        std::vector<request_impl*,allocator_type> primaries;
+        std::vector<request_impl*,allocator_type> callbacks;
     };
 
 } } }

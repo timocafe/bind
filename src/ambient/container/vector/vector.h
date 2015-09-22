@@ -99,9 +99,7 @@ namespace ambient {
     private:
         mutable size_t cached_size_;
     public:
-    AMBIENT_DELEGATE
-    (
-        typedef Allocator allocator_base_type;
+    AMBIENT_DELEGATE(
         size_t size_;
         value_type data[ AMBIENT_VAR_LENGTH ]; 
     )};
