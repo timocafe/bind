@@ -28,8 +28,6 @@
 #ifndef AMBIENT_INTERFACE_KERNEL_INLINER
 #define AMBIENT_INTERFACE_KERNEL_INLINER
 
-#include "utils/index_tuple.h"
-
 namespace ambient {
 
     template <typename T>
@@ -116,12 +114,12 @@ namespace ambient {
         static inline bool ready(functor* o){
             return expand_ready<0,TF...>(o);
         }
-        template<unsigned...I>
-        static void expand_invoke(redi::index_tuple<I...>, functor* o){
+        template<size_t...I>
+        static void expand_invoke(std::index_sequence<I...>, functor* o){
             (*fp)(info<remove_reference<TF> >::typed::template revised<I>(o)...);
         }
         static inline void invoke(functor* o){
-            expand_invoke(redi::to_index_tuple<TF...>(), o);
+            expand_invoke(std::make_index_sequence<sizeof...(TF)>(), o);
         }
     };
 

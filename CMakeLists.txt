@@ -31,7 +31,7 @@ set(MKL_LIB_DIR "" CACHE PATH "Location of BLAS/LAPACK libraries.")
 set(MKL_LIBRARIES "" CACHE STRINGS "BLAS/LAPACK libraries")
 set(PLASMA_LIB_DIR "" CACHE PATH "Location of PLASMA libraries.")
 set(PLASMA_LIBRARIES "" CACHE STRINGS "PLASMA libraries")
-set(AMBIENT_CXX_FLAGS "-std=c++11" CACHE STRINGS "C++11 support is required, e.g. -std=c++11 and -gcc-name=XX")
+set(AMBIENT_CXX_FLAGS "-std=c++14" CACHE STRINGS "C++14 support is required, e.g. -std=c++14 and -gcc-name=XX")
 option(AMBIENT_REGRESSION_TESTS "Build regression tests" OFF)
 
 ########################################################################
