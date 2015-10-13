@@ -25,50 +25,58 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef BIND_UTILS_TIMER
-#define BIND_UTILS_TIMER
-#include "bind/bind.hpp"
-#include <chrono>
+#ifndef BIND_UTILS_MUTEX
+#define BIND_UTILS_MUTEX
 
-namespace bind {
+namespace bind { 
 
-    void sync();
-    class async_timer {
-    public:
-        async_timer(std::string name): val(0.0), name(name), count(0){}
-       ~async_timer(){
-            std::cout << "R" << bind::rank() << ": " << name << " " << val << ", count : " << count << "\n";
-        }
-        void begin(){
-            this->t0 = std::chrono::system_clock::now();
-        }
-        void end(){
-            this->val += std::chrono::duration<double>(std::chrono::system_clock::now() - this->t0).count();
-            count++;
-        }
-        double get_time() const {
-            return val;
-        }
+    template <typename M>
+    class guard {
     private:
-        double val;
-        std::chrono::time_point<std::chrono::system_clock> t0;
-        unsigned long long count;
-        std::string name;
+        M& mtx;
+        guard(const guard &);
+        void operator= (const guard &);
+    public:
+        explicit guard(M& nmtx) : mtx(nmtx){ mtx.lock(); }
+        ~guard(){ mtx.unlock(); }
     };
 
-    class timer : public async_timer {
+    class mutex {
+    private:
+        pthread_mutex_t m;
     public:
-        timer(std::string name) : async_timer(name){}
-        void begin(){
-            bind::sync();
-            async_timer::begin();
+        mutex(mutex const&) = delete;
+        mutex& operator= (mutex const&) = delete;
+
+        mutex(){
+            int const res = pthread_mutex_init(&m,NULL);
+            assert(res == 0);
         }
-        void end(){
-            bind::sync();
-            async_timer::end();
+       ~mutex(){
+            int ret;
+            do{ ret = pthread_mutex_destroy(&m);
+            } while(ret == EINTR);
+        }
+        void lock(){
+            int res;
+            do{ res = pthread_mutex_lock(&m);
+            }while (res == EINTR);
+            assert(res == 0);
+        }
+        void unlock(){
+            int res;
+            do{ res = pthread_mutex_unlock(&m);
+            } while(res == EINTR);
+            assert(res == 0);
+        }
+        bool try_lock(){
+            int res;
+            do{ res = pthread_mutex_trylock(&m);
+            } while(res == EINTR);
+            if(res == EBUSY) return false;
+            return !res;
         }
     };
 }
 
 #endif
-

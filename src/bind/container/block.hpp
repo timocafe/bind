@@ -25,50 +25,50 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef BIND_UTILS_TIMER
-#define BIND_UTILS_TIMER
-#include "bind/bind.hpp"
-#include <chrono>
+#ifndef BIND_CONTAINER_BLOCK
+#define BIND_CONTAINER_BLOCK
 
 namespace bind {
+     
+    template<typename T, class Allocator = default_allocator> class block;
+    namespace detail { 
+        template<typename T>
+        void fill_value(volatile block<T>& a, T& value){
+            block<T>& a_ = const_cast<block<T>&>(a);
+            size_t size = get_square_dim(a_);
+            T* ad = a_.data();
+            for(size_t i = 0; i < size; ++i) ad[i] = value;
+        }
+    }
 
-    void sync();
-    class async_timer {
+    template <class T, class Allocator>
+    class block {
     public:
-        async_timer(std::string name): val(0.0), name(name), count(0){}
-       ~async_timer(){
-            std::cout << "R" << bind::rank() << ": " << name << " " << val << ", count : " << count << "\n";
+        typedef Allocator allocator_type;
+        typedef T value_type;
+        block(size_t m, size_t n) : bind_allocator(sizeof(T), m, n) {}
+        size_t lda() const {
+            return bind::get_dim(*this).y;
         }
-        void begin(){
-            this->t0 = std::chrono::system_clock::now();
+        void init(T value){
+            bind::cpu(detail::fill_value<T>, *this, value);
         }
-        void end(){
-            this->val += std::chrono::duration<double>(std::chrono::system_clock::now() - this->t0).count();
-            count++;
+        value_type& operator()(size_t i, size_t j){
+            return data()[ j*this->lda() + i ];
         }
-        double get_time() const {
-            return val;
+        const value_type& operator()(size_t i, size_t j) const {
+            return data()[ j*this->lda() + i ];
         }
-    private:
-        double val;
-        std::chrono::time_point<std::chrono::system_clock> t0;
-        unsigned long long count;
-        std::string name;
-    };
+        value_type* data() volatile {
+            return bind::delegated(*this).data;
+        }
+        const value_type* data() const volatile {
+            return bind::delegated(*this).data;
+        }
+    BIND_DELEGATE(
+        value_type data[ BIND_VAR_LENGTH ]; 
+    )};
 
-    class timer : public async_timer {
-    public:
-        timer(std::string name) : async_timer(name){}
-        void begin(){
-            bind::sync();
-            async_timer::begin();
-        }
-        void end(){
-            bind::sync();
-            async_timer::end();
-        }
-    };
 }
 
 #endif
-

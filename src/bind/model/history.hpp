@@ -25,50 +25,36 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef BIND_UTILS_TIMER
-#define BIND_UTILS_TIMER
-#include "bind/bind.hpp"
-#include <chrono>
+#ifndef BIND_MODEL_HISTORY
+#define BIND_MODEL_HISTORY
 
-namespace bind {
+#include "bind/utils/dim2.hpp"
 
-    void sync();
-    class async_timer {
+// revision tracking mechanism (target selector)
+namespace bind { namespace model {
+
+    class history : public memory::cpu::use_fixed_new<history> {
     public:
-        async_timer(std::string name): val(0.0), name(name), count(0){}
-       ~async_timer(){
-            std::cout << "R" << bind::rank() << ": " << name << " " << val << ", count : " << count << "\n";
+        history(dim2 dim, size_t ts) : current(NULL), dim(dim), extent(bind::memory::aligned_64(dim.square()*ts)) { }
+        void init_state(rank_t owner){
+            revision* r = new revision(extent, NULL, locality::common, owner);
+            this->current = r;
         }
-        void begin(){
-            this->t0 = std::chrono::system_clock::now();
+        template<locality L> void add_state(functor* gen, rank_t owner){
+            revision* r = new revision(extent, gen, L, owner);
+            this->current = r;
         }
-        void end(){
-            this->val += std::chrono::duration<double>(std::chrono::system_clock::now() - this->t0).count();
-            count++;
+        revision* back() const {
+            return this->current;
         }
-        double get_time() const {
-            return val;
+        bool weak() const {
+            return (this->back() == NULL);
         }
-    private:
-        double val;
-        std::chrono::time_point<std::chrono::system_clock> t0;
-        unsigned long long count;
-        std::string name;
+        revision* current;
+        size_t extent;
+        dim2 dim;
     };
 
-    class timer : public async_timer {
-    public:
-        timer(std::string name) : async_timer(name){}
-        void begin(){
-            bind::sync();
-            async_timer::begin();
-        }
-        void end(){
-            bind::sync();
-            async_timer::end();
-        }
-    };
-}
+} }
 
 #endif
-

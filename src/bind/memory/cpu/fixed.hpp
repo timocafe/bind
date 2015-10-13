@@ -25,50 +25,18 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef BIND_UTILS_TIMER
-#define BIND_UTILS_TIMER
-#include "bind/bind.hpp"
-#include <chrono>
+#ifndef BIND_MEMORY_CPU_FIXED_HPP
+#define BIND_MEMORY_CPU_FIXED_HPP
 
-namespace bind {
+namespace bind { namespace memory { namespace cpu {
 
-    void sync();
-    class async_timer {
-    public:
-        async_timer(std::string name): val(0.0), name(name), count(0){}
-       ~async_timer(){
-            std::cout << "R" << bind::rank() << ": " << name << " " << val << ", count : " << count << "\n";
-        }
-        void begin(){
-            this->t0 = std::chrono::system_clock::now();
-        }
-        void end(){
-            this->val += std::chrono::duration<double>(std::chrono::system_clock::now() - this->t0).count();
-            count++;
-        }
-        double get_time() const {
-            return val;
-        }
-    private:
-        double val;
-        std::chrono::time_point<std::chrono::system_clock> t0;
-        unsigned long long count;
-        std::string name;
+    struct fixed {
+        // boost::singleton_pool<fixed,S> can be used instead (implicit mutex)
+        template<size_t S> static void* malloc(){ return std::malloc(S);   }
+        template<size_t S> static void* calloc(){ return std::calloc(1,S); }
+        template<size_t S> static void free(void* ptr){ std::free(ptr);    }
     };
 
-    class timer : public async_timer {
-    public:
-        timer(std::string name) : async_timer(name){}
-        void begin(){
-            bind::sync();
-            async_timer::begin();
-        }
-        void end(){
-            bind::sync();
-            async_timer::end();
-        }
-    };
-}
+} } }
 
 #endif
-

@@ -25,50 +25,41 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef BIND_UTILS_TIMER
-#define BIND_UTILS_TIMER
-#include "bind/bind.hpp"
-#include <chrono>
+#ifndef BIND_MEMORY_CPU_DATA_BULK
+#define BIND_MEMORY_CPU_DATA_BULK
 
-namespace bind {
+#include "utils/rss.hpp"
+#include "bind/utils/env.hpp"
+#define DEFAULT_LIMIT 10
 
-    void sync();
-    class async_timer {
+namespace bind { namespace memory { namespace cpu {
+
+    class data_bulk : public bulk {
+        data_bulk(){
+            this->soft_limit = (bind::isset("BIND_DATA_BULK_LIMIT") ? bind::getint("BIND_DATA_BULK_LIMIT") : DEFAULT_LIMIT) * 
+                               ((double)getRSSLimit() / BIND_DATA_BULK_CHUNK / 100);
+        }
     public:
-        async_timer(std::string name): val(0.0), name(name), count(0){}
-       ~async_timer(){
-            std::cout << "R" << bind::rank() << ": " << name << " " << val << ", count : " << count << "\n";
+        static data_bulk& instance(){
+            static data_bulk singleton; return singleton;
         }
-        void begin(){
-            this->t0 = std::chrono::system_clock::now();
+        static void* soft_malloc(size_t s){
+            if(instance().soft_limit < factory<BIND_DATA_BULK_CHUNK>::size() || s > BIND_DATA_BULK_CHUNK) return NULL;
+            return instance().memory.malloc(s);
         }
-        void end(){
-            this->val += std::chrono::duration<double>(std::chrono::system_clock::now() - this->t0).count();
-            count++;
-        }
-        double get_time() const {
-            return val;
+
+        static void drop(){
+            instance().memory.reset();
+            if(instance().soft_limit < factory<BIND_DATA_BULK_CHUNK>::size())
+                factory<BIND_DATA_BULK_CHUNK>::deallocate();
+            factory<BIND_DATA_BULK_CHUNK>::reset();
         }
     private:
-        double val;
-        std::chrono::time_point<std::chrono::system_clock> t0;
-        unsigned long long count;
-        std::string name;
+        region<BIND_DATA_BULK_CHUNK, factory<BIND_DATA_BULK_CHUNK> > memory;
+        size_t soft_limit;
     };
 
-    class timer : public async_timer {
-    public:
-        timer(std::string name) : async_timer(name){}
-        void begin(){
-            bind::sync();
-            async_timer::begin();
-        }
-        void end(){
-            bind::sync();
-            async_timer::end();
-        }
-    };
-}
+} } }
 
+#undef DEFAULT_LIMIT
 #endif
-

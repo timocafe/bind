@@ -25,50 +25,47 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef BIND_UTILS_TIMER
-#define BIND_UTILS_TIMER
-#include "bind/bind.hpp"
-#include <chrono>
+namespace bind { namespace core {
 
-namespace bind {
+    // {{{ transformable
 
-    void sync();
-    class async_timer {
-    public:
-        async_timer(std::string name): val(0.0), name(name), count(0){}
-       ~async_timer(){
-            std::cout << "R" << bind::rank() << ": " << name << " " << val << ", count : " << count << "\n";
-        }
-        void begin(){
-            this->t0 = std::chrono::system_clock::now();
-        }
-        void end(){
-            this->val += std::chrono::duration<double>(std::chrono::system_clock::now() - this->t0).count();
-            count++;
-        }
-        double get_time() const {
-            return val;
-        }
-    private:
-        double val;
-        std::chrono::time_point<std::chrono::system_clock> t0;
-        unsigned long long count;
-        std::string name;
-    };
+    inline void set<transformable>::spawn(transformable& t){
+        t.generator->queue(new set(t));
+    }
+    inline set<transformable>::set(transformable& t) : t(t) {
+        handle = bind::select().get_channel().bcast(t, bind::which());
+    }
+    inline bool set<transformable>::ready(){
+        return (t.generator != NULL ? false : handle->test());
+    }
+    inline void set<transformable>::invoke(){}
 
-    class timer : public async_timer {
-    public:
-        timer(std::string name) : async_timer(name){}
-        void begin(){
-            bind::sync();
-            async_timer::begin();
-        }
-        void end(){
-            bind::sync();
-            async_timer::end();
-        }
-    };
-}
+    // }}}
+    // {{{ revision
 
-#endif
+    inline void set<revision>::spawn(revision& r){
+        set*& transfer = (set*&)r.assist.second;
+        if(bind::select().update(r)) transfer = new set(r);
+        *transfer += bind::which();
+        bind::select().generate_sid();
+    }
+    inline set<revision>::set(revision& r) : t(r) {
+        t.use();
+        handle = bind::select().get_channel().set(t);
+        if(t.generator != NULL) (t.generator.load())->queue(this);
+        else bind::select().queue(this);
+    }
+    inline void set<revision>::operator += (rank_t rank){
+        *handle += rank;
+    }
+    inline bool set<revision>::ready(){
+        return (t.generator != NULL ? false : handle->test());
+    }
+    inline void set<revision>::invoke(){
+        bind::select().squeeze(&t);
+        t.release(); 
+    }
 
+    // }}}
+
+} }

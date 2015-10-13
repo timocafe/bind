@@ -25,50 +25,45 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef BIND_UTILS_TIMER
-#define BIND_UTILS_TIMER
-#include "bind/bind.hpp"
-#include <chrono>
+#ifndef BIND_CORE_ACTOR
+#define BIND_CORE_ACTOR
 
 namespace bind {
 
-    void sync();
-    class async_timer {
+    namespace core {
+        class controller;
+    }
+
+    class actor {
+    protected:
+        typedef core::controller controller_type;
+        actor(){}
     public:
-        async_timer(std::string name): val(0.0), name(name), count(0){}
-       ~async_timer(){
-            std::cout << "R" << bind::rank() << ": " << name << " " << val << ", count : " << count << "\n";
-        }
-        void begin(){
-            this->t0 = std::chrono::system_clock::now();
-        }
-        void end(){
-            this->val += std::chrono::duration<double>(std::chrono::system_clock::now() - this->t0).count();
-            count++;
-        }
-        double get_time() const {
-            return val;
-        }
-    private:
-        double val;
-        std::chrono::time_point<std::chrono::system_clock> t0;
-        unsigned long long count;
-        std::string name;
+       ~actor();
+        actor(scope::const_iterator it);
+        bool remote() const;
+        bool local()  const;
+        bool common() const;
+        rank_t which()  const;
+        friend class core::controller;
+    protected:
+        int factor;
+        int round;
+        rank_t rank;
+        locality state;
+        controller_type* controller;
     };
 
-    class timer : public async_timer {
+    class actor_common : public actor {
     public:
-        timer(std::string name) : async_timer(name){}
-        void begin(){
-            bind::sync();
-            async_timer::begin();
-        }
-        void end(){
-            bind::sync();
-            async_timer::end();
-        }
+        actor_common();
     };
+
+    class actor_zero : public actor {
+    public:
+        actor_zero(typename actor::controller_type* c);
+    };
+
 }
 
 #endif
-

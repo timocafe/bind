@@ -25,50 +25,41 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef BIND_UTILS_TIMER
-#define BIND_UTILS_TIMER
-#include "bind/bind.hpp"
-#include <chrono>
+#ifndef BIND_INTERFACE_KERNEL
+#define BIND_INTERFACE_KERNEL
+
+#include "utils/index_sequence.hpp"
+#include "bind/interface/kernel_inliner.hpp"
 
 namespace bind {
 
-    void sync();
-    class async_timer {
-    public:
-        async_timer(std::string name): val(0.0), name(name), count(0){}
-       ~async_timer(){
-            std::cout << "R" << bind::rank() << ": " << name << " " << val << ", count : " << count << "\n";
-        }
-        void begin(){
-            this->t0 = std::chrono::system_clock::now();
-        }
-        void end(){
-            this->val += std::chrono::duration<double>(std::chrono::system_clock::now() - this->t0).count();
-            count++;
-        }
-        double get_time() const {
-            return val;
-        }
-    private:
-        double val;
-        std::chrono::time_point<std::chrono::system_clock> t0;
-        unsigned long long count;
-        std::string name;
-    };
+    using model::functor;
 
-    class timer : public async_timer {
+    template<class K>
+    class kernel : public functor {
     public:
-        timer(std::string name) : async_timer(name){}
-        void begin(){
-            bind::sync();
-            async_timer::begin();
+        #define inliner kernel_inliner<typename K::ftype,K::c>
+        inline void operator delete (void* ptr){ }
+        inline void* operator new (size_t size){
+            return bind::memory::malloc<memory::cpu::instr_bulk,sizeof(K)+sizeof(void*)*inliner::arity>();
         }
-        void end(){
-            bind::sync();
-            async_timer::end();
+        virtual bool ready(){ 
+            return inliner::ready(this);
         }
+        virtual void invoke(){
+            inliner::invoke(this);
+            inliner::cleanup(this);
+        }
+        template<size_t...I, typename... Args>
+        static void expand_spawn(std::index_sequence<I...>, Args&... args){
+            inliner::latch(new kernel(), info<Args>::template unfold<typename inliner::template get_type<I> >(args)...);
+        }
+        template<typename... Args>
+        static inline void spawn(Args&... args){
+            expand_spawn(std::make_index_sequence<sizeof...(Args)>(), args...);
+        }
+        #undef inliner
     };
 }
 
 #endif
-

@@ -1,0 +1,7 @@
+#include "bind/memory/cpu/bulk.h"
+#include "bind/memory/cpu/data_bulk.hpp"
+#include "bind/memory/cpu/comm_bulk.hpp"
+#include "bind/memory/cpu/instr_bulk.hpp"
+#include "bind/memory/cpu/standard.hpp"
+#include "bind/memory/cpu/fixed.hpp"
+#include "bind/memory/cpu/new.hpp"

@@ -25,50 +25,37 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef BIND_UTILS_TIMER
-#define BIND_UTILS_TIMER
-#include "bind/bind.hpp"
-#include <chrono>
+#ifndef BIND_MEMORY_CPU_COMM_BULK
+#define BIND_MEMORY_CPU_COMM_BULK
 
-namespace bind {
+#include "utils/rss.hpp"
+#define DEFAULT_LIMIT 20
 
-    void sync();
-    class async_timer {
+namespace bind { namespace memory { namespace cpu {
+
+    class comm_bulk : public bulk {
+        comm_bulk(){
+            this->soft_limit = (bind::isset("BIND_COMM_BULK_LIMIT") ? bind::getint("BIND_COMM_BULK_LIMIT") : DEFAULT_LIMIT) * 
+                               ((double)getRSSLimit() / BIND_COMM_BULK_CHUNK / 100);
+        }
     public:
-        async_timer(std::string name): val(0.0), name(name), count(0){}
-       ~async_timer(){
-            std::cout << "R" << bind::rank() << ": " << name << " " << val << ", count : " << count << "\n";
+        static comm_bulk& instance(){
+            static comm_bulk singleton; return singleton;
         }
-        void begin(){
-            this->t0 = std::chrono::system_clock::now();
-        }
-        void end(){
-            this->val += std::chrono::duration<double>(std::chrono::system_clock::now() - this->t0).count();
-            count++;
-        }
-        double get_time() const {
-            return val;
+        template<size_t S> static void* malloc()        { return instance().memory.malloc(S); }
+                           static void* malloc(size_t s){ return instance().memory.malloc(s); }
+        static void drop(){
+            instance().memory.reset();
+            if(instance().soft_limit < factory<BIND_COMM_BULK_CHUNK>::size())
+                factory<BIND_COMM_BULK_CHUNK>::deallocate();
+            factory<BIND_COMM_BULK_CHUNK>::reset();
         }
     private:
-        double val;
-        std::chrono::time_point<std::chrono::system_clock> t0;
-        unsigned long long count;
-        std::string name;
+        size_t soft_limit;
+        region<BIND_COMM_BULK_CHUNK, factory<BIND_COMM_BULK_CHUNK> > memory;
     };
 
-    class timer : public async_timer {
-    public:
-        timer(std::string name) : async_timer(name){}
-        void begin(){
-            bind::sync();
-            async_timer::begin();
-        }
-        void end(){
-            bind::sync();
-            async_timer::end();
-        }
-    };
-}
+} } }
 
+#undef DEFAULT_LIMIT
 #endif
-

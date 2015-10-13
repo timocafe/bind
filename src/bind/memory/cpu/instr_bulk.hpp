@@ -25,50 +25,47 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef BIND_UTILS_TIMER
-#define BIND_UTILS_TIMER
-#include "bind/bind.hpp"
-#include <chrono>
+#ifndef BIND_MEMORY_CPU_INSTR_BULK_H
+#define BIND_MEMORY_CPU_INSTR_BULK_H
 
-namespace bind {
+namespace bind { namespace memory { namespace cpu {
 
-    void sync();
-    class async_timer {
-    public:
-        async_timer(std::string name): val(0.0), name(name), count(0){}
-       ~async_timer(){
-            std::cout << "R" << bind::rank() << ": " << name << " " << val << ", count : " << count << "\n";
+    struct instr_bulk {
+        template<class T>
+        class allocator {
+        public:
+            typedef T value_type;
+            template <class U> struct rebind { typedef allocator<U> other; };
+            allocator() throw() { }
+            allocator(const allocator&) throw() { }
+            template<typename U> allocator(const allocator<U>&) throw() { }
+           ~allocator() throw() { }
+            static void deallocate(T* p, size_t n){ }
+            static T* allocate(size_t n){
+                return (T*)instr_bulk::malloc(n*sizeof(T));
+            }
+        };
+
+        static instr_bulk& instance(){
+            static instr_bulk singleton; return singleton;
         }
-        void begin(){
-            this->t0 = std::chrono::system_clock::now();
+        template<size_t S> 
+        static void* malloc(){
+            return malloc(S);
         }
-        void end(){
-            this->val += std::chrono::duration<double>(std::chrono::system_clock::now() - this->t0).count();
-            count++;
+        static void* malloc(size_t s){
+            return instance().memory.malloc(s);
         }
-        double get_time() const {
-            return val;
+        static void drop(){
+            instance().memory.reset();
         }
     private:
-        double val;
-        std::chrono::time_point<std::chrono::system_clock> t0;
-        unsigned long long count;
-        std::string name;
+        bind::memory::private_region<BIND_INSTR_BULK_CHUNK, 
+                                       bind::memory::private_factory<BIND_INSTR_BULK_CHUNK> 
+                                       > memory;
     };
 
-    class timer : public async_timer {
-    public:
-        timer(std::string name) : async_timer(name){}
-        void begin(){
-            bind::sync();
-            async_timer::begin();
-        }
-        void end(){
-            bind::sync();
-            async_timer::end();
-        }
-    };
-}
+} } }
 
 #endif
 

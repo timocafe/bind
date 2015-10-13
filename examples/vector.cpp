@@ -1,8 +1,8 @@
-#include "ambient/ambient.hpp"
-#include "ambient/container/vector.hpp"
+#include "bind/bind.hpp"
+#include "bind/container/vector.hpp"
 
 template<typename T>
-void reverse(ambient::vector<T>& vec){
+void reverse(bind::vector<T>& vec){
     int start = 0;
     int end = vec.size();
     while((start != end) && (start != --end)){
@@ -11,9 +11,11 @@ void reverse(ambient::vector<T>& vec){
 }
 
 int main(){
-    ambient::vector<int> a(100);         // zero initialised vector
-    ambient::bind_cpu(reverse<int>, a);  // reverse vector asynchronously
-    ambient::bind_cpu([](ambient::vector<int>& vec){ reverse(vec); }, a);
-    ambient::sync();                     // wait for operations to finish
+    bind::vector<int> a(100);         // zero initialised vector
+    bind::cpu(reverse<int>, a);  // reverse vector asynchronously
+    bind::cpu([](bind::vector<int>& vec){ reverse(vec); }, a);
+    bind::sync();                     // wait for operations to finish
+
+    //std::vector<int, bind::default_allocator> test(12);
     return 0;
 }

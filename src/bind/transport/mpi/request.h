@@ -25,50 +25,36 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef BIND_UTILS_TIMER
-#define BIND_UTILS_TIMER
-#include "bind/bind.hpp"
-#include <chrono>
+#ifndef BIND_TRANSPORT_MPI_REQUEST
+#define BIND_TRANSPORT_MPI_REQUEST
 
-namespace bind {
+namespace bind { namespace transport { namespace mpi {
 
-    void sync();
-    class async_timer {
+    class request_impl : public memory::cpu::use_bulk_new<request_impl> {
     public:
-        async_timer(std::string name): val(0.0), name(name), count(0){}
-       ~async_timer(){
-            std::cout << "R" << bind::rank() << ": " << name << " " << val << ", count : " << count << "\n";
-        }
-        void begin(){
-            this->t0 = std::chrono::system_clock::now();
-        }
-        void end(){
-            this->val += std::chrono::duration<double>(std::chrono::system_clock::now() - this->t0).count();
-            count++;
-        }
-        double get_time() const {
-            return val;
-        }
+        request_impl(void(*impl)(request_impl*), typename channel::scalar_type& v, rank_t target, int tag = 0);
+        request_impl(void(*impl)(request_impl*), typename channel::block_type& r, rank_t target, int tag = 0);
+        inline bool operator()();
+        void* data;
+        int extent;
+        int target; // MPI_INT
+        MPI_Request mpi_request;
+        void(*impl)(request_impl*);
+        bool once;
+        int tag;
+    };
+
+    class request {
+        typedef memory::cpu::instr_bulk::allocator<request_impl*> allocator_type;
+    public:
+        bool operator()();
+        void operator &= (request_impl* r);
+        void operator += (request_impl* r);
     private:
-        double val;
-        std::chrono::time_point<std::chrono::system_clock> t0;
-        unsigned long long count;
-        std::string name;
+        std::vector<request_impl*,allocator_type> primaries;
+        std::vector<request_impl*,allocator_type> callbacks;
     };
 
-    class timer : public async_timer {
-    public:
-        timer(std::string name) : async_timer(name){}
-        void begin(){
-            bind::sync();
-            async_timer::begin();
-        }
-        void end(){
-            bind::sync();
-            async_timer::end();
-        }
-    };
-}
+} } }
 
 #endif
-

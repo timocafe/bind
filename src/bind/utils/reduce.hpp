@@ -25,50 +25,41 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef BIND_UTILS_TIMER
-#define BIND_UTILS_TIMER
-#include "bind/bind.hpp"
-#include <chrono>
+#ifndef BIND_UTILS_REDUCE
+#define BIND_UTILS_REDUCE
 
 namespace bind {
 
-    void sync();
-    class async_timer {
-    public:
-        async_timer(std::string name): val(0.0), name(name), count(0){}
-       ~async_timer(){
-            std::cout << "R" << bind::rank() << ": " << name << " " << val << ", count : " << count << "\n";
-        }
-        void begin(){
-            this->t0 = std::chrono::system_clock::now();
-        }
-        void end(){
-            this->val += std::chrono::duration<double>(std::chrono::system_clock::now() - this->t0).count();
-            count++;
-        }
-        double get_time() const {
-            return val;
-        }
-    private:
-        double val;
-        std::chrono::time_point<std::chrono::system_clock> t0;
-        unsigned long long count;
-        std::string name;
-    };
+    template<typename T>
+    inline void reduce(std::vector<T*>& seq){
+        if(seq.size() == 1) return;
+        for(int stride = 1; stride < seq.size(); stride *= 2)
+            for(int k = stride; k < seq.size(); k += stride*2){
+                *seq[k-stride] += *seq[k];
+            }
+    }
 
-    class timer : public async_timer {
-    public:
-        timer(std::string name) : async_timer(name){}
-        void begin(){
+    template<typename T, typename Function>
+    inline T& reduce(std::vector<T>& seq, Function fn){
+        if(seq.size() == 1) return seq[0];
+        for(int stride = 1; stride < seq.size(); stride *= 2)
+            for(int k = stride; k < seq.size(); k += stride*2){
+                fn(seq[k-stride], seq[k]);
+            }
+        return seq[0];
+    }
+
+    template<typename T, typename Function>
+    inline T& reduce_sync(std::vector<T>& seq, Function fn){
+        if(seq.size() == 1) return seq[0];
+        for(int stride = 1; stride < seq.size(); stride *= 2){
+            for(int k = stride; k < seq.size(); k += stride*2){
+                fn(seq[k-stride], seq[k]);
+            }
             bind::sync();
-            async_timer::begin();
         }
-        void end(){
-            bind::sync();
-            async_timer::end();
-        }
-    };
+        return seq[0];
+    }
 }
 
 #endif
-

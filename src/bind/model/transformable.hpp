@@ -25,50 +25,48 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef BIND_UTILS_TIMER
-#define BIND_UTILS_TIMER
-#include "bind/bind.hpp"
-#include <chrono>
+#ifndef BIND_MODEL_TRANSFORMABLE
+#define BIND_MODEL_TRANSFORMABLE
 
-namespace bind {
+namespace bind { namespace model {
 
-    void sync();
-    class async_timer {
+    class transformable {
     public:
-        async_timer(std::string name): val(0.0), name(name), count(0){}
-       ~async_timer(){
-            std::cout << "R" << bind::rank() << ": " << name << " " << val << ", count : " << count << "\n";
+        union numeric_union {
+            typedef std::complex<double> limit; 
+            bool b; 
+            double d; 
+            std::complex<double> c; 
+            int i; 
+            size_t s; 
+            operator bool& (){ return b; }
+            operator double& (){ return d; }
+            operator std::complex<double>& (){ return c; }
+            operator size_t& (){ return s; }
+            operator int& (){ return i; }
+            void operator = (bool value){ b = value; }
+            void operator = (double value){ d = value; }
+            void operator = (std::complex<double> value){ c = value; }
+            void operator = (size_t value){ s = value; }
+            void operator = (int value){ i = value; }
+            numeric_union(){ }
+        };
+        void* operator new (size_t, void* place){ return place; }
+        void operator delete (void*, void*){ /* doesn't throw */ }
+
+        template <typename T>
+        transformable(T value){
+            this->v = value;
         }
-        void begin(){
-            this->t0 = std::chrono::system_clock::now();
+        numeric_union eval() const {
+            return v;
         }
-        void end(){
-            this->val += std::chrono::duration<double>(std::chrono::system_clock::now() - this->t0).count();
-            count++;
-        }
-        double get_time() const {
-            return val;
-        }
-    private:
-        double val;
-        std::chrono::time_point<std::chrono::system_clock> t0;
-        unsigned long long count;
-        std::string name;
+        mutable numeric_union v;
+        functor* generator;
     };
 
-    class timer : public async_timer {
-    public:
-        timer(std::string name) : async_timer(name){}
-        void begin(){
-            bind::sync();
-            async_timer::begin();
-        }
-        void end(){
-            bind::sync();
-            async_timer::end();
-        }
-    };
-}
+    // injecting templated T is also possible (except in collector) //
+    constexpr size_t sizeof_transformable(){ return bind::memory::aligned_64< sizeof(transformable) >(); }
+} }
 
 #endif
-

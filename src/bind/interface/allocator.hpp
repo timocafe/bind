@@ -25,50 +25,40 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef BIND_UTILS_TIMER
-#define BIND_UTILS_TIMER
-#include "bind/bind.hpp"
-#include <chrono>
+#ifndef BIND_INTERFACE_ALLOCATOR
+#define BIND_INTERFACE_ALLOCATOR
 
 namespace bind {
+    using model::history;
+    using model::revision;
 
-    void sync();
-    class async_timer {
-    public:
-        async_timer(std::string name): val(0.0), name(name), count(0){}
-       ~async_timer(){
-            std::cout << "R" << bind::rank() << ": " << name << " " << val << ", count : " << count << "\n";
-        }
-        void begin(){
-            this->t0 = std::chrono::system_clock::now();
-        }
-        void end(){
-            this->val += std::chrono::duration<double>(std::chrono::system_clock::now() - this->t0).count();
-            count++;
-        }
-        double get_time() const {
-            return val;
-        }
-    private:
-        double val;
-        std::chrono::time_point<std::chrono::system_clock> t0;
-        unsigned long long count;
-        std::string name;
+    struct stateful {
+        revision* before;
+        revision* after;
     };
 
-    class timer : public async_timer {
-    public:
-        timer(std::string name) : async_timer(name){}
-        void begin(){
-            bind::sync();
-            async_timer::begin();
+    struct default_allocator : public stateful {
+        default_allocator(const default_allocator&) = delete;
+        default_allocator& operator=(const default_allocator&) = delete;
+        default_allocator(){ }
+        default_allocator(size_t ts, size_t m = 1, size_t n = 1){
+            desc = new history(dim2(n,m),ts);
         }
-        void end(){
-            bind::sync();
-            async_timer::end();
+        ~default_allocator(){
+            if(desc->weak()) delete desc;
+            else destroy(desc);
         }
+        static void* alloc(memory::descriptor& spec){
+            return spec.malloc();
+        }
+        static void* calloc(memory::descriptor& spec){
+            void* m = alloc(spec); memset(m, 0, spec.extent); return m;
+        }
+        static void free(void* ptr, memory::descriptor& spec){
+            spec.free(ptr);
+        }
+        history* desc;
     };
 }
 
 #endif
-

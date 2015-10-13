@@ -25,50 +25,35 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef BIND_UTILS_TIMER
-#define BIND_UTILS_TIMER
-#include "bind/bind.hpp"
-#include <chrono>
+#ifndef BIND_CORE_SCOPE
+#define BIND_CORE_SCOPE
 
 namespace bind {
 
-    void sync();
-    class async_timer {
+    namespace core {
+        class controller;
+    }
+
+    class scope {
     public:
-        async_timer(std::string name): val(0.0), name(name), count(0){}
-       ~async_timer(){
-            std::cout << "R" << bind::rank() << ": " << name << " " << val << ", count : " << count << "\n";
-        }
-        void begin(){
-            this->t0 = std::chrono::system_clock::now();
-        }
-        void end(){
-            this->val += std::chrono::duration<double>(std::chrono::system_clock::now() - this->t0).count();
-            count++;
-        }
-        double get_time() const {
-            return val;
-        }
+        typedef std::vector<int> container;
+        typedef container::const_iterator const_iterator;
+        static const_iterator balance(int k, int max_k);
+        static const_iterator permute(int k, const std::vector<int>& s, size_t granularity = 1);
+        static bool local();
+        static scope& top();
+        static size_t size();
+        static const_iterator begin();
+        static const_iterator end();
+       ~scope();
+        scope(const_iterator first, const_iterator last);
+        scope(const_iterator first, size_t size);
     private:
-        double val;
-        std::chrono::time_point<std::chrono::system_clock> t0;
-        unsigned long long count;
-        std::string name;
+        container provision;
+        friend class core::controller;
+        scope(size_t np);
     };
 
-    class timer : public async_timer {
-    public:
-        timer(std::string name) : async_timer(name){}
-        void begin(){
-            bind::sync();
-            async_timer::begin();
-        }
-        void end(){
-            bind::sync();
-            async_timer::end();
-        }
-    };
 }
 
 #endif
-

@@ -1,6 +1,6 @@
-#include "ambient/ambient.hpp"
-#include "ambient/utils/math.hpp"
-#include "utils/static_bind.hpp"
+#include "bind/bind.hpp"
+#include "bind/container/block.hpp"
+#include "bind/utils/math.hpp"
 #include "utils/timer.hpp"
 #define IB 256
 
@@ -8,7 +8,7 @@ template<typename T> class stencil;
 template<typename T> class border;
 
 namespace detail { 
-    using namespace ambient;
+    using namespace bind;
 
     // Dirichlet boundaries; central differences in space, forward Euler in time:
     // u[i,j]' = u[i,j] + dt*D*(u(i,j+1) + u(i,j-1) + u(i+1,j) + u(i-1,j) - 4*u(i,j)) / (dr * dr)
@@ -22,7 +22,7 @@ namespace detail {
         size_t m = get_dim(av).y;
         size_t n = get_dim(av).x;
         T* a_ = av.data(); 
-        memset(a_, 0, ambient::extent(av)); 
+        memset(a_, 0, bind::extent(av)); 
         for(size_t i = 0; i < m; ++i)
         for(size_t j = 0; j < n; ++j){
            if(std::fabs(posi+i*dr) < bound && 
@@ -228,28 +228,19 @@ namespace detail {
 
 }
 
-AMBIENT_STATIC_BIND_CPU_TEMPLATE(detail::partial_init_value, partial_init_value)
-AMBIENT_STATIC_BIND_CPU_TEMPLATE(detail::reduce, reduce)
-AMBIENT_STATIC_BIND_CPU_TEMPLATE(detail::reduce_moment, reduce_moment)
-AMBIENT_STATIC_BIND_CPU_TEMPLATE(detail::evolve, evolve)
-AMBIENT_STATIC_BIND_CPU_TEMPLATE(detail::contract_border_top, contract_border_top)
-AMBIENT_STATIC_BIND_CPU_TEMPLATE(detail::contract_border_bottom, contract_border_bottom)
-AMBIENT_STATIC_BIND_CPU_TEMPLATE(detail::contract_border_left, contract_border_left)
-AMBIENT_STATIC_BIND_CPU_TEMPLATE(detail::contract_border_right, contract_border_right)
-
 template<typename T>
-void partial_init(ambient::block<T>& b, T value, double posi, double posj, double dr, double bound){
-    partial_init_value<T>(b, value, posi, posj, dr, bound);
+void partial_init(bind::block<T>& b, T value, double posi, double posj, double dr, double bound){
+    bind::cpu(detail::partial_init_value<T>, b, value, posi, posj, dr, bound);
 }
 
 template <typename T>
-class border : public ambient::block<T>{
+class border : public bind::block<T>{
 public:
-    border(size_t m, size_t n) : ambient::block<T>(m, n) {}
+    border(size_t m, size_t n) : bind::block<T>(m, n) {}
 };
 
 template <typename T>
-class stencil : public ambient::block<T> {
+class stencil : public bind::block<T> {
 public:
     class frame {
     public:
@@ -277,17 +268,17 @@ public:
     border<T>& right()  const { return *f->right;  }
 
     void print(){
-        for(int j = 0; j < IB; j++) printf("%.2f ", ambient::load(top())(j,0));
+        for(int j = 0; j < IB; j++) printf("%.2f ", bind::load(top())(j,0));
         printf("\n");
         for(int i = 0; i < IB-2; i++){
-            printf("%.2f ", ambient::load(left())(i,0));
+            printf("%.2f ", bind::load(left())(i,0));
             for(int j = 0; j < IB-2; j++){
-                printf("%.2f ", ambient::load(*this)(i,j));
+                printf("%.2f ", bind::load(*this)(i,j));
             }
-            printf("%.2f ", ambient::load(right())(i,0));
+            printf("%.2f ", bind::load(right())(i,0));
             printf("\n");
         }
-        for(int j = 0; j < IB; j++) printf("%.2f ", ambient::load(bottom())(j,0));
+        for(int j = 0; j < IB; j++) printf("%.2f ", bind::load(bottom())(j,0));
         printf("\n");
     }
 
@@ -298,33 +289,33 @@ public:
         ::partial_init(left(),   value, posi+dr,                posj,                   dr, bound);
         ::partial_init(*this,    value, posi + dr,              posj + dr,              dr, bound);
     }
-    size_t num_rows(){ return ambient::get_dim(*this).y+2; }
-    size_t num_cols(){ return ambient::get_dim(*this).x+2; }
+    size_t num_rows(){ return bind::get_dim(*this).y+2; }
+    size_t num_cols(){ return bind::get_dim(*this).x+2; }
                     
     void evolve_from(const stencil& s, double fac){
-        evolve<T>(*this, s, s.top(), s.right(), s.bottom(), s.left(), fac);
+        bind::cpu(detail::evolve<T>, *this, s, s.top(), s.right(), s.bottom(), s.left(), fac);
     }
     void contract(const stencil& s, const stencil& top, const stencil& right, const stencil& bottom, const stencil& left, double fac){
-        contract_border_top<T>   (this->top(),    s.left(), s.top(),    s.right(),  s, left.top(),    top.bottom(), right.top(),    fac);
-        contract_border_bottom<T>(this->bottom(), s.left(), s.bottom(), s.right(),  s, left.bottom(), bottom.top(), right.bottom(), fac);
-        contract_border_right<T> (this->right(),  s.top(),  s.right(),  s.bottom(), s, right.left(),  fac);
-        contract_border_left<T>  (this->left(),   s.top(),  s.left(),   s.bottom(), s, left.right(),  fac);
+        bind::cpu(detail::contract_border_top<T>   , this->top(),    s.left(), s.top(),    s.right(),  s, left.top(),    top.bottom(), right.top(),    fac);
+        bind::cpu(detail::contract_border_bottom<T>, this->bottom(), s.left(), s.bottom(), s.right(),  s, left.bottom(), bottom.top(), right.bottom(), fac);
+        bind::cpu(detail::contract_border_right<T> , this->right(),  s.top(),  s.right(),  s.bottom(), s, right.left(),  fac);
+        bind::cpu(detail::contract_border_left<T>  , this->left(),   s.top(),  s.left(),   s.bottom(), s, left.right(),  fac);
     }
     double size(){
         double* res = new double(0.);
-        reduce<T>(*this, left(), right(), top(), bottom(), res);
-        ambient::sync();
+        bind::cpu(detail::reduce<T>, *this, left(), right(), top(), bottom(), res);
+        bind::sync();
         double resv = *res; delete res;
         return resv;
     }
     double moment(double x, double y, double dr){
         double* res = new double(0.);
-        reduce_moment<T>(*this, left(), right(), top(), bottom(), x, y, dr, res);
-        ambient::sync();
+        bind::cpu(detail::reduce_moment<T>, *this, left(), right(), top(), bottom(), x, y, dr, res);
+        bind::sync();
         double resv = *res; delete res;
         return resv;
     }
-    stencil(size_t m, size_t n) : ambient::block<T>(m-2, n-2) { f = new frame(m, n); }
+    stencil(size_t m, size_t n) : bind::block<T>(m-2, n-2) { f = new frame(m, n); }
     frame* f;
 };
 
@@ -339,7 +330,7 @@ class Diffusion2D {
         time(0)
         {
             // process grid - manual for now //
-            int n = ambient::num_procs();
+            int n = bind::scope::size();
             if(n == 2){
                 np = 1;
                 nq = 2;
@@ -361,7 +352,7 @@ class Diffusion2D {
             dt = dr * dr / (6 * D);       // dt < dx*dx / (4*D) for stability
             fac = dt * D / (dr * dr);     // stencil factor
            
-            // Ambient grid
+            // Bind grid
             mt = nt = __a_ceil(N/IB);
             int tailn = __a_mod(N,IB);
             int tailm = __a_mod(N,IB);
@@ -381,7 +372,7 @@ class Diffusion2D {
                 grid.push_back(new stencil_t(tailm, tailn)); grid_mirror.push_back(new stencil_t(tailm, tailn));
             }
             {
-                ambient::actor_common select;
+                bind::actor_common select;
                 null_stencil.fill(0.0);
             }
 
@@ -392,7 +383,7 @@ class Diffusion2D {
 
             for(size_t i = 0; i < mt; ++i)
             for(size_t j = 0; j < nt; ++j){
-                ambient::actor select(ambient::scope::begin()+get_rank(i,j));
+                bind::actor select(bind::scope::begin()+get_rank(i,j));
                 get(i,j).partial_init(value, i*IB*dr+rmin, j*IB*dr+rmin, dr, bound);
             }
         }
@@ -433,7 +424,7 @@ class Diffusion2D {
         void propagate_density(){ 
             for(int i = 0; i < mt; i++){
                 for(int j = 0; j < nt; j++){
-                    ambient::actor select(ambient::scope::begin()+get_rank(i,j));
+                    bind::actor select(bind::scope::begin()+get_rank(i,j));
                     grid_mirror[i+j*mt]->evolve_from(get(i,j), fac);
                     grid_mirror[i+j*mt]->contract(get(i,j), get(i-1,j), get(i,j+1), get(i+1,j), get(i,j-1), fac);
                 }
@@ -465,13 +456,13 @@ int main(int argc, char* argv[]){
     size_t max_steps = 40;
     Diffusion2D task(D, rmax, rmin, N);
 
-    ambient::timer time("execution"); time.begin();
+    bind::timer time("execution"); time.begin();
     for(size_t steps = 0; steps < max_steps; ++steps){
         task.propagate_density();
     }
     time.end();
     {
-        ambient::actor select(ambient::scope::begin());
+        bind::actor select(bind::scope::begin());
         std::cout << "getting results... ";
         std::cout << task.get_size() << '\t' << task.get_moment() << std::endl;
     }

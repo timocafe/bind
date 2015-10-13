@@ -25,50 +25,48 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef BIND_UTILS_TIMER
-#define BIND_UTILS_TIMER
-#include "bind/bind.hpp"
-#include <chrono>
+#ifndef BIND_TRANSPORT_MPI_CHANNEL
+#define BIND_TRANSPORT_MPI_CHANNEL
 
-namespace bind {
+#include "bind/transport/mpi/tree.hpp"
 
-    void sync();
-    class async_timer {
+namespace bind { namespace transport { namespace mpi {
+
+    class request_impl;
+    template<class T> class collective;
+
+    static void recv_impl(request_impl* r);
+    static void send_impl(request_impl* r);
+    static bool test_impl(request_impl* r);
+
+    class channel {
     public:
-        async_timer(std::string name): val(0.0), name(name), count(0){}
-       ~async_timer(){
-            std::cout << "R" << bind::rank() << ": " << name << " " << val << ", count : " << count << "\n";
+        typedef typename model::revision block_type;
+        typedef typename model::transformable scalar_type;
+        template<class T> using collective_type = collective<T>;
+        struct mount {
+            mount(); 
+           ~mount();
+            std::vector<binary_tree<rank_t>*> trees;
+            std::vector<rank_t> circle;
+            int tag_ub;
+        };
+        static mount& setup(){ 
+            static mount m; 
+            return m; 
         }
-        void begin(){
-            this->t0 = std::chrono::system_clock::now();
-        }
-        void end(){
-            this->val += std::chrono::duration<double>(std::chrono::system_clock::now() - this->t0).count();
-            count++;
-        }
-        double get_time() const {
-            return val;
-        }
-    private:
-        double val;
-        std::chrono::time_point<std::chrono::system_clock> t0;
-        unsigned long long count;
-        std::string name;
+        channel();
+        size_t dim() const;
+        static void barrier();
+        collective<block_type>* get(block_type& r);
+        collective<block_type>* set(block_type& r);
+        collective<scalar_type>* bcast(scalar_type& v, rank_t root);
+        collective<scalar_type>* bcast(scalar_type& v);
+        rank_t rank;
+        group* world;
+        int tag_ub;
     };
 
-    class timer : public async_timer {
-    public:
-        timer(std::string name) : async_timer(name){}
-        void begin(){
-            bind::sync();
-            async_timer::begin();
-        }
-        void end(){
-            bind::sync();
-            async_timer::end();
-        }
-    };
-}
+} } }
 
 #endif
-

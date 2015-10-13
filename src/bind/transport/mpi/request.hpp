@@ -25,50 +25,51 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef BIND_UTILS_TIMER
-#define BIND_UTILS_TIMER
-#include "bind/bind.hpp"
-#include <chrono>
+namespace bind { namespace transport { namespace mpi {
 
-namespace bind {
+    // type information required //
+    inline request_impl::request_impl(void(*impl)(request_impl*), typename channel::scalar_type& v, rank_t target, int tag)
+    : extent(sizeof(typename channel::scalar_type::numeric_union)/sizeof(double)), 
+      data(&v.v),
+      target(target),
+      impl(impl),
+      tag(tag),
+      once(false)
+    {
+    }
+    // type information required //
+    inline request_impl::request_impl(void(*impl)(request_impl*), typename channel::block_type& r, rank_t target, int tag)
+    : extent(r.spec.extent/sizeof(double)), 
+      data(r.data),
+      target(target),
+      impl(impl),
+      tag(tag),
+      once(false)
+    {
+    }
+    inline bool request_impl::operator()(){
+        if(!once){ impl(this); once = true; }
+        return test_impl(this);
+    }
 
-    void sync();
-    class async_timer {
-    public:
-        async_timer(std::string name): val(0.0), name(name), count(0){}
-       ~async_timer(){
-            std::cout << "R" << bind::rank() << ": " << name << " " << val << ", count : " << count << "\n";
+    inline bool request::operator()(){
+        int length = primaries.size();
+        for(int i = 0; i < length; i++){
+            if(!(*primaries[i])()) return false;
         }
-        void begin(){
-            this->t0 = std::chrono::system_clock::now();
+        primaries.clear();
+        length = callbacks.size();
+        for(int i = 0; i < length; i++){
+            if(!(*callbacks[i])()) return false;
         }
-        void end(){
-            this->val += std::chrono::duration<double>(std::chrono::system_clock::now() - this->t0).count();
-            count++;
-        }
-        double get_time() const {
-            return val;
-        }
-    private:
-        double val;
-        std::chrono::time_point<std::chrono::system_clock> t0;
-        unsigned long long count;
-        std::string name;
-    };
+        return true;
+    }
+    inline void request::operator &= (request_impl* r){
+        primaries.push_back(r);
+    }
+    inline void request::operator += (request_impl* r){
+        callbacks.push_back(r);
+    }
 
-    class timer : public async_timer {
-    public:
-        timer(std::string name) : async_timer(name){}
-        void begin(){
-            bind::sync();
-            async_timer::begin();
-        }
-        void end(){
-            bind::sync();
-            async_timer::end();
-        }
-    };
-}
-
-#endif
+} } }
 

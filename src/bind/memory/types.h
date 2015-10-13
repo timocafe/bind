@@ -25,50 +25,44 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef BIND_UTILS_TIMER
-#define BIND_UTILS_TIMER
-#include "bind/bind.hpp"
-#include <chrono>
+#ifndef BIND_MEMORY_TYPES
+#define BIND_MEMORY_TYPES
 
-namespace bind {
+namespace bind { namespace memory {
 
-    void sync();
-    class async_timer {
-    public:
-        async_timer(std::string name): val(0.0), name(name), count(0){}
-       ~async_timer(){
-            std::cout << "R" << bind::rank() << ": " << name << " " << val << ", count : " << count << "\n";
-        }
-        void begin(){
-            this->t0 = std::chrono::system_clock::now();
-        }
-        void end(){
-            this->val += std::chrono::duration<double>(std::chrono::system_clock::now() - this->t0).count();
-            count++;
-        }
-        double get_time() const {
-            return val;
-        }
-    private:
-        double val;
-        std::chrono::time_point<std::chrono::system_clock> t0;
-        unsigned long long count;
-        std::string name;
+    namespace cpu {
+        class standard;
+        class bulk;
+    }
+    class delegated;
+
+    struct memory_tuple {
+        typedef std::tuple< memory::cpu::bulk,
+                            memory::cpu::standard,
+                            memory::delegated > type;
     };
 
-    class timer : public async_timer {
-    public:
-        timer(std::string name) : async_timer(name){}
-        void begin(){
-            bind::sync();
-            async_timer::begin();
-        }
-        void end(){
-            bind::sync();
-            async_timer::end();
-        }
-    };
-}
+    template<int N, int Limit>
+    constexpr int lower_bound(){
+        return (N > Limit ? N : Limit);
+    }
+
+    template<class T, class Tuple, int I = std::tuple_size<Tuple>::value>
+    constexpr int find_type(){
+        return I ? std::is_same< typename std::tuple_element<lower_bound<I-1,0>(),Tuple>::type, T >::value ? I-1 : find_type<T,Tuple,lower_bound<I-1,0>()>()
+                 : -1;
+    }
+
+    template<int Offset>
+    struct checked_get { static constexpr int value = Offset; };
+
+    template<>
+    struct checked_get< -1 > { /* type not found */ };
+
+    template<typename T>
+    constexpr int serial_id(){
+        return checked_get< find_type<T,memory_tuple::type>() >::value;
+    }
+} }
 
 #endif
-

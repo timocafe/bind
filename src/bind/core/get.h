@@ -25,50 +25,40 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef BIND_UTILS_TIMER
-#define BIND_UTILS_TIMER
-#include "bind/bind.hpp"
-#include <chrono>
+#ifndef BIND_CORE_GET
+#define BIND_CORE_GET
 
-namespace bind {
+namespace bind { namespace core {
+    
+    template<class T> class get {};
 
-    void sync();
-    class async_timer {
+    template<>
+    class get<transformable> : public functor, public memory::cpu::use_bulk_new<get<transformable> > {
     public:
-        async_timer(std::string name): val(0.0), name(name), count(0){}
-       ~async_timer(){
-            std::cout << "R" << bind::rank() << ": " << name << " " << val << ", count : " << count << "\n";
-        }
-        void begin(){
-            this->t0 = std::chrono::system_clock::now();
-        }
-        void end(){
-            this->val += std::chrono::duration<double>(std::chrono::system_clock::now() - this->t0).count();
-            count++;
-        }
-        double get_time() const {
-            return val;
-        }
+        template<class T> using collective = controller::channel_type::collective_type<T>;
+        static void spawn(transformable& v);
+        get(transformable& v);
+        virtual void invoke();
+        virtual bool ready();
     private:
-        double val;
-        std::chrono::time_point<std::chrono::system_clock> t0;
-        unsigned long long count;
-        std::string name;
+        collective<transformable>* handle;
     };
 
-    class timer : public async_timer {
+    template<>
+    class get<revision> : public functor, public memory::cpu::use_bulk_new<get<revision> >  {
     public:
-        timer(std::string name) : async_timer(name){}
-        void begin(){
-            bind::sync();
-            async_timer::begin();
-        }
-        void end(){
-            bind::sync();
-            async_timer::end();
-        }
+        template<class T> using collective = controller::channel_type::collective_type<T>;
+        static void spawn(revision& r);
+        get(revision& r);
+        virtual void invoke();
+        virtual bool ready();
+        void operator += (rank_t rank);
+    private:
+        collective<revision>* handle;
+        revision& t;
     };
-}
+
+} }
 
 #endif
 

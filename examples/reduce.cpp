@@ -1,0 +1,17 @@
+#include "bind/bind.hpp"
+#include "bind/container/ptr.hpp"
+#include "bind/utils/reduce.hpp"
+
+int main(){
+    const int N = 100;
+    std::vector<bind::ptr<int> > a(N, bind::ptr<int>(1));
+
+    bind::reduce(a, [](bind::ptr<int>& a, const bind::ptr<int>& b){
+        bind::cpu([](bind::ptr<int>& dst, const bind::ptr<int>& src){
+            dst.set(dst.get()+src.get());
+        }, a, b);
+    });
+
+    std::cout << "Reduced value: " << a[0] << "\n";
+    return 0;
+}

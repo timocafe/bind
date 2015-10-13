@@ -25,50 +25,52 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef BIND_UTILS_TIMER
-#define BIND_UTILS_TIMER
-#include "bind/bind.hpp"
-#include <chrono>
+namespace bind { namespace core {
 
-namespace bind {
+    // {{{ transformable
 
-    void sync();
-    class async_timer {
-    public:
-        async_timer(std::string name): val(0.0), name(name), count(0){}
-       ~async_timer(){
-            std::cout << "R" << bind::rank() << ": " << name << " " << val << ", count : " << count << "\n";
-        }
-        void begin(){
-            this->t0 = std::chrono::system_clock::now();
-        }
-        void end(){
-            this->val += std::chrono::duration<double>(std::chrono::system_clock::now() - this->t0).count();
-            count++;
-        }
-        double get_time() const {
-            return val;
-        }
-    private:
-        double val;
-        std::chrono::time_point<std::chrono::system_clock> t0;
-        unsigned long long count;
-        std::string name;
-    };
+    inline void get<transformable>::spawn(transformable& t){
+        bind::select().queue(new get(t));
+    }
+    inline get<transformable>::get(transformable& t){
+        handle = bind::select().get_channel().bcast(t, bind::which());
+    }
+    inline bool get<transformable>::ready(){
+        return handle->test();
+    }
+    inline void get<transformable>::invoke(){}
 
-    class timer : public async_timer {
-    public:
-        timer(std::string name) : async_timer(name){}
-        void begin(){
-            bind::sync();
-            async_timer::begin();
-        }
-        void end(){
-            bind::sync();
-            async_timer::end();
-        }
-    };
-}
+    // }}}
+    // {{{ revision
 
-#endif
+    inline void get<revision>::spawn(revision& r){
+        get*& transfer = (get*&)r.assist.second;
+        if(bind::select().update(r)) transfer = new get(r);
+        *transfer += bind::which();
+        bind::select().generate_sid();
+    }
+    inline get<revision>::get(revision& r) : t(r) {
+        handle = bind::select().get_channel().get(t);
+        t.invalidate();
+    }
+    inline void get<revision>::operator += (rank_t rank){
+        *handle += rank;
+        if(handle->involved() && !t.valid()){
+            t.use();
+            t.generator = this;
+            t.embed(t.spec.hard_malloc<memory::cpu::comm_bulk>()); 
+            bind::select().queue(this);
+        }
+    }
+    inline bool get<revision>::ready(){
+        return handle->test();
+    }
+    inline void get<revision>::invoke(){
+        bind::select().squeeze(&t);
+        t.release();
+        t.complete();
+    }
 
+    // }}}
+
+} }
