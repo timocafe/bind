@@ -57,19 +57,19 @@ namespace bind {
         template<size_t arg> static void modify(T& obj, functor* m){ *(T*)&m->arguments[arg] = obj; }
     };
     template <typename T> struct ptr_info : public singular_info<T> {
-        template<size_t arg> static void deallocate(functor* m){       
+        template<size_t arg> static void deallocate(functor* m){
             EXTRACT(o); o->desc->generator = NULL;
         }
-        template<size_t arg> static void modify_remote(T& obj){ 
+        template<size_t arg> static void modify_remote(T& obj){
             bind::select().rsync(obj.desc);
         }
-        template<size_t arg> static void modify_local(const T& obj, functor* m){ 
+        template<size_t arg> static void modify_local(const T& obj, functor* m){
             obj.desc->generator = m;
             bind::select().lsync(obj.desc);
-            m->arguments[arg] = (void*)new(bind::memory::malloc<memory::cpu::instr_bulk,sizeof(T)>()) T(obj.desc);
+            m->arguments[arg] = bind::memory::malloc<memory::cpu::instr_bulk,sizeof(T)>(); memcpy(m->arguments[arg], &obj, sizeof(T)); 
         }
-        template<size_t arg> static void modify(const T& obj, functor* m){ 
-            m->arguments[arg] = (void*)new(bind::memory::malloc<memory::cpu::instr_bulk,sizeof(T)>()) T(obj.desc);
+        template<size_t arg> static void modify(const T& obj, functor* m){
+            m->arguments[arg] = bind::memory::malloc<memory::cpu::instr_bulk,sizeof(T)>(); memcpy(m->arguments[arg], &obj, sizeof(T)); 
         }
         static constexpr bool ReferenceOnly = true;
     };
@@ -77,7 +77,7 @@ namespace bind {
         template<size_t arg> static void deallocate(functor* m){ }
         template<size_t arg> static void modify_remote(T& obj){ }
         template<size_t arg> static void modify_local(const T& obj, functor* m){
-            m->arguments[arg] = (void*)new(bind::memory::malloc<memory::cpu::instr_bulk,sizeof(T)>()) T(obj.desc);
+            m->arguments[arg] = bind::memory::malloc<memory::cpu::instr_bulk,sizeof(T)>(); memcpy(m->arguments[arg], &obj, sizeof(T)); 
         }
     };
     // }}}

@@ -38,7 +38,7 @@ namespace bind {
         }
         template<typename T, typename Allocator>
         void measure_size(const bind::vector<T,Allocator>& a, bind::ptr<size_t>& size){
-            size.set(a.size());
+            *size = a.size();
         }
         template<class T, class Allocator>
         void init_value_vector(volatile bind::vector<T,Allocator>& a, T& value){

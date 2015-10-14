@@ -55,13 +55,10 @@ namespace bind { namespace model {
         void operator delete (void*, void*){ /* doesn't throw */ }
 
         template <typename T>
-        transformable(T value){
-            this->v = value;
+        transformable(T val){
+            this->value = val;
         }
-        numeric_union eval() const {
-            return v;
-        }
-        mutable numeric_union v;
+        mutable numeric_union value;
         functor* generator;
     };
 

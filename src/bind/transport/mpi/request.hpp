@@ -30,7 +30,7 @@ namespace bind { namespace transport { namespace mpi {
     // type information required //
     inline request_impl::request_impl(void(*impl)(request_impl*), typename channel::scalar_type& v, rank_t target, int tag)
     : extent(sizeof(typename channel::scalar_type::numeric_union)/sizeof(double)), 
-      data(&v.v),
+      data(&v.value),
       target(target),
       impl(impl),
       tag(tag),

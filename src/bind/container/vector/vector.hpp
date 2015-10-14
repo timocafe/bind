@@ -111,7 +111,7 @@ namespace bind {
     size_t vector<T,Allocator>::measure() const {
         bind::ptr<size_t> measured;
         bind::cpu(detail::measure_size<T,Allocator>, *this, measured);
-        cached_size_ = (size_t)measured;
+        cached_size_ = measured.load();
         return cached_size();
     }
 

@@ -36,89 +36,81 @@ namespace bind {
     template <typename T>
     class ptr {
     private:
+        template <typename F> friend class ptr;
         template<typename S> 
-        ptr& operator = (const S& v){ }
+        ptr& operator= (const S& val) = delete;
     public:
         typedef T value_type;
 
-        void init(value_type v = T()){
-            desc = new (bind::memory::calloc<memory::cpu::fixed,sizeof_transformable()>()) transformable(v);
+        T& operator* () const {
+            return desc->value;
+        }
+        void init(value_type val = T()){
+            desc = new (bind::memory::calloc<memory::cpu::fixed,sizeof_transformable()>()) transformable(val);
             valid = true;
         }
         template<typename S>
         void reuse(ptr<S>& f){
             desc = (transformable*)f.desc; // unsafe - proper convertion should be done
             valid = f.valid;
-            f.clear();
-        }
-       ~ptr(){ 
-           if(desc) bind::destroy(desc); 
-       }
-        explicit constexpr ptr(transformable* c): desc(c) { // kernel's inner usage (no desctruction)
-        }
-        ptr(){ 
-            init();  
-        }
-        ptr(double v){ 
-            init(v);   
-        }
-        ptr(std::complex<double> v){ 
-            init(v);
-        }
-        T get() const { // kernels only
-            return desc->v;
-        }
-        void set(T desired){ // kernels only
-            desc->v = desired;
+            f.desc = NULL; 
         }
         T load() const {
             if(!valid){
                 bind::sync();
                 valid = true;
             }
-            return desc->eval();
+            return desc->value;
         }
-        operator T () const {
-            return load();
+        const ptr<T>& unfold() const {
+            return *this;
         }
+        ptr<T>& unfold(){
+            valid = false;
+            return *this;
+        }
+       ~ptr(){ 
+           if(desc) bind::destroy(desc); 
+        }
+
+        // constructors //
+        ptr(){ 
+            init();  
+        }
+        ptr(double val){ 
+            init(val);
+        }
+        ptr(std::complex<double> val){
+            init(val);
+        }
+
+        // copy //
         ptr(const ptr& f){
             init(f.load()); /* important */
-        }
-        ptr(ptr&& f){
-            reuse(f);
-        }
-        ptr& operator = (const ptr& f){
-            desc->v = f.load();
-            return *this;
-        }
-        ptr& operator = (ptr&& f){ 
-            if(desc) bind::destroy(desc);
-            reuse(f);
-            return *this;
         }
         template<typename S>
         ptr(const ptr<S>& f){
             init((T)f.load());
         }
+        ptr& operator= (const ptr& f){
+            desc->value = f.load();
+            return *this;
+        }
+
+        // move //
+        ptr(ptr&& f){
+            reuse(f);
+        }
         template<typename S> 
         ptr(ptr<S>&& f){
             reuse(f);
         }
-        const ptr<T>& unfold() const {
-            assert(valid);
+        ptr& operator= (ptr&& f){ 
+            if(desc) bind::destroy(desc);
+            reuse(f);
             return *this;
         }
-        ptr<T>& unfold(){
-            assert(valid); 
-            valid = false;
-            return *this;
-        }
-        void clear() const {
-            desc = NULL; 
-        }
-
     private:
-        template <typename F> friend class ptr;
         mutable bool valid;
     public:
         mutable transformable* desc;

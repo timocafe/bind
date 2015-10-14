@@ -8,7 +8,7 @@ int main(){
 
     bind::reduce(a, [](bind::ptr<int>& a, const bind::ptr<int>& b){
         bind::cpu([](bind::ptr<int>& dst, const bind::ptr<int>& src){
-            dst.set(dst.get()+src.get());
+            *dst += *src;
         }, a, b);
     });
 

@@ -28,6 +28,11 @@
 #ifndef BIND
 #define BIND
 
+#ifndef NDEBUG
+#define BIND_NO_DEBUG
+#define NDEBUG
+#endif
+
 #ifndef BIND_INSTR_BULK_CHUNK
 #define BIND_INSTR_BULK_CHUNK     16777216 // 16 MB
 #endif
@@ -81,4 +86,7 @@
 #include "bind/core.hpp"
 #include "bind/interface.hpp"
 
+#ifdef BIND_NO_DEBUG
+#undef NDEBUG
+#endif
 #endif
