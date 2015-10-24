@@ -25,7 +25,6 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#include "utils/rss.hpp"
 #define STACK_RESERVE 65536
 
 namespace bind { namespace core {
@@ -46,14 +45,6 @@ namespace bind { namespace core {
         this->push_scope(new bind::scope(get_num_procs()));
 
         if(!verbose()) this->io_guard.enable();
-        if(!bind::isset("BIND_VERBOSE")) return;
-
-        if(bind::isset("BIND_DATA_BULK_LIMIT")) std::cout << "bind: max share of data bulk: " << bind::getint("BIND_DATA_BULK_LIMIT") << "%\n";
-        if(bind::isset("BIND_COMM_BULK_LIMIT")) std::cout << "bind: max share of comm bulk: " << bind::getint("BIND_COMM_BULK_LIMIT") << "%\n";
-        #ifdef MPI_VERSION
-        std::cout << "bind: number of procs: " << get_num_procs() << "\n";
-        #endif
-        std::cout << "bind: number of threads: " << bind::num_threads() << " (" << BIND_THREADING_TAGLINE << ")\n\n";
     }
 
     inline int controller::generate_sid(){
@@ -91,11 +82,10 @@ namespace bind { namespace core {
     }
 
     inline void controller::flush(){
-        BIND_SMP_ENABLE
         while(!chains->empty()){
             for(auto task : *chains){
                 if(task->ready()){
-                    BIND_THREAD task->invoke();
+                    cilk_spawn task->invoke();
                     for(auto d : task->deps) d->ready();
                     mirror->insert(mirror->end(), task->deps.begin(), task->deps.end());
                 }else mirror->push_back(task);
@@ -103,7 +93,7 @@ namespace bind { namespace core {
             chains->clear();
             std::swap(chains,mirror);
         }
-        BIND_SMP_DISABLE
+        cilk_sync;
         clock++;
         channel.barrier();
     }

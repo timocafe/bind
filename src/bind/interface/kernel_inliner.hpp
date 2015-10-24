@@ -28,8 +28,6 @@
 #ifndef BIND_INTERFACE_KERNEL_INLINER
 #define BIND_INTERFACE_KERNEL_INLINER
 
-#include "utils/index_sequence.hpp"
-
 namespace bind {
 
     template <typename T>

@@ -1,7 +1,6 @@
 #include "bind/bind.hpp"
 #include "bind/container/block.hpp"
 #include "bind/utils/math.hpp"
-#include "utils/timer.hpp"
 #define IB 256
 
 template<typename T> class stencil;

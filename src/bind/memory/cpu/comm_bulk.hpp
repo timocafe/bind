@@ -28,7 +28,6 @@
 #ifndef BIND_MEMORY_CPU_COMM_BULK
 #define BIND_MEMORY_CPU_COMM_BULK
 
-#include "utils/rss.hpp"
 #define DEFAULT_LIMIT 20
 
 namespace bind { namespace memory { namespace cpu {

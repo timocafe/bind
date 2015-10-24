@@ -28,8 +28,6 @@
 #ifndef BIND_TRANSPORT_MPI_COLLECTIVE
 #define BIND_TRANSPORT_MPI_COLLECTIVE
 
-#include "bind/utils/guard_once.hpp"
-
 namespace bind { namespace transport { namespace mpi {
 
     template<typename T>

@@ -28,8 +28,6 @@
 #ifndef BIND_MODEL_HISTORY
 #define BIND_MODEL_HISTORY
 
-#include "bind/utils/dim2.hpp"
-
 // revision tracking mechanism (target selector)
 namespace bind { namespace model {
 

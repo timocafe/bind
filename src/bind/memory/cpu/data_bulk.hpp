@@ -28,8 +28,6 @@
 #ifndef BIND_MEMORY_CPU_DATA_BULK
 #define BIND_MEMORY_CPU_DATA_BULK
 
-#include "utils/rss.hpp"
-#include "bind/utils/env.hpp"
 #define DEFAULT_LIMIT 10
 
 namespace bind { namespace memory { namespace cpu {

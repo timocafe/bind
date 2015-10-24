@@ -109,6 +109,10 @@ namespace bind {
         return bind::select().get_actor();
     }
 
+    inline int num_threads(){
+        static int n = __cilkrts_get_nworkers(); return n;
+    }
+
 }
 
 #endif

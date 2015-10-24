@@ -28,8 +28,6 @@
 #ifndef BIND_TRANSPORT_MPI_CHANNEL
 #define BIND_TRANSPORT_MPI_CHANNEL
 
-#include "bind/transport/mpi/tree.hpp"
-
 namespace bind { namespace transport { namespace mpi {
 
     class request_impl;

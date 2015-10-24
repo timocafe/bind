@@ -28,8 +28,6 @@
 #ifndef BIND_MODEL_REVISION
 #define BIND_MODEL_REVISION
 
-#include "bind/utils/rank_t.hpp"
-
 namespace bind { namespace model {
 
     class revision : public memory::cpu::use_fixed_new<revision> {

@@ -27,8 +27,6 @@
 
 #ifndef BIND_UTILS_TIMER
 #define BIND_UTILS_TIMER
-#include "bind/bind.hpp"
-#include <chrono>
 
 namespace bind {
 

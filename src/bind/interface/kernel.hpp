@@ -28,9 +28,6 @@
 #ifndef BIND_INTERFACE_KERNEL
 #define BIND_INTERFACE_KERNEL
 
-#include "utils/index_sequence.hpp"
-#include "bind/interface/kernel_inliner.hpp"
-
 namespace bind {
 
     using model::functor;

@@ -28,15 +28,18 @@
 #ifndef BIND_CONTAINER_VECTOR_VECTOR_H
 #define BIND_CONTAINER_VECTOR_VECTOR_H
 
-#include "bind/utils/vt_override.hpp"
-
 namespace bind {
 
     template<class T, class Allocator>
     class vector_async;
 
     template <class T, class Allocator = default_allocator>
-    class vector : public bind::allow_vt_override<vector<T,Allocator> > {
+    class vector {
+    public:
+        void* operator new (size_t size, void* ptr){ return ptr; }
+        void  operator delete (void*, void*){ /* doesn't throw */ }
+        void* operator new (size_t sz){ return bind::memory::malloc<bind::memory::cpu::fixed,vector>(); }
+        void operator delete (void* ptr){ bind::memory::free<bind::memory::cpu::fixed,sizeof(vector)>(ptr); }
     public:
         typedef vector_async<T,Allocator> async_type;
         typedef Allocator allocator_type;

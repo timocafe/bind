@@ -28,8 +28,6 @@
 #ifndef BIND_CORE_CONTROLLER
 #define BIND_CORE_CONTROLLER
 
-#include "bind/utils/io.hpp"
-
 namespace bind { namespace core {
 
     using model::history;

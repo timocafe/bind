@@ -28,8 +28,6 @@
 #ifndef BIND_MEMORY_FACTORY
 #define BIND_MEMORY_FACTORY
 
-#include "bind/utils/mutex.hpp"
-
 namespace bind { namespace memory {
 
     template<size_t S>

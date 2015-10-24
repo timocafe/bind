@@ -27,10 +27,9 @@
 
 #ifndef BIND
 #define BIND
-
 #ifndef NDEBUG
-#define BIND_NO_DEBUG
 #define NDEBUG
+#define BIND_NO_DEBUG
 #endif
 
 #ifndef BIND_INSTR_BULK_CHUNK
@@ -77,15 +76,103 @@
 #include <atomic>
 #include <tuple>
 #include <sys/mman.h>
+#include <chrono>
+#include <cilk/cilk.h>
+#include <cilk/cilk_api.h>
 // }}}
+// {{{ utils package
+#include "utils/rss.hpp"
+#include "bind/utils/index_sequence.hpp"
+#include "bind/utils/io.hpp"
+#include "bind/utils/mutex.hpp"
+#include "bind/utils/rank_t.hpp"
+#include "bind/utils/dim2.hpp"
+#include "bind/utils/env.hpp"
+#include "bind/utils/guard_once.hpp"
+// }}}
+// {{{ memory package
+#include "bind/memory/types.h"
+#include "bind/memory/factory.hpp"
+#include "bind/memory/region.hpp"
+    // {{{ memory::cpu package
+    #include "bind/memory/cpu/bulk.h"
+    #include "bind/memory/cpu/data_bulk.hpp"
+    #include "bind/memory/cpu/comm_bulk.hpp"
+    #include "bind/memory/cpu/instr_bulk.hpp"
+    #include "bind/memory/cpu/standard.hpp"
+    #include "bind/memory/cpu/fixed.hpp"
+    #include "bind/memory/cpu/new.hpp"
+    // }}}
+    // {{{ memory::gpu package
+    // }}}
+#include "bind/memory/delegated.h"
+#include "bind/memory/descriptor.hpp"
+// }}}
+// {{{ model package
+#include "bind/model/locality.hpp"
+#include "bind/model/functor.hpp"
+#include "bind/model/revision.hpp"
+#include "bind/model/history.hpp"
+#include "bind/model/transformable.hpp"
+// }}}
+// {{{ transport package (requires :model)
+#ifdef MPI_VERSION
+#define BIND_CHANNEL_NAME mpi
+#include "bind/transport/mpi/group.hpp"
+#include "bind/transport/mpi/tree.hpp"
+#include "bind/transport/mpi/channel.h"
+#include "bind/transport/mpi/request.h"
+#include "bind/transport/mpi/collective.h"
 
-#include "bind/utils/threading.hpp"
-#include "bind/memory.hpp"
-#include "bind/model.hpp"
-#include "bind/transport.hpp"
-#include "bind/core.hpp"
-#include "bind/interface.hpp"
+#include "bind/transport/mpi/request.hpp"
+#include "bind/transport/mpi/channel.hpp"
 
+namespace bind {
+    inline rank_t rank();
+    inline int num_procs();
+    inline int get_sid();
+    inline int generate_sid();
+}
+
+#include "bind/transport/mpi/collective.hpp"
+#else
+#include "bind/transport/nop/channel.hpp"
+#endif
+// }}}
+// {{{ core package (requires :model :transport)
+#include "bind/core/collector.h"
+#include "bind/core/collector.hpp"
+
+#include "bind/core/scope.h"
+#include "bind/core/actor.h"
+
+#include "bind/core/controller.h"
+#include "bind/core/get.h"
+#include "bind/core/set.h"
+#include "bind/core/controller.hpp"
+namespace bind {
+    inline rank_t which(){
+        return bind::select().get_actor().which();
+    }
+}
+#include "bind/core/get.hpp"
+#include "bind/core/set.hpp"
+
+#include "bind/core/scope.hpp"
+#include "bind/core/actor.hpp"
+// }}}
+// {{{ interface package (requires :model :transport :core)
+#include "bind/utils/auxiliary.hpp"
+#include "bind/interface/typed.hpp"
+#include "bind/interface/allocator.hpp"
+#include "bind/interface/kernel_inliner.hpp"
+#include "bind/interface/kernel.hpp"
+#include "bind/interface/access.hpp"
+#include "bind/interface/lambda.hpp"
+// }}}
+// {{{ bonus utils package
+#include "bind/utils/timer.hpp"
+// }}}
 #ifdef BIND_NO_DEBUG
 #undef NDEBUG
 #endif
