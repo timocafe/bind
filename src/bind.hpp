@@ -77,51 +77,51 @@
 #include <cilk/cilk_api.h>
 // }}}
 // {{{ utils package
-#include "bind/utils/rss.hpp"
-#include "bind/utils/index_sequence.hpp"
-#include "bind/utils/io.hpp"
-#include "bind/utils/mutex.hpp"
-#include "bind/utils/rank_t.hpp"
-#include "bind/utils/dim2.hpp"
-#include "bind/utils/env.hpp"
-#include "bind/utils/guard_once.hpp"
+#include "utils/rss.hpp"
+#include "utils/index_sequence.hpp"
+#include "utils/io.hpp"
+#include "utils/mutex.hpp"
+#include "utils/rank_t.hpp"
+#include "utils/dim2.hpp"
+#include "utils/env.hpp"
+#include "utils/guard_once.hpp"
 // }}}
 // {{{ memory package
-#include "bind/memory/types.h"
-#include "bind/memory/factory.hpp"
-#include "bind/memory/region.hpp"
+#include "memory/types.h"
+#include "memory/factory.hpp"
+#include "memory/region.hpp"
     // {{{ memory::cpu package
-    #include "bind/memory/cpu/bulk.h"
-    #include "bind/memory/cpu/data_bulk.hpp"
-    #include "bind/memory/cpu/comm_bulk.hpp"
-    #include "bind/memory/cpu/instr_bulk.hpp"
-    #include "bind/memory/cpu/standard.hpp"
-    #include "bind/memory/cpu/fixed.hpp"
-    #include "bind/memory/cpu/new.hpp"
+    #include "memory/cpu/bulk.h"
+    #include "memory/cpu/data_bulk.hpp"
+    #include "memory/cpu/comm_bulk.hpp"
+    #include "memory/cpu/instr_bulk.hpp"
+    #include "memory/cpu/standard.hpp"
+    #include "memory/cpu/fixed.hpp"
+    #include "memory/cpu/new.hpp"
     // }}}
     // {{{ memory::gpu package
     // }}}
-#include "bind/memory/delegated.h"
-#include "bind/memory/descriptor.hpp"
+#include "memory/delegated.h"
+#include "memory/descriptor.hpp"
 // }}}
 // {{{ model package
-#include "bind/model/locality.hpp"
-#include "bind/model/functor.hpp"
-#include "bind/model/revision.hpp"
-#include "bind/model/history.hpp"
-#include "bind/model/transformable.hpp"
+#include "model/locality.hpp"
+#include "model/functor.hpp"
+#include "model/revision.hpp"
+#include "model/history.hpp"
+#include "model/transformable.hpp"
 // }}}
 // {{{ transport package (requires :model)
 #ifdef BIND_MPI
 #define BIND_CHANNEL_NAME mpi
-#include "bind/transport/mpi/group.hpp"
-#include "bind/transport/mpi/tree.hpp"
-#include "bind/transport/mpi/channel.h"
-#include "bind/transport/mpi/request.h"
-#include "bind/transport/mpi/collective.h"
+#include "transport/mpi/group.hpp"
+#include "transport/mpi/tree.hpp"
+#include "transport/mpi/channel.h"
+#include "transport/mpi/request.h"
+#include "transport/mpi/collective.h"
 
-#include "bind/transport/mpi/request.hpp"
-#include "bind/transport/mpi/channel.hpp"
+#include "transport/mpi/request.hpp"
+#include "transport/mpi/channel.hpp"
 
 namespace bind {
     inline rank_t rank();
@@ -130,52 +130,52 @@ namespace bind {
     inline int generate_sid();
 }
 
-#include "bind/transport/mpi/collective.hpp"
+#include "transport/mpi/collective.hpp"
 #else
-#include "bind/transport/nop/channel.hpp"
+#include "transport/nop/channel.hpp"
 #endif
 // }}}
 // {{{ core package (requires :model :transport)
-#include "bind/core/collector.h"
-#include "bind/core/collector.hpp"
+#include "core/collector.h"
+#include "core/collector.hpp"
 
-#include "bind/core/scope.h"
-#include "bind/core/actor.h"
+#include "core/scope.h"
+#include "core/actor.h"
 
-#include "bind/core/controller.h"
-#include "bind/core/get.h"
-#include "bind/core/set.h"
-#include "bind/core/controller.hpp"
+#include "core/controller.h"
+#include "core/get.h"
+#include "core/set.h"
+#include "core/controller.hpp"
 namespace bind {
     inline rank_t which(){
         return bind::select().get_actor().which();
     }
 }
-#include "bind/core/get.hpp"
-#include "bind/core/set.hpp"
+#include "core/get.hpp"
+#include "core/set.hpp"
 
-#include "bind/core/scope.hpp"
-#include "bind/core/actor.hpp"
+#include "core/scope.hpp"
+#include "core/actor.hpp"
 // }}}
 // {{{ interface package (requires :model :transport :core)
-#include "bind/utils/auxiliary.hpp"
-#include "bind/interface/typed.hpp"
-#include "bind/interface/allocator.hpp"
-#include "bind/interface/kernel_inliner.hpp"
-#include "bind/interface/kernel.hpp"
-#include "bind/interface/access.hpp"
-#include "bind/interface/lambda.hpp"
+#include "utils/auxiliary.hpp"
+#include "interface/typed.hpp"
+#include "interface/allocator.hpp"
+#include "interface/kernel_inliner.hpp"
+#include "interface/kernel.hpp"
+#include "interface/access.hpp"
+#include "interface/lambda.hpp"
 // }}}
 // {{{ bonus container package (requires :*)
-#include "bind/container/ptr.hpp"
-#include "bind/container/block.hpp"
-#include "bind/container/vector.h"
-#include "bind/container/vector.hpp"
-#include "bind/container/vector_async.h"
-#include "bind/container/vector_async.hpp"
+#include "container/ptr.hpp"
+#include "container/block.hpp"
+#include "container/vector.h"
+#include "container/vector.hpp"
+#include "container/vector_async.h"
+#include "container/vector_async.hpp"
 // }}}
 // {{{ bonus utils package (requires :*)
-#include "bind/utils/timer.hpp"
+#include "utils/timer.hpp"
 // }}}
 #ifdef BIND_NO_DEBUG
 #undef NDEBUG
