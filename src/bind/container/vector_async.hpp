@@ -28,8 +28,6 @@
 #ifndef BIND_CONTAINER_VECTOR_VECTOR_ASYNC_HPP
 #define BIND_CONTAINER_VECTOR_VECTOR_ASYNC_HPP
 
-#include "bind/container/vector/vector_async.h"
-
 namespace bind {
 
     /* disabled methods, sync mode only (throw) */

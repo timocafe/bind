@@ -25,24 +25,259 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef BIND_CONTAINER_VECTOR_HPP
-#define BIND_CONTAINER_VECTOR_HPP
+#ifndef BIND_CONTAINER_VECTOR_VECTOR_HPP
+#define BIND_CONTAINER_VECTOR_VECTOR_HPP
 
-/* The actual implementation of vector is separated into two classes: vector and vector_async.
- * For the purpose of flexibility they both share the same interface but the limitations have to be noted.
- *
- * vector (a high-level wrapper to provide user-space interface to compose async calls):
- *
- *    - cached size: unlike capacity, the size of the vector might be changed asynchroneously (invoke measure() to refresh cached value).
- *    - data-access: discouraged due to performance reasons but is possible if to invoke load() first.
- *
- * vector_async (is used for the actual data-access inside async calls):
- *
- *    - capacity: can't be changed in async mode (so methods changing the size will fail if it's reached).
- *    - please check the list of allowed calls in vector_async.h.
- */
+namespace bind {
+     
+    template<class T, class Allocator> class vector;
+    namespace detail {
+        template<typename T, typename Allocator>
+        void set_size(bind::vector<T,Allocator>& a, const size_t& size){
+            a.resize(size);
+        }
+        template<typename T, typename Allocator>
+        void measure_size(const bind::vector<T,Allocator>& a, bind::ptr<size_t>& size){
+            *size = a.size();
+        }
+        template<class T, class Allocator>
+        void init_value_vector(volatile bind::vector<T,Allocator>& a, T& value){
+            bind::vector<T,Allocator>& a_ = const_cast<bind::vector<T,Allocator>&>(a);
+            a_.resize(a_.cached_size());
+            for(size_t i = 0; i < a_.size(); ++i) a_[i] = value;
+        }
+        template<class T, class Allocator, class OtherAllocator = Allocator>
+        void copy_vector(volatile bind::vector<T,Allocator>& dst, const bind::vector<T,OtherAllocator>& src, const size_t& n){
+            bind::vector<T,Allocator>& dst_ = const_cast<bind::vector<T,Allocator>&>(dst);
+            for(size_t i = 0; i < n; ++i) dst_[i] = src[i];
+        }
+        template<typename T, typename Allocator>
+        void add(bind::vector<T,Allocator>& a, const bind::vector<T,Allocator>& b){
+            for(int i = 0; i < a.size(); ++i) a[i] += b[i];
+        }
+    }
 
-#include "bind/container/vector/vector.hpp"
-#include "bind/container/vector/vector_async.hpp"
+    template<class T, class Allocator>
+    size_t vector<T,Allocator>::capacity() const {
+        return (bind::extent(*this)-sizeof(size_t))/sizeof(T);
+    }
+
+    template<class T, class Allocator>
+    size_t vector<T,Allocator>::cached_size() const {
+        return cached_size_;
+    }
+
+    /* prohibited in async mode (sync mode only) */
+
+    template<class T, class Allocator>
+    vector<T,Allocator>::vector(size_t n, T value) : bind_allocator(n*sizeof(T)+sizeof(size_t)), cached_size_(n) {
+        this->init(value);
+    }
+
+    template <typename T, class Allocator>
+    vector<T,Allocator>::vector(const vector& a) : bind_allocator(a.capacity()*sizeof(T)+sizeof(size_t)) {
+        bind::merge(a, *this);
+    }
+    
+    template <typename T, class Allocator>
+    vector<T,Allocator>& vector<T,Allocator>::operator = (const vector& rhs){
+        vector c(rhs);
+        this->swap(c);
+        return *this;
+    }
+
+    template <typename T, class Allocator>
+    template <class OtherAllocator>
+    vector<T,Allocator>& vector<T,Allocator>::operator = (const vector<T,OtherAllocator>& rhs){
+        vector resized(rhs.capacity());
+        this->swap(resized);
+        this->cached_size_ = rhs.cached_size();
+
+        if(!bind::weak(rhs)) bind::cpu(detail::copy_vector<T,Allocator,OtherAllocator>, *this, rhs, this->cached_size_);
+        return *this;
+    }
+
+    template<class T, class Allocator>
+    void vector<T,Allocator>::init(T value){
+        bind::cpu(detail::init_value_vector<T,Allocator>, *this, value);
+    }
+
+    template<typename T, class Allocator>
+    void vector<T,Allocator>::auto_reserve(){
+        if(this->cached_size() == this->capacity()){
+            this->reserve(this->cached_size()*2);
+        }
+    }
+
+    template<class T, class Allocator>
+    void vector<T,Allocator>::reserve(size_t n){
+        if(capacity() >= n) return;
+        size_t current_size = cached_size();
+        vector reserved(n);
+        if(!bind::weak(*this)) bind::cpu(detail::copy_vector<T,Allocator>, reserved, *this, current_size);
+        this->swap(reserved);
+        cached_size_ = current_size;
+    }
+
+    template<typename T, class Allocator>
+    void vector<T,Allocator>::shrink_to_fit(){
+        if(bind::memory::aligned_64(cached_size()*sizeof(T)+sizeof(size_t)) ==
+           bind::memory::aligned_64(capacity()*sizeof(T)+sizeof(size_t))) return;
+
+        size_t current_size = cached_size();
+        vector shrinked(cached_size());
+        if(!bind::weak(*this)) bind::cpu(detail::copy_vector<T,Allocator>, shrinked, *this, current_size);
+        this->swap(shrinked);
+    }
+
+    template<class T, class Allocator>
+    size_t vector<T,Allocator>::measure() const {
+        bind::ptr<size_t> measured;
+        bind::cpu(detail::measure_size<T,Allocator>, *this, measured);
+        cached_size_ = measured.load();
+        return cached_size();
+    }
+
+    template<typename T, class Allocator>
+    void vector<T,Allocator>::load() const {
+        bind::load(*this);
+    }
+
+    /* using cached size */
+
+    template<class T, class Allocator>
+    void vector<T,Allocator>::swap(vector<T,Allocator>& r){
+        bind::ext::swap(*this, r);
+        std::swap(this->cached_size_, r.cached_size_);
+    }
+
+    template<class T, class Allocator>
+    size_t vector<T,Allocator>::size() const {
+        return cached_size();
+    }
+
+    template<class T, class Allocator>
+    bool vector<T,Allocator>::empty() const {
+        return (bind::weak(*this) || (cached_size() == 0));
+    }
+
+    template<class T, class Allocator>
+    void vector<T,Allocator>::resize(size_t sz){
+        reserve(sz);
+        cached_size_ = sz;
+        bind::cpu(detail::set_size<T,Allocator>, *this, sz);
+    }
+
+    template<typename T, class Allocator>
+    void vector<T,Allocator>::clear(){
+        vector tmp;
+        this->swap(tmp);
+    }
+
+    /* using data-access methods (load required if not async) */
+
+    template<class T, class Allocator>
+    typename vector<T,Allocator>::value_type* vector<T,Allocator>::data(){
+        return bind::delegated(*this).data;
+    }
+
+    template<class T, class Allocator>
+    typename vector<T,Allocator>::value_type& vector<T,Allocator>::operator[](size_t i){
+        return bind::delegated(*this).data[ i ];
+    }
+
+    template<typename T, class Allocator>
+    typename vector<T,Allocator>::value_type& vector<T,Allocator>::at(size_type i){
+        if(i >= size()) throw std::out_of_range("vector::out_of_range");
+        return (*this)[i];
+    }
+
+    template<typename T, class Allocator>
+    typename vector<T,Allocator>::value_type& vector<T,Allocator>::front(){
+        return (*this)[0];
+    }
+
+    template<typename T, class Allocator>
+    typename vector<T,Allocator>::value_type& vector<T,Allocator>::back(){
+        return (*this)[size()-1];
+    }
+
+    template<typename T, class Allocator>
+    typename vector<T,Allocator>::iterator vector<T,Allocator>::begin(){
+        return this->data();
+    }
+
+    template<typename T, class Allocator>
+    typename vector<T,Allocator>::iterator vector<T,Allocator>::end(){
+        return this->begin()+size();
+    }
+
+    template<class T, class Allocator>
+    const typename vector<T,Allocator>::value_type* vector<T,Allocator>::data() const {
+        return bind::delegated(*this).data;
+    }
+
+    template<class T, class Allocator>
+    const typename vector<T,Allocator>::value_type& vector<T,Allocator>::operator[](size_t i) const {
+        return bind::delegated(*this).data[ i ];
+    }
+
+    template<typename T, class Allocator>
+    const typename vector<T,Allocator>::value_type& vector<T,Allocator>::at(size_type i) const {
+        if(i >= size()) throw std::out_of_range("vector::out_of_range");
+        return (*this)[i];
+    }
+
+    template<typename T, class Allocator>
+    const typename vector<T,Allocator>::value_type& vector<T,Allocator>::front() const {
+        return (*this)[0];
+    }
+
+    template<typename T, class Allocator>
+    const typename vector<T,Allocator>::value_type& vector<T,Allocator>::back() const {
+        return (*this)[size()-1];
+    }
+
+    template<typename T, class Allocator>
+    typename vector<T,Allocator>::const_iterator vector<T,Allocator>::cbegin() const {
+        return this->data();
+    }
+
+    template<typename T, class Allocator>
+    typename vector<T,Allocator>::const_iterator vector<T,Allocator>::cend() const {
+        return this->begin()+size();
+    }
+
+    template<class T, class Allocator>
+    void vector<T,Allocator>::push_back(value_type value){
+        auto_reserve();
+        bind::sync();
+        (*this)[cached_size_] = value;
+        bind::delegated(*this).size_ = ++cached_size_;
+    }
+
+    template<class T, class Allocator>
+    void vector<T,Allocator>::pop_back(){
+        bind::delegated(*this).size_ = --cached_size_;
+    }
+
+    template<typename T, class Allocator>
+    typename vector<T,Allocator>::iterator vector<T,Allocator>::insert(const_iterator position, value_type val){
+        auto_reserve();
+        bind::sync();
+        for(int i = size(); i > (position-this->cbegin()); i--) (*this)[i] = (*this)[i-1];
+        (*this)[position-this->cbegin()] = val;
+        bind::delegated(*this).size_ = ++cached_size_;
+        return (this->begin()+(position-this->cbegin()));
+    }
+
+    template<typename T, class Allocator>
+    typename vector<T,Allocator>::iterator vector<T,Allocator>::erase(const_iterator position){
+        for(int i = (position-this->cbegin()); i < size()-1; i++) (*this)[i] = (*this)[i+1];
+        bind::delegated(*this).size_ = --cached_size_;
+        return (this->begin()+(position-this->cbegin()));
+    }
+
+}
 
 #endif

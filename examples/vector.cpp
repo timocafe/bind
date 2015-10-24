@@ -1,5 +1,4 @@
 #include "bind/bind.hpp"
-#include "bind/container/vector.hpp"
 
 template<typename T>
 void reverse(bind::vector<T>& vec){

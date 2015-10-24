@@ -77,7 +77,7 @@
 #include <cilk/cilk_api.h>
 // }}}
 // {{{ utils package
-#include "utils/rss.hpp"
+#include "bind/utils/rss.hpp"
 #include "bind/utils/index_sequence.hpp"
 #include "bind/utils/io.hpp"
 #include "bind/utils/mutex.hpp"
@@ -166,7 +166,15 @@ namespace bind {
 #include "bind/interface/access.hpp"
 #include "bind/interface/lambda.hpp"
 // }}}
-// {{{ bonus utils package
+// {{{ bonus container package (requires :*)
+#include "bind/container/ptr.hpp"
+#include "bind/container/block.hpp"
+#include "bind/container/vector.h"
+#include "bind/container/vector.hpp"
+#include "bind/container/vector_async.h"
+#include "bind/container/vector_async.hpp"
+// }}}
+// {{{ bonus utils package (requires :*)
 #include "bind/utils/timer.hpp"
 // }}}
 #ifdef BIND_NO_DEBUG

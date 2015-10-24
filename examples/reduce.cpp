@@ -1,6 +1,5 @@
 #include "bind/bind.hpp"
-#include "bind/container/ptr.hpp"
-#include "bind/utils/reduce.hpp"
+#include "utils/reduce.hpp"
 
 int main(){
     const int N = 100;

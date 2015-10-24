@@ -1,5 +1,4 @@
 #include "bind/bind.hpp"
-#include "bind/container/ptr.hpp"
 
 int main(){
     bind::ptr<double> sum;
