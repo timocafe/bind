@@ -1,8 +1,8 @@
 # Makefile example (icc)
 
 SHELL := /bin/bash
-CXXFLAGS?= -std=c++11 -O3 -mt_mpi -I../src -ldl
-#CXXFLAGS?= -std=c++11 -O3 -DBIND_MPI=MPI_DISABLE -I../src -ldl
+CXXFLAGS?= -std=c++11 -O3 -DBIND_MPI=MPI_THREAD_FUNNELED -mt_mpi -I../src -ldl
+#CXXFLAGS?= -std=c++11 -O3 -I../src -ldl
 
 .DEFAULT: all
 .PHONY: all clean

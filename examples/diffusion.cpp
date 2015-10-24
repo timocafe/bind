@@ -451,6 +451,8 @@ int main(int argc, char* argv[]){
     double rmax = 1;
     double rmin = -1;
     size_t N = 1 << std::stoul(argv[1]);
+    std::cout << "Parallel: " << bind::num_procs() << " procs x "
+                              << bind::num_threads() << " threads\n"; 
     std::cout << "Domain: " << N << "\n";
     size_t max_steps = 40;
     Diffusion2D task(D, rmax, rmin, N);

@@ -41,13 +41,9 @@
 #ifndef BIND_COMM_BULK_CHUNK
 #define BIND_COMM_BULK_CHUNK      67108864 // 64 MB
 #endif
-#ifndef BIND_MPI
-#define BIND_MPI                  MPI_THREAD_FUNNELED
-#endif
-#define MPI_DISABLE -1
 
 // {{{ system includes
-#if BIND_MPI != MPI_DISABLE
+#ifdef BIND_MPI
 #include <mpi.h>
 #endif
 #include <complex>
@@ -116,7 +112,7 @@
 #include "bind/model/transformable.hpp"
 // }}}
 // {{{ transport package (requires :model)
-#ifdef MPI_VERSION
+#ifdef BIND_MPI
 #define BIND_CHANNEL_NAME mpi
 #include "bind/transport/mpi/group.hpp"
 #include "bind/transport/mpi/tree.hpp"
