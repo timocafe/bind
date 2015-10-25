@@ -25,17 +25,18 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#define STACK_RESERVE 65536
-
 namespace bind { namespace nodes {
-    static size_t size(){
+    inline size_t size(){
         return select().nodes.size();
     }
-    static std::vector<rank_t>::const_iterator begin(){
+    inline std::vector<rank_t>::const_iterator begin(){
         return select().nodes.begin();
     }
-    static std::vector<rank_t>::const_iterator end(){
+    inline std::vector<rank_t>::const_iterator end(){
         return select().nodes.end();
+    }
+    inline rank_t which(){
+        return select().get_node().which();
     }
 } }
 
@@ -48,10 +49,6 @@ namespace bind { namespace core {
     }
 
     inline controller::controller() : chains(&stack_m), mirror(&stack_s), clock(1), sid(1) {
-        this->stack_m.reserve(STACK_RESERVE);
-        this->stack_s.reserve(STACK_RESERVE);
-        this->garbage.reserve(STACK_RESERVE);
-
         this->each = new node_each(this);
         this->which = NULL;
         for(int i = 0; i < get_num_procs(); i++) nodes.push_back(i);
@@ -202,4 +199,3 @@ namespace bind { namespace core {
 
 } }
 
-#undef STACK_RESERVE

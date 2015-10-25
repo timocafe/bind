@@ -1626,7 +1626,6 @@ namespace bind { namespace memory {
 
 } }
 
-
 #ifndef BIND_CORE_NODE
 #define BIND_CORE_NODE
 
@@ -1815,17 +1814,18 @@ namespace bind { namespace core {
 
 #endif
 
-#define STACK_RESERVE 65536
-
 namespace bind { namespace nodes {
-    static size_t size(){
+    inline size_t size(){
         return select().nodes.size();
     }
-    static std::vector<rank_t>::const_iterator begin(){
+    inline std::vector<rank_t>::const_iterator begin(){
         return select().nodes.begin();
     }
-    static std::vector<rank_t>::const_iterator end(){
+    inline std::vector<rank_t>::const_iterator end(){
         return select().nodes.end();
+    }
+    inline rank_t which(){
+        return select().get_node().which();
     }
 } }
 
@@ -1838,10 +1838,6 @@ namespace bind { namespace core {
     }
 
     inline controller::controller() : chains(&stack_m), mirror(&stack_s), clock(1), sid(1) {
-        this->stack_m.reserve(STACK_RESERVE);
-        this->stack_s.reserve(STACK_RESERVE);
-        this->garbage.reserve(STACK_RESERVE);
-
         this->each = new node_each(this);
         this->which = NULL;
         for(int i = 0; i < get_num_procs(); i++) nodes.push_back(i);
@@ -1992,12 +1988,6 @@ namespace bind { namespace core {
 
 } }
 
-#undef STACK_RESERVE
-namespace bind {
-    inline rank_t which(){
-        return bind::select().get_node().which();
-    }
-}
 
 namespace bind { namespace core {
 
@@ -2007,7 +1997,7 @@ namespace bind { namespace core {
         bind::select().queue(new get(t));
     }
     inline get<transformable>::get(transformable& t){
-        handle = bind::select().get_channel().bcast(t, bind::which());
+        handle = bind::select().get_channel().bcast(t, bind::nodes::which());
     }
     inline bool get<transformable>::ready(){
         return handle->test();
@@ -2020,7 +2010,7 @@ namespace bind { namespace core {
     inline void get<revision>::spawn(revision& r){
         get*& transfer = (get*&)r.assist.second;
         if(bind::select().update(r)) transfer = new get(r);
-        *transfer += bind::which();
+        *transfer += bind::nodes::which();
         bind::select().generate_sid();
     }
     inline get<revision>::get(revision& r) : t(r) {
@@ -2057,7 +2047,7 @@ namespace bind { namespace core {
         t.generator->queue(new set(t));
     }
     inline set<transformable>::set(transformable& t) : t(t) {
-        handle = bind::select().get_channel().bcast(t, bind::which());
+        handle = bind::select().get_channel().bcast(t, bind::nodes::which());
     }
     inline bool set<transformable>::ready(){
         return (t.generator != NULL ? false : handle->test());
@@ -2070,7 +2060,7 @@ namespace bind { namespace core {
     inline void set<revision>::spawn(revision& r){
         set*& transfer = (set*&)r.assist.second;
         if(bind::select().update(r)) transfer = new set(r);
-        *transfer += bind::which();
+        *transfer += bind::nodes::which();
         bind::select().generate_sid();
     }
     inline set<revision>::set(revision& r) : t(r) {
@@ -2093,7 +2083,6 @@ namespace bind { namespace core {
     // }}}
 
 } }
-
 
 #ifndef BIND_CORE_NODE_HPP
 #define BIND_CORE_NODE_HPP
@@ -2145,19 +2134,16 @@ namespace bind {
 
 namespace bind {
 
-    using model::revision;
-
     inline void sync(){
         bind::select().sync();
     }
 
-    template<typename T> 
-    void sync(const T& t){ 
-        bind::sync(); 
-    }
-
     inline int num_procs(){
         return bind::select().get_num_procs();
+    }
+
+    inline int num_threads(){
+        static int n = __cilkrts_get_nworkers(); return n;
     }
 
     inline int get_sid(){
@@ -2170,14 +2156,6 @@ namespace bind {
 
     inline rank_t rank(){
         return bind::select().get_rank();
-    }
-
-    inline bool master(){
-        return (rank() == 0);
-    }
-
-    inline bool verbose(){ 
-        return bind::select().verbose();
     }
 
     template<typename T>
@@ -2218,14 +2196,6 @@ namespace bind {
     template<typename V>
     inline bool locked_once(const V& o){
         return o.bind_allocator.before->locked_once();
-    }
-
-    inline node& get_node(){
-        return bind::select().get_node();
-    }
-
-    inline int num_threads(){
-        static int n = __cilkrts_get_nworkers(); return n;
     }
 
 }
@@ -2304,10 +2274,10 @@ namespace bind {
         static void modify_remote(T& obj){
             auto o = obj.bind_allocator.desc;
             bind::select().touch(o, bind::rank());
-            if(o->back()->owner != bind::which())
+            if(o->back()->owner != bind::nodes::which())
                 bind::select().rsync(o->back());
             bind::select().collect(o->back());
-            bind::select().add_revision<locality::remote>(o, NULL, bind::which()); 
+            bind::select().add_revision<locality::remote>(o, NULL, bind::nodes::which()); 
         }
         template<size_t arg>
         static void modify_local(T& obj, functor* m){
@@ -2379,7 +2349,7 @@ namespace bind {
         template<size_t arg> static void modify_remote(T& obj){
             auto o = obj.bind_allocator.desc;
             bind::select().touch(o, bind::rank());
-            if(o->back()->owner != bind::which())
+            if(o->back()->owner != bind::nodes::which())
                 bind::select().rsync(o->back());
         }
         template<size_t arg> static void modify_local(T& obj, functor* m){
@@ -2414,7 +2384,7 @@ namespace bind {
             auto o = obj.bind_allocator.desc;
             bind::select().touch(o, bind::rank());
             bind::select().collect(o->back());
-            bind::select().add_revision<locality::remote>(o, NULL, bind::which()); 
+            bind::select().add_revision<locality::remote>(o, NULL, bind::nodes::which()); 
         }
         template<size_t arg> static void modify_local(T& obj, functor* m){
             auto o = obj.bind_allocator.desc;

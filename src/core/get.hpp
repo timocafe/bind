@@ -33,7 +33,7 @@ namespace bind { namespace core {
         bind::select().queue(new get(t));
     }
     inline get<transformable>::get(transformable& t){
-        handle = bind::select().get_channel().bcast(t, bind::which());
+        handle = bind::select().get_channel().bcast(t, bind::nodes::which());
     }
     inline bool get<transformable>::ready(){
         return handle->test();
@@ -46,7 +46,7 @@ namespace bind { namespace core {
     inline void get<revision>::spawn(revision& r){
         get*& transfer = (get*&)r.assist.second;
         if(bind::select().update(r)) transfer = new get(r);
-        *transfer += bind::which();
+        *transfer += bind::nodes::which();
         bind::select().generate_sid();
     }
     inline get<revision>::get(revision& r) : t(r) {

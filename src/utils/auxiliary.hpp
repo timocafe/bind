@@ -30,19 +30,16 @@
 
 namespace bind {
 
-    using model::revision;
-
     inline void sync(){
         bind::select().sync();
     }
 
-    template<typename T> 
-    void sync(const T& t){ 
-        bind::sync(); 
-    }
-
     inline int num_procs(){
         return bind::select().get_num_procs();
+    }
+
+    inline int num_threads(){
+        static int n = __cilkrts_get_nworkers(); return n;
     }
 
     inline int get_sid(){
@@ -55,14 +52,6 @@ namespace bind {
 
     inline rank_t rank(){
         return bind::select().get_rank();
-    }
-
-    inline bool master(){
-        return (rank() == 0);
-    }
-
-    inline bool verbose(){ 
-        return bind::select().verbose();
     }
 
     template<typename T>
@@ -103,14 +92,6 @@ namespace bind {
     template<typename V>
     inline bool locked_once(const V& o){
         return o.bind_allocator.before->locked_once();
-    }
-
-    inline node& get_node(){
-        return bind::select().get_node();
-    }
-
-    inline int num_threads(){
-        static int n = __cilkrts_get_nworkers(); return n;
     }
 
 }

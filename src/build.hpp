@@ -127,20 +127,13 @@ namespace bind {
 // {{{ core package (requires :model :transport)
 #include "core/collector.h"
 #include "core/collector.hpp"
-
 #include "core/node.h"
 #include "core/controller.h"
 #include "core/get.h"
 #include "core/set.h"
 #include "core/controller.hpp"
-namespace bind {
-    inline rank_t which(){
-        return bind::select().get_node().which();
-    }
-}
 #include "core/get.hpp"
 #include "core/set.hpp"
-
 #include "core/node.hpp"
 // }}}
 // {{{ interface package (requires :model :transport :core)
