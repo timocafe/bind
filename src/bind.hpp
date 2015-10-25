@@ -31,17 +31,6 @@
 #define NDEBUG
 #define BIND_NO_DEBUG
 #endif
-
-#ifndef BIND_INSTR_BULK_CHUNK
-#define BIND_INSTR_BULK_CHUNK     16777216 // 16 MB
-#endif
-#ifndef BIND_DATA_BULK_CHUNK
-#define BIND_DATA_BULK_CHUNK      67108864 // 64 MB
-#endif
-#ifndef BIND_COMM_BULK_CHUNK
-#define BIND_COMM_BULK_CHUNK      67108864 // 64 MB
-#endif
-
 // {{{ system includes
 #ifdef BIND_MPI
 #include <mpi.h>
