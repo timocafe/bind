@@ -1080,6 +1080,7 @@ namespace bind { namespace transport { namespace mpi {
             std::vector<binary_tree<rank_t>*> trees;
             std::vector<rank_t> circle;
             int tag_ub;
+            int sid;
         };
         static mount& setup(){ 
             static mount m; 
@@ -1094,7 +1095,6 @@ namespace bind { namespace transport { namespace mpi {
         collective<scalar_type>* bcast(scalar_type& v);
         rank_t rank;
         group* world;
-        int tag_ub;
     };
 
 } } }
@@ -1166,7 +1166,7 @@ namespace bind { namespace transport { namespace mpi {
         typedef memory::cpu::instr_bulk::allocator<int> allocator_type;
     public:
         collective(typename channel::block_type& r, rank_t root);
-        void operator += (rank_t rank);
+        void append(rank_t rank);
         bool involved();
         bool test();
     private:
@@ -1255,6 +1255,7 @@ namespace bind { namespace transport { namespace mpi {
         MPI_Comm_size(MPI_COMM_WORLD, &np);
         MPI_Attr_get(MPI_COMM_WORLD, MPI_TAG_UB, &ub, &flag);
         this->tag_ub = flag ? *ub : 32767;
+        this->sid = 1;
         
         trees.resize(2); // 0,1 are empty
         for(int i = 2; i <= np; i++)  trees.push_back(new binary_tree<rank_t>(i));
@@ -1266,7 +1267,7 @@ namespace bind { namespace transport { namespace mpi {
     }
 
     inline channel::channel(){
-        this->tag_ub = channel::setup().tag_ub; // making sure MPI is initialised
+        channel::setup(); // making sure MPI is initialised
         this->world = new group(MPI_COMM_WORLD);
         this->rank = this->world->rank;
     }
@@ -1300,14 +1301,16 @@ namespace bind { namespace transport { namespace mpi {
 namespace bind {
     inline rank_t rank();
     inline int num_procs();
-    inline int get_sid();
-    inline int generate_sid();
 }
 
 
 #define BOUNDARY_OVERFLOW -1
 
 namespace bind { namespace transport { namespace mpi {
+
+    inline int generate_sid(){
+        return (++channel::setup().sid %= channel::setup().tag_ub);
+    }
 
     template<typename T>
     inline void bcast<T>::dispatch(){
@@ -1328,20 +1331,21 @@ namespace bind { namespace transport { namespace mpi {
         this->tags.push_back(-1);
     }
 
-    inline void collective<typename channel::block_type>::operator += (rank_t rank){
+    inline void collective<typename channel::block_type>::append(rank_t rank){
         if(!states[rank]){
             states[rank] = true;
             if(states.back()){
                 for(int i = this->tags.size(); i <= bind::num_procs(); i++)
-                    this->tags.push_back(bind::generate_sid());
+                    this->tags.push_back(generate_sid());
                 for(int i = 0; i < bind::num_procs(); i++)
                     this->states[i] = true;
             }else{
                 if(rank == bind::rank()) this->self = tree.size();
-                this->tags.push_back(bind::get_sid());
+                this->tags.push_back(channel::setup().sid);
                 this->tree.push_back(rank);
             }
         }
+        generate_sid();
     }
 
     inline bool collective<typename channel::block_type>::involved(){
@@ -1367,7 +1371,7 @@ namespace bind { namespace transport { namespace mpi {
     : bcast<typename channel::scalar_type>(v, root) {
         tags.reserve(bind::num_procs()+1);
         for(int i = 0; i <= bind::num_procs(); i++)
-            this->tags.push_back(bind::generate_sid());
+            this->tags.push_back(generate_sid());
     }
 
     inline bool collective<typename channel::scalar_type>::test(){
@@ -1392,7 +1396,7 @@ namespace bind { namespace transport { namespace nop {
 
     template<class T> struct collective {
         bool test(){ return true; }
-        void operator += (rank_t rank){}
+        void append(rank_t rank){}
         bool involved(){ return true; }
     };
 
@@ -1408,7 +1412,6 @@ namespace bind { namespace transport { namespace nop {
         collective<scalar_type>* bcast(scalar_type& v, rank_t root){ return NULL; }
         collective<scalar_type>* bcast(scalar_type& v){ return NULL; }
         static constexpr rank_t rank = 0;
-        static constexpr int tag_ub = 1;
     };
 
 } } }
@@ -1593,8 +1596,6 @@ namespace bind { namespace core {
         channel_type& get_channel();
 
         void sync();
-        int  generate_sid();
-        int  get_sid();
 
         controller* activate(node* a);
         void deactivate(node* a);
@@ -1610,7 +1611,6 @@ namespace bind { namespace core {
         utils::funneled_io io_guard;
         node_each* each;
         node* which;
-        int sid;
     public:
         std::vector<rank_t> nodes;
         template<class T>
@@ -1655,6 +1655,7 @@ namespace bind { namespace core {
         get(revision& r);
         virtual void invoke();
         virtual bool ready();
+    private:
         void operator += (rank_t rank);
     private:
         collective<revision>* handle;
@@ -1694,6 +1695,7 @@ namespace bind { namespace core {
         set(revision& r);
         virtual void invoke();
         virtual bool ready();
+    private:
         void operator += (rank_t rank);
     private:
         collective<revision>* handle;
@@ -1727,19 +1729,11 @@ namespace bind { namespace core {
         delete this->each;
     }
 
-    inline controller::controller() : chains(&stack_m), mirror(&stack_s), clock(1), sid(1) {
+    inline controller::controller() : chains(&stack_m), mirror(&stack_s), clock(1) {
         this->each = new node_each(this);
         this->which = NULL;
         for(int i = 0; i < get_num_procs(); i++) nodes.push_back(i);
         if(!verbose()) this->io_guard.enable();
-    }
-
-    inline int controller::generate_sid(){
-        return (++sid %= channel.tag_ub);
-    }
-
-    inline int controller::get_sid(){
-        return sid;
     }
 
     inline void controller::deactivate(node* a){
@@ -1901,14 +1895,13 @@ namespace bind { namespace core {
         get*& transfer = (get*&)r.assist.second;
         if(bind::select().update(r)) transfer = new get(r);
         *transfer += bind::nodes::which();
-        bind::select().generate_sid();
     }
     inline get<revision>::get(revision& r) : t(r) {
         handle = bind::select().get_channel().get(t);
         t.invalidate();
     }
     inline void get<revision>::operator += (rank_t rank){
-        *handle += rank;
+        handle->append(rank);
         if(handle->involved() && !t.valid()){
             t.use();
             t.generator = this;
@@ -1951,7 +1944,6 @@ namespace bind { namespace core {
         set*& transfer = (set*&)r.assist.second;
         if(bind::select().update(r)) transfer = new set(r);
         *transfer += bind::nodes::which();
-        bind::select().generate_sid();
     }
     inline set<revision>::set(revision& r) : t(r) {
         t.use();
@@ -1960,7 +1952,7 @@ namespace bind { namespace core {
         else bind::select().queue(this);
     }
     inline void set<revision>::operator += (rank_t rank){
-        *handle += rank;
+        handle->append(rank);
     }
     inline bool set<revision>::ready(){
         return (t.generator != NULL ? false : handle->test());
@@ -2034,14 +2026,6 @@ namespace bind {
 
     inline int num_threads(){
         static int n = __cilkrts_get_nworkers(); return n;
-    }
-
-    inline int get_sid(){
-        return bind::select().get_sid();
-    }
-
-    inline int generate_sid(){
-        return bind::select().generate_sid();
     }
 
     inline rank_t rank(){

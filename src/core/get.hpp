@@ -47,14 +47,13 @@ namespace bind { namespace core {
         get*& transfer = (get*&)r.assist.second;
         if(bind::select().update(r)) transfer = new get(r);
         *transfer += bind::nodes::which();
-        bind::select().generate_sid();
     }
     inline get<revision>::get(revision& r) : t(r) {
         handle = bind::select().get_channel().get(t);
         t.invalidate();
     }
     inline void get<revision>::operator += (rank_t rank){
-        *handle += rank;
+        handle->append(rank);
         if(handle->involved() && !t.valid()){
             t.use();
             t.generator = this;

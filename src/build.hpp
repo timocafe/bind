@@ -112,8 +112,6 @@
 namespace bind {
     inline rank_t rank();
     inline int num_procs();
-    inline int get_sid();
-    inline int generate_sid();
 }
 
 #include "transport/mpi/collective.hpp"

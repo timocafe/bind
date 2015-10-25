@@ -48,6 +48,7 @@ namespace bind { namespace transport { namespace mpi {
             std::vector<binary_tree<rank_t>*> trees;
             std::vector<rank_t> circle;
             int tag_ub;
+            int sid;
         };
         static mount& setup(){ 
             static mount m; 
@@ -62,7 +63,6 @@ namespace bind { namespace transport { namespace mpi {
         collective<scalar_type>* bcast(scalar_type& v);
         rank_t rank;
         group* world;
-        int tag_ub;
     };
 
 } } }

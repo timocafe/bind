@@ -42,14 +42,6 @@ namespace bind {
         static int n = __cilkrts_get_nworkers(); return n;
     }
 
-    inline int get_sid(){
-        return bind::select().get_sid();
-    }
-
-    inline int generate_sid(){
-        return bind::select().generate_sid();
-    }
-
     inline rank_t rank(){
         return bind::select().get_rank();
     }

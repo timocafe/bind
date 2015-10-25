@@ -44,6 +44,7 @@ namespace bind { namespace transport { namespace mpi {
         MPI_Comm_size(MPI_COMM_WORLD, &np);
         MPI_Attr_get(MPI_COMM_WORLD, MPI_TAG_UB, &ub, &flag);
         this->tag_ub = flag ? *ub : 32767;
+        this->sid = 1;
         
         trees.resize(2); // 0,1 are empty
         for(int i = 2; i <= np; i++)  trees.push_back(new binary_tree<rank_t>(i));
@@ -55,7 +56,7 @@ namespace bind { namespace transport { namespace mpi {
     }
 
     inline channel::channel(){
-        this->tag_ub = channel::setup().tag_ub; // making sure MPI is initialised
+        channel::setup(); // making sure MPI is initialised
         this->world = new group(MPI_COMM_WORLD);
         this->rank = this->world->rank;
     }

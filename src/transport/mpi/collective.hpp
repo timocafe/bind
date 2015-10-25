@@ -29,6 +29,10 @@
 
 namespace bind { namespace transport { namespace mpi {
 
+    inline int generate_sid(){
+        return (++channel::setup().sid %= channel::setup().tag_ub);
+    }
+
     template<typename T>
     inline void bcast<T>::dispatch(){
         std::pair<rank_t,rank_t> lr = (*channel::setup().trees[size])[self];
@@ -48,20 +52,21 @@ namespace bind { namespace transport { namespace mpi {
         this->tags.push_back(-1);
     }
 
-    inline void collective<typename channel::block_type>::operator += (rank_t rank){
+    inline void collective<typename channel::block_type>::append(rank_t rank){
         if(!states[rank]){
             states[rank] = true;
             if(states.back()){
                 for(int i = this->tags.size(); i <= bind::num_procs(); i++)
-                    this->tags.push_back(bind::generate_sid());
+                    this->tags.push_back(generate_sid());
                 for(int i = 0; i < bind::num_procs(); i++)
                     this->states[i] = true;
             }else{
                 if(rank == bind::rank()) this->self = tree.size();
-                this->tags.push_back(bind::get_sid());
+                this->tags.push_back(channel::setup().sid);
                 this->tree.push_back(rank);
             }
         }
+        generate_sid();
     }
 
     inline bool collective<typename channel::block_type>::involved(){
@@ -87,7 +92,7 @@ namespace bind { namespace transport { namespace mpi {
     : bcast<typename channel::scalar_type>(v, root) {
         tags.reserve(bind::num_procs()+1);
         for(int i = 0; i <= bind::num_procs(); i++)
-            this->tags.push_back(bind::generate_sid());
+            this->tags.push_back(generate_sid());
     }
 
     inline bool collective<typename channel::scalar_type>::test(){

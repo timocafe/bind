@@ -48,19 +48,11 @@ namespace bind { namespace core {
         delete this->each;
     }
 
-    inline controller::controller() : chains(&stack_m), mirror(&stack_s), clock(1), sid(1) {
+    inline controller::controller() : chains(&stack_m), mirror(&stack_s), clock(1) {
         this->each = new node_each(this);
         this->which = NULL;
         for(int i = 0; i < get_num_procs(); i++) nodes.push_back(i);
         if(!verbose()) this->io_guard.enable();
-    }
-
-    inline int controller::generate_sid(){
-        return (++sid %= channel.tag_ub);
-    }
-
-    inline int controller::get_sid(){
-        return sid;
     }
 
     inline void controller::deactivate(node* a){

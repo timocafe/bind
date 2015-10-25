@@ -56,7 +56,7 @@ namespace bind { namespace transport { namespace mpi {
         typedef memory::cpu::instr_bulk::allocator<int> allocator_type;
     public:
         collective(typename channel::block_type& r, rank_t root);
-        void operator += (rank_t rank);
+        void append(rank_t rank);
         bool involved();
         bool test();
     private:

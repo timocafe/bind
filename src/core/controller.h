@@ -67,8 +67,6 @@ namespace bind { namespace core {
         channel_type& get_channel();
 
         void sync();
-        int  generate_sid();
-        int  get_sid();
 
         controller* activate(node* a);
         void deactivate(node* a);
@@ -84,7 +82,6 @@ namespace bind { namespace core {
         utils::funneled_io io_guard;
         node_each* each;
         node* which;
-        int sid;
     public:
         std::vector<rank_t> nodes;
         template<class T>

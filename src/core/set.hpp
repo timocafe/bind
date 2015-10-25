@@ -47,7 +47,6 @@ namespace bind { namespace core {
         set*& transfer = (set*&)r.assist.second;
         if(bind::select().update(r)) transfer = new set(r);
         *transfer += bind::nodes::which();
-        bind::select().generate_sid();
     }
     inline set<revision>::set(revision& r) : t(r) {
         t.use();
@@ -56,7 +55,7 @@ namespace bind { namespace core {
         else bind::select().queue(this);
     }
     inline void set<revision>::operator += (rank_t rank){
-        *handle += rank;
+        handle->append(rank);
     }
     inline bool set<revision>::ready(){
         return (t.generator != NULL ? false : handle->test());

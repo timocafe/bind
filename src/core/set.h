@@ -53,6 +53,7 @@ namespace bind { namespace core {
         set(revision& r);
         virtual void invoke();
         virtual bool ready();
+    private:
         void operator += (rank_t rank);
     private:
         collective<revision>* handle;
