@@ -38,8 +38,7 @@ namespace bind {
     }
     inline node::node(scope::const_iterator it){
         if(! (this->controller = bind::select().activate(this)) ) return;
-        this->round = this->controller->get_num_procs();
-        this->rank = (*it) % this->round;
+        this->rank = (*it) % this->controller->get_num_procs();
         this->state = (this->rank == controller->get_rank()) ? locality::local : locality::remote;
     }
     inline bool node::remote() const {
@@ -58,20 +57,10 @@ namespace bind {
     // }}}
     // {{{ node's special case: everyone does the same
 
-    inline node_common::node_common(){
-        if(! (this->controller = bind::select().activate(this)) ) return;
-        this->rank = controller->get_shared_rank();
-        this->state = locality::common;
-    }
-
-    // }}}
-    // {{{ node's special case: auto-scheduling node
-
     inline node_zero::node_zero(typename node::controller_type* c){
         this->controller = c;
-        this->round = controller->get_num_procs();
-        this->rank = 0;
-        this->state = (this->rank == controller->get_rank()) ? locality::local : locality::remote;
+        this->rank = controller->get_shared_rank();
+        this->state = locality::common;
     }
 
     // }}}

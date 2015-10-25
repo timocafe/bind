@@ -375,10 +375,7 @@ class Diffusion2D {
                 }
                 grid.push_back(new stencil_t(tailm, tailn)); grid_mirror.push_back(new stencil_t(tailm, tailn));
             }
-            {
-                bind::node_common select;
-                null_stencil.fill(0.0);
-            }
+            null_stencil.fill(0.0);
 
             //initialize grid density(x,y,t=0)
             double bound = 1./2;

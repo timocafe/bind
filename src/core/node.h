@@ -47,16 +47,9 @@ namespace bind {
         rank_t which()  const;
         friend class core::controller;
     protected:
-        int factor;
-        int round;
         rank_t rank;
         locality state;
         controller_type* controller;
-    };
-
-    class node_common : public node {
-    public:
-        node_common();
     };
 
     class node_zero : public node {

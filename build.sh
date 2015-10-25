@@ -11,4 +11,4 @@ while IFS='' read -r line || [[ -n "$line" ]]; do
     else
         echo "$line" >> $BUILD
     fi
-done < "$1"
+done < "src/build.hpp"
