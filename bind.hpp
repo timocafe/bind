@@ -1687,9 +1687,9 @@ namespace bind {
         controller_type* controller;
     };
 
-    class nodeless : public node {
+    class node_each : public node {
     public:
-        nodeless(typename node::controller_type* c);
+        node_each(typename node::controller_type* c);
     };
 
 }
@@ -1756,10 +1756,10 @@ namespace bind { namespace core {
         std::vector< functor* >* chains;
         std::vector< functor* >* mirror;
         bind::memory::collector garbage;
-        std::stack<node*, std::vector<node*> > nodes;
         std::stack<scope*, std::vector<scope*> > scopes;
         utils::funneled_io io_guard;
-        nodeless* base_node;
+        node_each* each;
+        node* which;
         int sid;
     public:
         template<class T>
@@ -1860,7 +1860,7 @@ namespace bind { namespace core {
     inline controller::~controller(){ 
         if(!chains->empty()) printf("Bind:: exiting with operations still in queue!\n");
         this->clear();
-        delete this->base_node;
+        delete this->each;
     }
 
     inline controller::controller() : chains(&stack_m), mirror(&stack_s), clock(1), sid(1) {
@@ -1868,8 +1868,8 @@ namespace bind { namespace core {
         this->stack_s.reserve(STACK_RESERVE);
         this->garbage.reserve(STACK_RESERVE);
 
-        this->base_node = new nodeless(this);
-        nodes.push(base_node);
+        this->each = new node_each(this);
+        this->which = NULL;
         this->push_scope(new bind::scope(get_num_procs()));
 
         if(!verbose()) this->io_guard.enable();
@@ -1882,11 +1882,11 @@ namespace bind { namespace core {
         return sid;
     }
     inline void controller::deactivate(node* a){
-        nodes.pop();
+        which = NULL;
     }
-    inline controller* controller::activate(node* a){
-        if(&get_node() != this->base_node) return NULL;
-        nodes.push(a);
+    inline controller* controller::activate(node* n){
+        if(which) return NULL;
+        which = n;
         return this;
     }
     inline void controller::sync(){
@@ -1897,7 +1897,7 @@ namespace bind { namespace core {
         memory::cpu::comm_bulk::drop();
     }
     inline node& controller::get_node(){
-        return *nodes.top();
+        return (!which) ? *each : *which;
     }
     inline scope& controller::get_scope(){
         return *scopes.top();
@@ -2210,7 +2210,7 @@ namespace bind {
     // }}}
     // {{{ node's special case: everyone does the same
 
-    inline node_zero::node_zero(typename node::controller_type* c){
+    inline node_each::node_each(typename node::controller_type* c){
         this->controller = c;
         this->rank = controller->get_shared_rank();
         this->state = locality::common;

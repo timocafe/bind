@@ -32,7 +32,7 @@ namespace bind { namespace core {
     inline controller::~controller(){ 
         if(!chains->empty()) printf("Bind:: exiting with operations still in queue!\n");
         this->clear();
-        delete this->base_node;
+        delete this->each;
     }
 
     inline controller::controller() : chains(&stack_m), mirror(&stack_s), clock(1), sid(1) {
@@ -40,8 +40,8 @@ namespace bind { namespace core {
         this->stack_s.reserve(STACK_RESERVE);
         this->garbage.reserve(STACK_RESERVE);
 
-        this->base_node = new nodeless(this);
-        nodes.push(base_node);
+        this->each = new node_each(this);
+        this->which = NULL;
         this->push_scope(new bind::scope(get_num_procs()));
 
         if(!verbose()) this->io_guard.enable();
@@ -54,11 +54,11 @@ namespace bind { namespace core {
         return sid;
     }
     inline void controller::deactivate(node* a){
-        nodes.pop();
+        which = NULL;
     }
-    inline controller* controller::activate(node* a){
-        if(&get_node() != this->base_node) return NULL;
-        nodes.push(a);
+    inline controller* controller::activate(node* n){
+        if(which) return NULL;
+        which = n;
         return this;
     }
     inline void controller::sync(){
@@ -69,7 +69,7 @@ namespace bind { namespace core {
         memory::cpu::comm_bulk::drop();
     }
     inline node& controller::get_node(){
-        return *nodes.top();
+        return (!which) ? *each : *which;
     }
     inline scope& controller::get_scope(){
         return *scopes.top();

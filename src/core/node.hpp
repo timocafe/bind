@@ -57,7 +57,7 @@ namespace bind {
     // }}}
     // {{{ node's special case: everyone does the same
 
-    inline node_zero::node_zero(typename node::controller_type* c){
+    inline node_each::node_each(typename node::controller_type* c){
         this->controller = c;
         this->rank = controller->get_shared_rank();
         this->state = locality::common;

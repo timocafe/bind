@@ -84,10 +84,10 @@ namespace bind { namespace core {
         std::vector< functor* >* chains;
         std::vector< functor* >* mirror;
         bind::memory::collector garbage;
-        std::stack<node*, std::vector<node*> > nodes;
         std::stack<scope*, std::vector<scope*> > scopes;
         utils::funneled_io io_guard;
-        nodeless* base_node;
+        node_each* each;
+        node* which;
         int sid;
     public:
         template<class T>
