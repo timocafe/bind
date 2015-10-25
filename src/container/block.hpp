@@ -35,7 +35,7 @@ namespace bind {
         template<typename T>
         void fill_value(volatile block<T>& a, T& value){
             block<T>& a_ = const_cast<block<T>&>(a);
-            size_t size = get_square_dim(a_);
+            size_t size = get_dim(a_).square();
             T* ad = a_.data();
             for(size_t i = 0; i < size; ++i) ad[i] = value;
         }

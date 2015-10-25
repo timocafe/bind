@@ -68,16 +68,6 @@ namespace bind {
     inline dim2 get_dim(const V& obj){
         return obj.bind_allocator.desc->dim;
     }
-
-    template<typename V> 
-    inline size_t get_square_dim(V& obj){ 
-        return get_dim(obj).square();
-    }
-
-    template<typename V>
-    inline size_t get_length(V& obj){
-        return get_dim(obj).y;
-    }
     
     template<typename V> 
     inline size_t extent(V& obj){ 
