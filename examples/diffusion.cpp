@@ -23,8 +23,8 @@ namespace detail {
                             double& dr, double& bound)
     {
         block<T>& av = const_cast<block<T>&>(a);
-        size_t m = get_dim(av).y;
-        size_t n = get_dim(av).x;
+        size_t m = av.num_rows();
+        size_t n = av.num_cols();
         T* a_ = av.data(); 
         memset(a_, 0, bind::extent(av)); 
         for(size_t i = 0; i < m; ++i)
@@ -48,8 +48,8 @@ namespace detail {
         const T* b  = bottom.data();
 
         double summ = 0.;
-        size_t n = get_dim(a).x;
-        size_t m = get_dim(a).y;
+        size_t m = a.num_rows();
+        size_t n = a.num_cols();
 
         for(int j = 0; j < n+2; j++) summ += t[j];
         for(int i = 0; i < m; i++){
@@ -76,8 +76,8 @@ namespace detail {
         const T* b  = bottom.data();
 
         double summ = 0.;
-        size_t n = get_dim(a).x;
-        size_t m = get_dim(a).y;
+        size_t m = a.num_rows();
+        size_t n = a.num_cols();
 
         double x_, y_;
         for(int j = 0; j < n+2; j++){ x_ = x + j*dr; y_ = y; summ += t[j]*(x_*x_+y_*y_); }
@@ -101,8 +101,8 @@ namespace detail {
                                          double& fac)
     {
         size_t ind;
-        size_t m = get_dim(s).y;
-        size_t n = get_dim(s).x;
+        size_t m = s.num_rows()-2;
+        size_t n = s.num_cols()-2;
         T* u_ = s_.data();
         const T* u  = s.data();
         const T* t  = top.data();
@@ -146,8 +146,8 @@ namespace detail {
                                                        const border<T>& rn_top,
                                                        double& fac)
     {
-        size_t n = get_dim(const_cast<border<T>&>(top_)).x-1;
-        size_t m = get_dim(s).y;
+        size_t n = const_cast<border<T>&>(top_).num_cols()-1;
+        size_t m = s.num_rows()-2;
         T* t_ = top_.data();
         const T* t  = top.data();
         const T* l  = left.data();
@@ -156,7 +156,7 @@ namespace detail {
         const T* lt = ln_top.data();
         const T* tb = tn_bottom.data();
         const T* rt = rn_top.data();
-                                   t_[0] = t[0] + fac*(t[1] + lt[get_dim(ln_top).x-1] + l[0] + tb[0] - 4*t[0]);
+                                   t_[0] = t[0] + fac*(t[1] + lt[ln_top.num_cols()-1] + l[0] + tb[0] - 4*t[0]);
         for(int j = 1; j < n; j++) t_[j] = t[j] + fac*(t[j+1] + t[j-1] + x[(j-1)*m] + tb[j] - 4*t[j]);
                                    t_[n] = t[n] + fac*(rt[0] + t[n-1] + r[0] + tb[n] - 4*t[n]);
     }
@@ -171,8 +171,8 @@ namespace detail {
                                                              const border<T>& rn_bottom,
                                                              double& fac)
     {
-        size_t n = get_dim(const_cast<border<T>&>(bottom_)).x-1;
-        size_t m = get_dim(s).y;
+        size_t n = const_cast<border<T>&>(bottom_).num_cols()-1;
+        size_t m = s.num_rows()-2;
         T* b_ = bottom_.data();
         const T* b  = bottom.data();
         const T* l  = left.data();
@@ -182,7 +182,7 @@ namespace detail {
         const T* bt = bn_top.data();
         const T* rb = rn_bottom.data();
 
-                                   b_[0] = b[0] + fac*(b[1] + lb[get_dim(ln_bottom).x-1] + bt[0] + l[m-1] - 4*b[0]);
+                                   b_[0] = b[0] + fac*(b[1] + lb[ln_bottom.num_cols()-1] + bt[0] + l[m-1] - 4*b[0]);
         for(int j = 1; j < n; j++) b_[j] = b[j] + fac*(b[j+1] + b[j-1] + bt[j] + x[j*m-1] - 4*b[j]);
                                    b_[n] = b[n] + fac*(rb[0] + b[n-1] + bt[n] + r[m-1] - 4*b[n]);
     }
@@ -195,7 +195,7 @@ namespace detail {
                                                          const border<T>& ln_right,
                                                          double& fac)
     {
-        size_t m = get_dim(const_cast<border<T>&>(left_)).y-1;
+        size_t m = const_cast<border<T>&>(left_).num_rows()-1;
         T* l_ = left_.data();
         const T* l  = left.data();
         const T* t  = top.data();
@@ -216,8 +216,8 @@ namespace detail {
                                                            const border<T>& rn_left,
                                                            double& fac)
     {
-        size_t m = get_dim(const_cast<border<T>&>(right_)).y-1;
-        size_t n = get_dim(s).x;
+        size_t m = const_cast<border<T>&>(right_).num_rows()-1;
+        size_t n = s.num_cols()-2;
         T* r_ = right_.data();
         const T* r  = right.data();
         const T* t  = top.data();
@@ -293,8 +293,8 @@ public:
         ::partial_init(left(),   value, posi+dr,                posj,                   dr, bound);
         ::partial_init(*this,    value, posi + dr,              posj + dr,              dr, bound);
     }
-    size_t num_rows(){ return bind::get_dim(*this).y+2; }
-    size_t num_cols(){ return bind::get_dim(*this).x+2; }
+    size_t num_rows() const { return bind::block<T>::num_rows()+2; }
+    size_t num_cols() const { return bind::block<T>::num_cols()+2; }
                     
     void evolve_from(const stencil& s, double fac){
         bind::cpu(detail::evolve<T>, *this, s, s.top(), s.right(), s.bottom(), s.left(), fac);

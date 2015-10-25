@@ -71,7 +71,6 @@
 #include "utils/io.hpp"
 #include "utils/mutex.hpp"
 #include "utils/rank_t.hpp"
-#include "utils/dim2.hpp"
 #include "utils/env.hpp"
 #include "utils/guard_once.hpp"
 // }}}

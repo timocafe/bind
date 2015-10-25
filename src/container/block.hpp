@@ -35,7 +35,7 @@ namespace bind {
         template<typename T>
         void fill_value(volatile block<T>& a, T& value){
             block<T>& a_ = const_cast<block<T>&>(a);
-            size_t size = get_dim(a_).square();
+            size_t size = length(a_);
             T* ad = a_.data();
             for(size_t i = 0; i < size; ++i) ad[i] = value;
         }
@@ -46,18 +46,15 @@ namespace bind {
     public:
         typedef Allocator allocator_type;
         typedef T value_type;
-        block(size_t m, size_t n) : bind_allocator(sizeof(T), m, n) {}
-        size_t lda() const {
-            return bind::get_dim(*this).y;
-        }
+        block(size_t m, size_t n) : bind_allocator(sizeof(T), m, n), rows(m), cols(n) {}
         void init(T value){
             bind::cpu(detail::fill_value<T>, *this, value);
         }
         value_type& operator()(size_t i, size_t j){
-            return data()[ j*this->lda() + i ];
+            return data()[ j*rows + i ];
         }
         const value_type& operator()(size_t i, size_t j) const {
-            return data()[ j*this->lda() + i ];
+            return data()[ j*rows + i ];
         }
         value_type* data() volatile {
             return bind::delegated(*this).data;
@@ -65,6 +62,14 @@ namespace bind {
         const value_type* data() const volatile {
             return bind::delegated(*this).data;
         }
+        size_t num_rows() const {
+            return rows;
+        }
+        size_t num_cols() const {
+            return cols;
+        }
+        size_t rows;
+        size_t cols;
     BIND_DELEGATE(
         value_type data[ BIND_VAR_LENGTH ]; 
     )};

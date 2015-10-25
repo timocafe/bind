@@ -65,8 +65,8 @@ namespace bind {
     }
 
     template<typename V>
-    inline dim2 get_dim(const V& obj){
-        return obj.bind_allocator.desc->dim;
+    inline size_t length(const V& obj){
+        return obj.bind_allocator.desc->length;
     }
     
     template<typename V> 

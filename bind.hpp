@@ -298,88 +298,6 @@ namespace bind {
 
 #endif
 
-#ifndef BIND_UTILS_DIM2
-#define BIND_UTILS_DIM2
-
-namespace bind{
-
-    struct dim2 {
-        size_t x, y;
-        dim2() 
-        : x(0), y(0) 
-        {
-        }
-
-        dim2(size_t x, size_t y) 
-        : x(x), y(y) 
-        {
-        }
-
-        size_t max() const {
-            return std::max(this->x, this->y);
-        }
-
-        size_t min() const {
-            return std::min(this->x, this->y);
-        }
-
-        size_t square() const {
-            return this->x * this->y;
-        }
-
-        dim2& operator=(int value){
-            this->x = this->y = value;
-            return *this;
-        }
-
-        dim2& operator*=(const dim2 & b){
-            this->x *= b.x;
-            this->y *= b.y;
-            return *this;
-        }
-
-        size_t operator*(const dim2 & b) const { // multiplication of all components
-            return this->x * b.x *
-                   this->y * b.y ;
-        }
-
-        bool operator==(int value) const {
-            return (x == value && y == value);
-        }
-
-        bool operator!=(int value) const {
-            return !(x == value && y == value);
-        }
-
-        bool operator==(dim2 m) const {
-            return (x == m.x && y == m.y);
-        }
-
-        bool operator!=(dim2 m) const {
-            return !(x == m.x && y == m.y);
-        }
-
-        bool operator<(dim2 m) const {
-            return (x < m.x && y < m.y);
-        }
-
-        bool operator<(size_t m) const {
-            return (x < m && y < m);
-        }
-
-        bool operator>(dim2 m) const {
-            return (x > m.x && y > m.y);
-        }
-
-        bool operator>(size_t m) const {
-            return (x > m && y > m);
-        }
-    };
-
-}
-
-#endif
-
 #ifndef BIND_UTILS_ENV
 #define BIND_UTILS_ENV
 
@@ -1019,7 +937,7 @@ namespace bind { namespace model {
 
     class history : public memory::cpu::use_fixed_new<history> {
     public:
-        history(dim2 dim, size_t ts) : current(NULL), dim(dim), extent(bind::memory::aligned_64(dim.square()*ts)) { }
+        history(size_t n, size_t ts) : current(NULL), length(n), extent(bind::memory::aligned_64(n*ts)) { }
         void init_state(rank_t owner){
             revision* r = new revision(extent, NULL, locality::common, owner);
             this->current = r;
@@ -1036,7 +954,7 @@ namespace bind { namespace model {
         }
         revision* current;
         size_t extent;
-        dim2 dim;
+        size_t length;
     };
 
 } }
@@ -2169,8 +2087,8 @@ namespace bind {
     }
 
     template<typename V>
-    inline dim2 get_dim(const V& obj){
-        return obj.bind_allocator.desc->dim;
+    inline size_t length(const V& obj){
+        return obj.bind_allocator.desc->length;
     }
     
     template<typename V> 
@@ -2498,7 +2416,7 @@ namespace bind {
         default_allocator& operator=(const default_allocator&) = delete;
         default_allocator(){ }
         default_allocator(size_t ts, size_t m = 1, size_t n = 1){
-            desc = new history(dim2(n,m),ts);
+            desc = new history(n*m, ts);
         }
         ~default_allocator(){
             if(desc->weak()) delete desc;
@@ -2900,7 +2818,7 @@ namespace bind {
         template<typename T>
         void fill_value(volatile block<T>& a, T& value){
             block<T>& a_ = const_cast<block<T>&>(a);
-            size_t size = get_dim(a_).square();
+            size_t size = length(a_);
             T* ad = a_.data();
             for(size_t i = 0; i < size; ++i) ad[i] = value;
         }
@@ -2911,18 +2829,15 @@ namespace bind {
     public:
         typedef Allocator allocator_type;
         typedef T value_type;
-        block(size_t m, size_t n) : bind_allocator(sizeof(T), m, n) {}
-        size_t lda() const {
-            return bind::get_dim(*this).y;
-        }
+        block(size_t m, size_t n) : bind_allocator(sizeof(T), m, n), rows(m), cols(n) {}
         void init(T value){
             bind::cpu(detail::fill_value<T>, *this, value);
         }
         value_type& operator()(size_t i, size_t j){
-            return data()[ j*this->lda() + i ];
+            return data()[ j*rows + i ];
         }
         const value_type& operator()(size_t i, size_t j) const {
-            return data()[ j*this->lda() + i ];
+            return data()[ j*rows + i ];
         }
         value_type* data() volatile {
             return bind::delegated(*this).data;
@@ -2930,6 +2845,14 @@ namespace bind {
         const value_type* data() const volatile {
             return bind::delegated(*this).data;
         }
+        size_t num_rows() const {
+            return rows;
+        }
+        size_t num_cols() const {
+            return cols;
+        }
+        size_t rows;
+        size_t cols;
     BIND_DELEGATE(
         value_type data[ BIND_VAR_LENGTH ]; 
     )};
