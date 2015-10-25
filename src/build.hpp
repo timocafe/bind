@@ -105,15 +105,8 @@
 #include "transport/mpi/channel.h"
 #include "transport/mpi/request.h"
 #include "transport/mpi/collective.h"
-
 #include "transport/mpi/request.hpp"
 #include "transport/mpi/channel.hpp"
-
-namespace bind {
-    inline rank_t rank();
-    inline int num_procs();
-}
-
 #include "transport/mpi/collective.hpp"
 #else
 #include "transport/nop/channel.hpp"

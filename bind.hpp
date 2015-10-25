@@ -1081,6 +1081,7 @@ namespace bind { namespace transport { namespace mpi {
             std::vector<rank_t> circle;
             int tag_ub;
             int sid;
+            int np;
         };
         static mount& setup(){ 
             static mount m; 
@@ -1186,7 +1187,6 @@ namespace bind { namespace transport { namespace mpi {
 
 #endif
 
-
 namespace bind { namespace transport { namespace mpi {
 
     // type information required //
@@ -1249,7 +1249,7 @@ namespace bind { namespace transport { namespace mpi {
     }
 
     inline channel::mount::mount(){
-        int *ub, flag, np, level, zero = 0;
+        int *ub, flag, level, zero = 0;
         MPI_Init_thread(&zero, NULL, BIND_MPI, &level); 
         if(level != BIND_MPI) throw std::runtime_error("Error: Wrong threading level");
         MPI_Comm_size(MPI_COMM_WORLD, &np);
@@ -1298,19 +1298,27 @@ namespace bind { namespace transport { namespace mpi {
 
 } } }
 
-namespace bind {
-    inline rank_t rank();
-    inline int num_procs();
-}
-
-
 #define BOUNDARY_OVERFLOW -1
 
 namespace bind { namespace transport { namespace mpi {
 
-    inline int generate_sid(){
-        return (++channel::setup().sid %= channel::setup().tag_ub);
+    namespace detail {
+        inline int num_procs(){
+            return channel::setup().np;
+        }
+        
+        inline int generate_sid(){
+            return (++channel::setup().sid %= channel::setup().tag_ub);
+        }
     }
+
+} } }
+
+namespace bind {
+    inline rank_t rank();
+}
+
+namespace bind { namespace transport { namespace mpi {
 
     template<typename T>
     inline void bcast<T>::dispatch(){
@@ -1326,7 +1334,7 @@ namespace bind { namespace transport { namespace mpi {
     }
 
     inline collective<typename channel::block_type>::collective(typename channel::block_type& r, rank_t root) 
-    : bcast<typename channel::block_type>(r, root), states(bind::num_procs()+1) {
+    : bcast<typename channel::block_type>(r, root), states(detail::num_procs()+1) {
         this->tree.push_back(root);
         this->tags.push_back(-1);
     }
@@ -1335,9 +1343,9 @@ namespace bind { namespace transport { namespace mpi {
         if(!states[rank]){
             states[rank] = true;
             if(states.back()){
-                for(int i = this->tags.size(); i <= bind::num_procs(); i++)
-                    this->tags.push_back(generate_sid());
-                for(int i = 0; i < bind::num_procs(); i++)
+                for(int i = this->tags.size(); i <= detail::num_procs(); i++)
+                    this->tags.push_back(detail::generate_sid());
+                for(int i = 0; i < detail::num_procs(); i++)
                     this->states[i] = true;
             }else{
                 if(rank == bind::rank()) this->self = tree.size();
@@ -1345,7 +1353,7 @@ namespace bind { namespace transport { namespace mpi {
                 this->tree.push_back(rank);
             }
         }
-        generate_sid();
+        detail::generate_sid();
     }
 
     inline bool collective<typename channel::block_type>::involved(){
@@ -1355,7 +1363,7 @@ namespace bind { namespace transport { namespace mpi {
     inline bool collective<typename channel::block_type>::test(){
         if(this->once()){
             if(states.back()){
-                this->size = bind::num_procs();
+                this->size = detail::num_procs();
                 this->list = &channel::setup().circle[root];
                 this->self = (size + bind::rank() - root) % size;
             }else{
@@ -1369,14 +1377,14 @@ namespace bind { namespace transport { namespace mpi {
 
     inline collective<typename channel::scalar_type>::collective(typename channel::scalar_type& v, rank_t root)
     : bcast<typename channel::scalar_type>(v, root) {
-        tags.reserve(bind::num_procs()+1);
-        for(int i = 0; i <= bind::num_procs(); i++)
-            this->tags.push_back(generate_sid());
+        tags.reserve(detail::num_procs()+1);
+        for(int i = 0; i <= detail::num_procs(); i++)
+            this->tags.push_back(detail::generate_sid());
     }
 
     inline bool collective<typename channel::scalar_type>::test(){
         if(this->once()){
-            this->size = bind::num_procs();
+            this->size = detail::num_procs();
             this->list = &channel::setup().circle[root];
             this->self = (size + bind::rank() - root) % size;
             this->dispatch();

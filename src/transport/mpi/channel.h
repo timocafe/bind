@@ -49,6 +49,7 @@ namespace bind { namespace transport { namespace mpi {
             std::vector<rank_t> circle;
             int tag_ub;
             int sid;
+            int np;
         };
         static mount& setup(){ 
             static mount m; 
