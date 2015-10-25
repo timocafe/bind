@@ -1627,39 +1627,6 @@ namespace bind { namespace memory {
 } }
 
 
-#ifndef BIND_CORE_SCOPE
-#define BIND_CORE_SCOPE
-
-namespace bind {
-
-    namespace core {
-        class controller;
-    }
-
-    class scope {
-    public:
-        typedef std::vector<int> container;
-        typedef container::const_iterator const_iterator;
-        static const_iterator balance(int k, int max_k);
-        static const_iterator permute(int k, const std::vector<int>& s, size_t granularity = 1);
-        static bool local();
-        static scope& top();
-        static size_t size();
-        static const_iterator begin();
-        static const_iterator end();
-       ~scope();
-        scope(const_iterator first, const_iterator last);
-        scope(const_iterator first, size_t size);
-    private:
-        container provision;
-        friend class core::controller;
-        scope(size_t np);
-    };
-
-}
-
-#endif
-
 #ifndef BIND_CORE_NODE
 #define BIND_CORE_NODE
 
@@ -1675,7 +1642,7 @@ namespace bind {
         node(){}
     public:
        ~node();
-        node(scope::const_iterator it);
+        node(std::vector<rank_t>::const_iterator it);
         bool remote() const;
         bool local()  const;
         bool common() const;
@@ -1687,15 +1654,13 @@ namespace bind {
         controller_type* controller;
     };
 
-    class node_each : public node {
-    public:
+    struct node_each : public node {
         node_each(typename node::controller_type* c);
     };
 
 }
 
 #endif
-
 
 #ifndef BIND_CORE_CONTROLLER
 #define BIND_CORE_CONTROLLER
@@ -1741,9 +1706,6 @@ namespace bind { namespace core {
         void sync();
         int  generate_sid();
         int  get_sid();
-        void push_scope(scope* s);
-        void pop_scope();
-        scope& get_scope();
 
         controller* activate(node* a);
         void deactivate(node* a);
@@ -1756,12 +1718,12 @@ namespace bind { namespace core {
         std::vector< functor* >* chains;
         std::vector< functor* >* mirror;
         bind::memory::collector garbage;
-        std::stack<scope*, std::vector<scope*> > scopes;
         utils::funneled_io io_guard;
         node_each* each;
         node* which;
         int sid;
     public:
+        std::vector<rank_t> nodes;
         template<class T>
         struct weak_instance {
             static controller w;
@@ -1855,6 +1817,18 @@ namespace bind { namespace core {
 
 #define STACK_RESERVE 65536
 
+namespace bind { namespace nodes {
+    static size_t size(){
+        return select().nodes.size();
+    }
+    static std::vector<rank_t>::const_iterator begin(){
+        return select().nodes.begin();
+    }
+    static std::vector<rank_t>::const_iterator end(){
+        return select().nodes.end();
+    }
+} }
+
 namespace bind { namespace core {
 
     inline controller::~controller(){ 
@@ -1870,25 +1844,28 @@ namespace bind { namespace core {
 
         this->each = new node_each(this);
         this->which = NULL;
-        this->push_scope(new bind::scope(get_num_procs()));
-
+        for(int i = 0; i < get_num_procs(); i++) nodes.push_back(i);
         if(!verbose()) this->io_guard.enable();
     }
 
     inline int controller::generate_sid(){
         return (++sid %= channel.tag_ub);
     }
+
     inline int controller::get_sid(){
         return sid;
     }
+
     inline void controller::deactivate(node* a){
         which = NULL;
     }
+
     inline controller* controller::activate(node* n){
         if(which) return NULL;
         which = n;
         return this;
     }
+
     inline void controller::sync(){
         this->flush();
         this->clear();
@@ -1896,17 +1873,9 @@ namespace bind { namespace core {
         memory::cpu::data_bulk::drop();
         memory::cpu::comm_bulk::drop();
     }
+
     inline node& controller::get_node(){
         return (!which) ? *each : *which;
-    }
-    inline scope& controller::get_scope(){
-        return *scopes.top();
-    }
-    inline void controller::pop_scope(){
-        scopes.pop();
-    }
-    inline void controller::push_scope(scope* s){
-        scopes.push(s);
     }
 
     inline void controller::flush(){
@@ -2126,58 +2095,6 @@ namespace bind { namespace core {
 } }
 
 
-#ifndef BIND_CORE_SCOPE_HPP
-#define BIND_CORE_SCOPE_HPP
-
-namespace bind {
-
-        inline bool scope::local(){
-            return bind::select().get_node().local();
-        }
-        inline scope::const_iterator scope::balance(int k, int max_k){
-            int capacity = scope::size();
-            if(max_k > capacity){
-                int k_ = k/((int)(max_k / capacity));
-                if(k_ < capacity) k = k_;
-            }
-            return scope::begin() + k % capacity;
-        }
-        inline scope::const_iterator scope::permute(int k, const std::vector<int>& s, size_t granularity){
-            if(k >= s.size()) throw std::runtime_error("Error: permutation overflow!");
-            if(granularity > scope::size()) granularity = 1;
-            return scope::begin() + granularity * (s[k] % (scope::size() / granularity));
-        }
-        inline scope& scope::top(){
-            return bind::select().get_scope();
-        }
-        inline scope::const_iterator scope::begin(){
-            return top().provision.begin();
-        }
-        inline scope::const_iterator scope::end(){
-            return top().provision.end();
-        }
-        inline size_t scope::size(){
-            return top().provision.size();
-        }
-        inline scope::~scope(){
-            bind::select().pop_scope();
-        }
-        inline scope::scope(const_iterator first, const_iterator last){
-            for(const_iterator it = first; it != last; it++) provision.push_back(*it);
-            bind::select().push_scope(this);
-        }
-        inline scope::scope(const_iterator first, size_t size){
-            const_iterator last = first + std::min(bind::scope::size(),size);
-            for(const_iterator it = first; it != last; it++) provision.push_back(*it);
-            bind::select().push_scope(this);
-        }
-        inline scope::scope(size_t np){
-            for(int i = 0; i < np; i++) provision.push_back(i);
-        }
-}
-
-#endif
-
 #ifndef BIND_CORE_NODE_HPP
 #define BIND_CORE_NODE_HPP
 
@@ -2186,13 +2103,13 @@ namespace bind {
     // {{{ primary node-class
 
     inline node::~node(){
-        if(!this->controller) return;
+        if(!controller) return;
         bind::select().deactivate(this);
     }
-    inline node::node(scope::const_iterator it){
-        if(! (this->controller = bind::select().activate(this)) ) return;
-        this->rank = (*it) % this->controller->get_num_procs();
-        this->state = (this->rank == controller->get_rank()) ? locality::local : locality::remote;
+    inline node::node(std::vector<rank_t>::const_iterator it){
+        if(! (controller = bind::select().activate(this)) ) return;
+        this->rank = *it;
+        this->state = (rank == controller->get_rank()) ? locality::local : locality::remote;
     }
     inline bool node::remote() const {
         return (state == locality::remote);

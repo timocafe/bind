@@ -69,9 +69,6 @@ namespace bind { namespace core {
         void sync();
         int  generate_sid();
         int  get_sid();
-        void push_scope(scope* s);
-        void pop_scope();
-        scope& get_scope();
 
         controller* activate(node* a);
         void deactivate(node* a);
@@ -84,12 +81,12 @@ namespace bind { namespace core {
         std::vector< functor* >* chains;
         std::vector< functor* >* mirror;
         bind::memory::collector garbage;
-        std::stack<scope*, std::vector<scope*> > scopes;
         utils::funneled_io io_guard;
         node_each* each;
         node* which;
         int sid;
     public:
+        std::vector<rank_t> nodes;
         template<class T>
         struct weak_instance {
             static controller w;

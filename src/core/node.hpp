@@ -33,13 +33,13 @@ namespace bind {
     // {{{ primary node-class
 
     inline node::~node(){
-        if(!this->controller) return;
+        if(!controller) return;
         bind::select().deactivate(this);
     }
-    inline node::node(scope::const_iterator it){
-        if(! (this->controller = bind::select().activate(this)) ) return;
-        this->rank = (*it) % this->controller->get_num_procs();
-        this->state = (this->rank == controller->get_rank()) ? locality::local : locality::remote;
+    inline node::node(std::vector<rank_t>::const_iterator it){
+        if(! (controller = bind::select().activate(this)) ) return;
+        this->rank = *it;
+        this->state = (rank == controller->get_rank()) ? locality::local : locality::remote;
     }
     inline bool node::remote() const {
         return (state == locality::remote);

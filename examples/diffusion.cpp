@@ -334,7 +334,7 @@ class Diffusion2D {
         time(0)
         {
             // process grid - manual for now //
-            int n = bind::scope::size();
+            int n = bind::nodes::size();
             if(n == 2){
                 np = 1;
                 nq = 2;
@@ -384,7 +384,7 @@ class Diffusion2D {
 
             for(size_t i = 0; i < mt; ++i)
             for(size_t j = 0; j < nt; ++j){
-                bind::node select(bind::scope::begin()+get_rank(i,j));
+                bind::node select(bind::nodes::begin()+get_rank(i,j));
                 get(i,j).partial_init(value, i*IB*dr+rmin, j*IB*dr+rmin, dr, bound);
             }
         }
@@ -425,7 +425,7 @@ class Diffusion2D {
         void propagate_density(){ 
             for(int i = 0; i < mt; i++){
                 for(int j = 0; j < nt; j++){
-                    bind::node select(bind::scope::begin()+get_rank(i,j));
+                    bind::node select(bind::nodes::begin()+get_rank(i,j));
                     grid_mirror[i+j*mt]->evolve_from(get(i,j), fac);
                     grid_mirror[i+j*mt]->contract(get(i,j), get(i-1,j), get(i,j+1), get(i+1,j), get(i,j-1), fac);
                 }
@@ -465,7 +465,7 @@ int main(int argc, char* argv[]){
     }
     time.end();
     {
-        bind::node select(bind::scope::begin());
+        bind::node select(bind::nodes::begin());
         std::cout << "getting results... ";
         std::cout << task.get_size() << '\t' << task.get_moment() << std::endl;
     }

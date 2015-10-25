@@ -128,9 +128,7 @@ namespace bind {
 #include "core/collector.h"
 #include "core/collector.hpp"
 
-#include "core/scope.h"
 #include "core/node.h"
-
 #include "core/controller.h"
 #include "core/get.h"
 #include "core/set.h"
@@ -143,7 +141,6 @@ namespace bind {
 #include "core/get.hpp"
 #include "core/set.hpp"
 
-#include "core/scope.hpp"
 #include "core/node.hpp"
 // }}}
 // {{{ interface package (requires :model :transport :core)

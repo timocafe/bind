@@ -27,6 +27,18 @@
 
 #define STACK_RESERVE 65536
 
+namespace bind { namespace nodes {
+    static size_t size(){
+        return select().nodes.size();
+    }
+    static std::vector<rank_t>::const_iterator begin(){
+        return select().nodes.begin();
+    }
+    static std::vector<rank_t>::const_iterator end(){
+        return select().nodes.end();
+    }
+} }
+
 namespace bind { namespace core {
 
     inline controller::~controller(){ 
@@ -42,25 +54,28 @@ namespace bind { namespace core {
 
         this->each = new node_each(this);
         this->which = NULL;
-        this->push_scope(new bind::scope(get_num_procs()));
-
+        for(int i = 0; i < get_num_procs(); i++) nodes.push_back(i);
         if(!verbose()) this->io_guard.enable();
     }
 
     inline int controller::generate_sid(){
         return (++sid %= channel.tag_ub);
     }
+
     inline int controller::get_sid(){
         return sid;
     }
+
     inline void controller::deactivate(node* a){
         which = NULL;
     }
+
     inline controller* controller::activate(node* n){
         if(which) return NULL;
         which = n;
         return this;
     }
+
     inline void controller::sync(){
         this->flush();
         this->clear();
@@ -68,17 +83,9 @@ namespace bind { namespace core {
         memory::cpu::data_bulk::drop();
         memory::cpu::comm_bulk::drop();
     }
+
     inline node& controller::get_node(){
         return (!which) ? *each : *which;
-    }
-    inline scope& controller::get_scope(){
-        return *scopes.top();
-    }
-    inline void controller::pop_scope(){
-        scopes.pop();
-    }
-    inline void controller::push_scope(scope* s){
-        scopes.push(s);
     }
 
     inline void controller::flush(){

@@ -40,7 +40,7 @@ namespace bind {
         node(){}
     public:
        ~node();
-        node(scope::const_iterator it);
+        node(std::vector<rank_t>::const_iterator it);
         bool remote() const;
         bool local()  const;
         bool common() const;
@@ -52,8 +52,7 @@ namespace bind {
         controller_type* controller;
     };
 
-    class node_each : public node {
-    public:
+    struct node_each : public node {
         node_each(typename node::controller_type* c);
     };
 
