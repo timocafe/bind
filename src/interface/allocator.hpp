@@ -41,8 +41,8 @@ namespace bind {
         default_allocator(const default_allocator&) = delete;
         default_allocator& operator=(const default_allocator&) = delete;
         default_allocator(){ }
-        default_allocator(size_t ts, size_t m = 1, size_t n = 1){
-            desc = new history(n*m, ts);
+        default_allocator(size_t size){
+            desc = new history(size);
         }
         ~default_allocator(){
             if(desc->weak()) delete desc;

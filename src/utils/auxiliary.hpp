@@ -65,11 +65,6 @@ namespace bind {
     }
 
     template<typename V>
-    inline size_t length(const V& obj){
-        return obj.bind_allocator.desc->length;
-    }
-    
-    template<typename V> 
     inline size_t extent(V& obj){ 
         return obj.bind_allocator.desc->extent;
     }

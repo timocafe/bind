@@ -937,7 +937,7 @@ namespace bind { namespace model {
 
     class history : public memory::cpu::use_fixed_new<history> {
     public:
-        history(size_t n, size_t ts) : current(NULL), length(n), extent(bind::memory::aligned_64(n*ts)) { }
+        history(size_t size) : current(NULL), extent(bind::memory::aligned_64(size)) { }
         void init_state(rank_t owner){
             revision* r = new revision(extent, NULL, locality::common, owner);
             this->current = r;
@@ -954,7 +954,6 @@ namespace bind { namespace model {
         }
         revision* current;
         size_t extent;
-        size_t length;
     };
 
 } }
@@ -2087,11 +2086,6 @@ namespace bind {
     }
 
     template<typename V>
-    inline size_t length(const V& obj){
-        return obj.bind_allocator.desc->length;
-    }
-    
-    template<typename V> 
     inline size_t extent(V& obj){ 
         return obj.bind_allocator.desc->extent;
     }
@@ -2415,8 +2409,8 @@ namespace bind {
         default_allocator(const default_allocator&) = delete;
         default_allocator& operator=(const default_allocator&) = delete;
         default_allocator(){ }
-        default_allocator(size_t ts, size_t m = 1, size_t n = 1){
-            desc = new history(n*m, ts);
+        default_allocator(size_t size){
+            desc = new history(size);
         }
         ~default_allocator(){
             if(desc->weak()) delete desc;
@@ -2818,7 +2812,7 @@ namespace bind {
         template<typename T>
         void fill_value(volatile block<T>& a, T& value){
             block<T>& a_ = const_cast<block<T>&>(a);
-            size_t size = length(a_);
+            size_t size = a_.num_rows()*a_.num_cols();
             T* ad = a_.data();
             for(size_t i = 0; i < size; ++i) ad[i] = value;
         }
@@ -2829,7 +2823,7 @@ namespace bind {
     public:
         typedef Allocator allocator_type;
         typedef T value_type;
-        block(size_t m, size_t n) : bind_allocator(sizeof(T), m, n), rows(m), cols(n) {}
+        block(size_t m, size_t n) : bind_allocator(sizeof(T)*m*n), rows(m), cols(n) {}
         void init(T value){
             bind::cpu(detail::fill_value<T>, *this, value);
         }

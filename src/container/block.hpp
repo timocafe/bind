@@ -35,7 +35,7 @@ namespace bind {
         template<typename T>
         void fill_value(volatile block<T>& a, T& value){
             block<T>& a_ = const_cast<block<T>&>(a);
-            size_t size = length(a_);
+            size_t size = a_.num_rows()*a_.num_cols();
             T* ad = a_.data();
             for(size_t i = 0; i < size; ++i) ad[i] = value;
         }
@@ -46,7 +46,7 @@ namespace bind {
     public:
         typedef Allocator allocator_type;
         typedef T value_type;
-        block(size_t m, size_t n) : bind_allocator(sizeof(T), m, n), rows(m), cols(n) {}
+        block(size_t m, size_t n) : bind_allocator(sizeof(T)*m*n), rows(m), cols(n) {}
         void init(T value){
             bind::cpu(detail::fill_value<T>, *this, value);
         }
