@@ -1,4 +1,4 @@
-#include "bind.hpp"
+#include "utils/bind.hpp"
 #include "utils/reduce.hpp"
 
 int main(){
