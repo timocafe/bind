@@ -7,7 +7,7 @@ while IFS='' read -r line || [[ -n "$line" ]]; do
     file=`echo "$line" | awk -F'"' '{print $2}'`
 
     if [ -n "$file" ] && [ -f "src/$file" ]; then
-        cat "src/$file" >> $BUILD
+        sed '/^\/\*/,/\*\// d' "src/$file" >> $BUILD
     else
         echo "$line" >> $BUILD
     fi
