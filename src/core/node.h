@@ -25,8 +25,8 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef BIND_CORE_ACTOR
-#define BIND_CORE_ACTOR
+#ifndef BIND_CORE_NODE
+#define BIND_CORE_NODE
 
 namespace bind {
 
@@ -34,13 +34,13 @@ namespace bind {
         class controller;
     }
 
-    class actor {
+    class node {
     protected:
         typedef core::controller controller_type;
-        actor(){}
+        node(){}
     public:
-       ~actor();
-        actor(scope::const_iterator it);
+       ~node();
+        node(scope::const_iterator it);
         bool remote() const;
         bool local()  const;
         bool common() const;
@@ -54,14 +54,14 @@ namespace bind {
         controller_type* controller;
     };
 
-    class actor_common : public actor {
+    class node_common : public node {
     public:
-        actor_common();
+        node_common();
     };
 
-    class actor_zero : public actor {
+    class node_zero : public node {
     public:
-        actor_zero(typename actor::controller_type* c);
+        node_zero(typename node::controller_type* c);
     };
 
 }

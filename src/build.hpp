@@ -129,7 +129,7 @@ namespace bind {
 #include "core/collector.hpp"
 
 #include "core/scope.h"
-#include "core/actor.h"
+#include "core/node.h"
 
 #include "core/controller.h"
 #include "core/get.h"
@@ -137,14 +137,14 @@ namespace bind {
 #include "core/controller.hpp"
 namespace bind {
     inline rank_t which(){
-        return bind::select().get_actor().which();
+        return bind::select().get_node().which();
     }
 }
 #include "core/get.hpp"
 #include "core/set.hpp"
 
 #include "core/scope.hpp"
-#include "core/actor.hpp"
+#include "core/node.hpp"
 // }}}
 // {{{ interface package (requires :model :transport :core)
 #include "utils/auxiliary.hpp"

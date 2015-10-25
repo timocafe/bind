@@ -73,9 +73,9 @@ namespace bind { namespace core {
         void pop_scope();
         scope& get_scope();
 
-        controller* activate(actor* a);
-        void deactivate(actor* a);
-        actor& get_actor();
+        controller* activate(node* a);
+        void deactivate(node* a);
+        node& get_node();
     private:
         size_t clock;
         channel_type channel;
@@ -84,10 +84,10 @@ namespace bind { namespace core {
         std::vector< functor* >* chains;
         std::vector< functor* >* mirror;
         bind::memory::collector garbage;
-        std::stack<actor*, std::vector<actor*> > actors;
+        std::stack<node*, std::vector<node*> > nodes;
         std::stack<scope*, std::vector<scope*> > scopes;
         utils::funneled_io io_guard;
-        actor_zero* base_actor;
+        node_zero* base_node;
         int sid;
     public:
         template<class T>

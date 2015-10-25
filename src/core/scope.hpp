@@ -31,7 +31,7 @@
 namespace bind {
 
         inline bool scope::local(){
-            return bind::select().get_actor().local();
+            return bind::select().get_node().local();
         }
         inline scope::const_iterator scope::balance(int k, int max_k){
             int capacity = scope::size();

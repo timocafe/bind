@@ -1660,8 +1660,8 @@ namespace bind {
 
 #endif
 
-#ifndef BIND_CORE_ACTOR
-#define BIND_CORE_ACTOR
+#ifndef BIND_CORE_NODE
+#define BIND_CORE_NODE
 
 namespace bind {
 
@@ -1669,13 +1669,13 @@ namespace bind {
         class controller;
     }
 
-    class actor {
+    class node {
     protected:
         typedef core::controller controller_type;
-        actor(){}
+        node(){}
     public:
-       ~actor();
-        actor(scope::const_iterator it);
+       ~node();
+        node(scope::const_iterator it);
         bool remote() const;
         bool local()  const;
         bool common() const;
@@ -1689,14 +1689,14 @@ namespace bind {
         controller_type* controller;
     };
 
-    class actor_common : public actor {
+    class node_common : public node {
     public:
-        actor_common();
+        node_common();
     };
 
-    class actor_zero : public actor {
+    class node_zero : public node {
     public:
-        actor_zero(typename actor::controller_type* c);
+        node_zero(typename node::controller_type* c);
     };
 
 }
@@ -1752,9 +1752,9 @@ namespace bind { namespace core {
         void pop_scope();
         scope& get_scope();
 
-        controller* activate(actor* a);
-        void deactivate(actor* a);
-        actor& get_actor();
+        controller* activate(node* a);
+        void deactivate(node* a);
+        node& get_node();
     private:
         size_t clock;
         channel_type channel;
@@ -1763,10 +1763,10 @@ namespace bind { namespace core {
         std::vector< functor* >* chains;
         std::vector< functor* >* mirror;
         bind::memory::collector garbage;
-        std::stack<actor*, std::vector<actor*> > actors;
+        std::stack<node*, std::vector<node*> > nodes;
         std::stack<scope*, std::vector<scope*> > scopes;
         utils::funneled_io io_guard;
-        actor_zero* base_actor;
+        node_zero* base_node;
         int sid;
     public:
         template<class T>
@@ -1867,7 +1867,7 @@ namespace bind { namespace core {
     inline controller::~controller(){ 
         if(!chains->empty()) printf("Bind:: exiting with operations still in queue!\n");
         this->clear();
-        delete this->base_actor;
+        delete this->base_node;
     }
 
     inline controller::controller() : chains(&stack_m), mirror(&stack_s), clock(1), sid(1) {
@@ -1875,8 +1875,8 @@ namespace bind { namespace core {
         this->stack_s.reserve(STACK_RESERVE);
         this->garbage.reserve(STACK_RESERVE);
 
-        this->base_actor = new actor_zero(this);
-        actors.push(base_actor);
+        this->base_node = new node_zero(this);
+        nodes.push(base_node);
         this->push_scope(new bind::scope(get_num_procs()));
 
         if(!verbose()) this->io_guard.enable();
@@ -1888,12 +1888,12 @@ namespace bind { namespace core {
     inline int controller::get_sid(){
         return sid;
     }
-    inline void controller::deactivate(actor* a){
-        actors.pop();
+    inline void controller::deactivate(node* a){
+        nodes.pop();
     }
-    inline controller* controller::activate(actor* a){
-        if(&get_actor() != this->base_actor) return NULL;
-        actors.push(a);
+    inline controller* controller::activate(node* a){
+        if(&get_node() != this->base_node) return NULL;
+        nodes.push(a);
         return this;
     }
     inline void controller::sync(){
@@ -1903,8 +1903,8 @@ namespace bind { namespace core {
         memory::cpu::data_bulk::drop();
         memory::cpu::comm_bulk::drop();
     }
-    inline actor& controller::get_actor(){
-        return *actors.top();
+    inline node& controller::get_node(){
+        return *nodes.top();
     }
     inline scope& controller::get_scope(){
         return *scopes.top();
@@ -2033,7 +2033,7 @@ namespace bind { namespace core {
 #undef STACK_RESERVE
 namespace bind {
     inline rank_t which(){
-        return bind::select().get_actor().which();
+        return bind::select().get_node().which();
     }
 }
 
@@ -2139,7 +2139,7 @@ namespace bind { namespace core {
 namespace bind {
 
         inline bool scope::local(){
-            return bind::select().get_actor().local();
+            return bind::select().get_node().local();
         }
         inline scope::const_iterator scope::balance(int k, int max_k){
             int capacity = scope::size();
@@ -2185,49 +2185,49 @@ namespace bind {
 
 #endif
 
-#ifndef BIND_CORE_ACTOR_HPP
-#define BIND_CORE_ACTOR_HPP
+#ifndef BIND_CORE_NODE_HPP
+#define BIND_CORE_NODE_HPP
 
 namespace bind {
 
-    // {{{ primary actor-class
+    // {{{ primary node-class
 
-    inline actor::~actor(){
+    inline node::~node(){
         if(!this->controller) return;
         bind::select().deactivate(this);
     }
-    inline actor::actor(scope::const_iterator it){
+    inline node::node(scope::const_iterator it){
         if(! (this->controller = bind::select().activate(this)) ) return;
         this->round = this->controller->get_num_procs();
         this->rank = (*it) % this->round;
         this->state = (this->rank == controller->get_rank()) ? locality::local : locality::remote;
     }
-    inline bool actor::remote() const {
+    inline bool node::remote() const {
         return (state == locality::remote);
     }
-    inline bool actor::local() const {
+    inline bool node::local() const {
         return (state == locality::local);
     }
-    inline bool actor::common() const {
+    inline bool node::common() const {
         return (state == locality::common);
     }
-    inline rank_t actor::which() const {
+    inline rank_t node::which() const {
         return this->rank;
     }
 
     // }}}
-    // {{{ actor's special case: everyone does the same
+    // {{{ node's special case: everyone does the same
 
-    inline actor_common::actor_common(){
+    inline node_common::node_common(){
         if(! (this->controller = bind::select().activate(this)) ) return;
         this->rank = controller->get_shared_rank();
         this->state = locality::common;
     }
 
     // }}}
-    // {{{ actor's special case: auto-scheduling actor
+    // {{{ node's special case: auto-scheduling node
 
-    inline actor_zero::actor_zero(typename actor::controller_type* c){
+    inline node_zero::node_zero(typename node::controller_type* c){
         this->controller = c;
         this->round = controller->get_num_procs();
         this->rank = 0;
@@ -2321,8 +2321,8 @@ namespace bind {
         return o.bind_allocator.before->locked_once();
     }
 
-    inline actor& get_actor(){
-        return bind::select().get_actor();
+    inline node& get_node(){
+        return bind::select().get_node();
     }
 
     inline int num_threads(){
@@ -2731,8 +2731,8 @@ namespace bind {
         static const int arity = sizeof...(TF);
 
         static inline void latch(functor* o, TF&... args){
-            if(bind::select().get_actor().remote())   { expand_modify_remote<0>(args...); return; }
-            else if(bind::select().get_actor().local()) expand_modify_local<0>(o, args...);
+            if(bind::select().get_node().remote())   { expand_modify_remote<0>(args...); return; }
+            else if(bind::select().get_node().local()) expand_modify_local<0>(o, args...);
             else                                           expand_modify<0>(o, args...);
             expand_pin<0,TF...>(o) || bind::select().queue(o);
         }

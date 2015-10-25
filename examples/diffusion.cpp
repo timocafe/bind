@@ -376,7 +376,7 @@ class Diffusion2D {
                 grid.push_back(new stencil_t(tailm, tailn)); grid_mirror.push_back(new stencil_t(tailm, tailn));
             }
             {
-                bind::actor_common select;
+                bind::node_common select;
                 null_stencil.fill(0.0);
             }
 
@@ -387,7 +387,7 @@ class Diffusion2D {
 
             for(size_t i = 0; i < mt; ++i)
             for(size_t j = 0; j < nt; ++j){
-                bind::actor select(bind::scope::begin()+get_rank(i,j));
+                bind::node select(bind::scope::begin()+get_rank(i,j));
                 get(i,j).partial_init(value, i*IB*dr+rmin, j*IB*dr+rmin, dr, bound);
             }
         }
@@ -428,7 +428,7 @@ class Diffusion2D {
         void propagate_density(){ 
             for(int i = 0; i < mt; i++){
                 for(int j = 0; j < nt; j++){
-                    bind::actor select(bind::scope::begin()+get_rank(i,j));
+                    bind::node select(bind::scope::begin()+get_rank(i,j));
                     grid_mirror[i+j*mt]->evolve_from(get(i,j), fac);
                     grid_mirror[i+j*mt]->contract(get(i,j), get(i-1,j), get(i,j+1), get(i+1,j), get(i,j-1), fac);
                 }
@@ -468,7 +468,7 @@ int main(int argc, char* argv[]){
     }
     time.end();
     {
-        bind::actor select(bind::scope::begin());
+        bind::node select(bind::scope::begin());
         std::cout << "getting results... ";
         std::cout << task.get_size() << '\t' << task.get_moment() << std::endl;
     }

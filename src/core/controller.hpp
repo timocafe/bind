@@ -32,7 +32,7 @@ namespace bind { namespace core {
     inline controller::~controller(){ 
         if(!chains->empty()) printf("Bind:: exiting with operations still in queue!\n");
         this->clear();
-        delete this->base_actor;
+        delete this->base_node;
     }
 
     inline controller::controller() : chains(&stack_m), mirror(&stack_s), clock(1), sid(1) {
@@ -40,8 +40,8 @@ namespace bind { namespace core {
         this->stack_s.reserve(STACK_RESERVE);
         this->garbage.reserve(STACK_RESERVE);
 
-        this->base_actor = new actor_zero(this);
-        actors.push(base_actor);
+        this->base_node = new node_zero(this);
+        nodes.push(base_node);
         this->push_scope(new bind::scope(get_num_procs()));
 
         if(!verbose()) this->io_guard.enable();
@@ -53,12 +53,12 @@ namespace bind { namespace core {
     inline int controller::get_sid(){
         return sid;
     }
-    inline void controller::deactivate(actor* a){
-        actors.pop();
+    inline void controller::deactivate(node* a){
+        nodes.pop();
     }
-    inline controller* controller::activate(actor* a){
-        if(&get_actor() != this->base_actor) return NULL;
-        actors.push(a);
+    inline controller* controller::activate(node* a){
+        if(&get_node() != this->base_node) return NULL;
+        nodes.push(a);
         return this;
     }
     inline void controller::sync(){
@@ -68,8 +68,8 @@ namespace bind { namespace core {
         memory::cpu::data_bulk::drop();
         memory::cpu::comm_bulk::drop();
     }
-    inline actor& controller::get_actor(){
-        return *actors.top();
+    inline node& controller::get_node(){
+        return *nodes.top();
     }
     inline scope& controller::get_scope(){
         return *scopes.top();

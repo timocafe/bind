@@ -105,8 +105,8 @@ namespace bind {
         return o.bind_allocator.before->locked_once();
     }
 
-    inline actor& get_actor(){
-        return bind::select().get_actor();
+    inline node& get_node(){
+        return bind::select().get_node();
     }
 
     inline int num_threads(){

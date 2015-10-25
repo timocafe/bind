@@ -25,49 +25,49 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef BIND_CORE_ACTOR_HPP
-#define BIND_CORE_ACTOR_HPP
+#ifndef BIND_CORE_NODE_HPP
+#define BIND_CORE_NODE_HPP
 
 namespace bind {
 
-    // {{{ primary actor-class
+    // {{{ primary node-class
 
-    inline actor::~actor(){
+    inline node::~node(){
         if(!this->controller) return;
         bind::select().deactivate(this);
     }
-    inline actor::actor(scope::const_iterator it){
+    inline node::node(scope::const_iterator it){
         if(! (this->controller = bind::select().activate(this)) ) return;
         this->round = this->controller->get_num_procs();
         this->rank = (*it) % this->round;
         this->state = (this->rank == controller->get_rank()) ? locality::local : locality::remote;
     }
-    inline bool actor::remote() const {
+    inline bool node::remote() const {
         return (state == locality::remote);
     }
-    inline bool actor::local() const {
+    inline bool node::local() const {
         return (state == locality::local);
     }
-    inline bool actor::common() const {
+    inline bool node::common() const {
         return (state == locality::common);
     }
-    inline rank_t actor::which() const {
+    inline rank_t node::which() const {
         return this->rank;
     }
 
     // }}}
-    // {{{ actor's special case: everyone does the same
+    // {{{ node's special case: everyone does the same
 
-    inline actor_common::actor_common(){
+    inline node_common::node_common(){
         if(! (this->controller = bind::select().activate(this)) ) return;
         this->rank = controller->get_shared_rank();
         this->state = locality::common;
     }
 
     // }}}
-    // {{{ actor's special case: auto-scheduling actor
+    // {{{ node's special case: auto-scheduling node
 
-    inline actor_zero::actor_zero(typename actor::controller_type* c){
+    inline node_zero::node_zero(typename node::controller_type* c){
         this->controller = c;
         this->round = controller->get_num_procs();
         this->rank = 0;
