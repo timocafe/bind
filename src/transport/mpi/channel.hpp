@@ -42,6 +42,7 @@ namespace bind { namespace transport { namespace mpi {
         MPI_Init_thread(&zero, NULL, BIND_MPI, &level); 
         if(level != BIND_MPI) throw std::runtime_error("Error: Wrong threading level");
         MPI_Comm_size(MPI_COMM_WORLD, &np);
+        MPI_Comm_rank(MPI_COMM_WORLD, &self);
         MPI_Attr_get(MPI_COMM_WORLD, MPI_TAG_UB, &ub, &flag);
         this->tag_ub = flag ? *ub : 32767;
         this->sid = 1;
