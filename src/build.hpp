@@ -71,8 +71,6 @@
 #include "utils/io.hpp"
 #include "utils/mutex.hpp"
 #include "utils/rank_t.hpp"
-#include "utils/env.hpp"
-#include "utils/guard_once.hpp"
 // }}}
 // {{{ memory package
 #include "memory/types.h"

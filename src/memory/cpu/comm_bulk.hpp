@@ -28,14 +28,13 @@
 #ifndef BIND_MEMORY_CPU_COMM_BULK
 #define BIND_MEMORY_CPU_COMM_BULK
 
-#define DEFAULT_LIMIT 20
+#define COMM_BULK_LIMIT 20
 
 namespace bind { namespace memory { namespace cpu {
 
     class comm_bulk : public bulk {
         comm_bulk(){
-            this->soft_limit = (bind::isset("BIND_COMM_BULK_LIMIT") ? bind::getint("BIND_COMM_BULK_LIMIT") : DEFAULT_LIMIT) * 
-                               ((double)getRSSLimit() / BIND_COMM_BULK_CHUNK / 100);
+            this->soft_limit = COMM_BULK_LIMIT * ((double)getRSSLimit() / BIND_COMM_BULK_CHUNK / 100);
         }
     public:
         static comm_bulk& instance(){
@@ -56,5 +55,5 @@ namespace bind { namespace memory { namespace cpu {
 
 } } }
 
-#undef DEFAULT_LIMIT
+#undef COMM_BULK_LIMIT
 #endif

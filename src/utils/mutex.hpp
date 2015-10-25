@@ -30,6 +30,14 @@
 
 namespace bind { 
 
+    class guard_once {
+    public:
+        guard_once() : once(false) { }
+        bool operator()(){ if(!once){ once = true; return true; } return false; }
+    private:
+        bool once;
+    };
+
     template <typename M>
     class guard {
     private:

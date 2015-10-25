@@ -224,6 +224,14 @@ namespace bind { namespace utils {
 
 namespace bind { 
 
+    class guard_once {
+    public:
+        guard_once() : once(false) { }
+        bool operator()(){ if(!once){ once = true; return true; } return false; }
+    private:
+        bool once;
+    };
+
     template <typename M>
     class guard {
     private:
@@ -294,39 +302,6 @@ namespace bind {
     #else
     typedef int rank_t;
     #endif
-}
-
-#endif
-
-#ifndef BIND_UTILS_ENV
-#define BIND_UTILS_ENV
-
-namespace bind {
-
-    inline bool isset(const char* env){
-        return (std::getenv( env ) != NULL);
-    }
-
-    inline int getint(const char* env){
-        return std::atoi(std::getenv( env ));
-    }
-}
-
-#endif
-
-#ifndef BIND_UTILS_GUARD_ONCE
-#define BIND_UTILS_GUARD_ONCE
-
-namespace bind {
-
-    class guard_once {
-    public:
-        guard_once() : once(false) { }
-        bool operator()(){ if(!once){ once = true; return true; } return false; }
-    private:
-        bool once;
-    };
-
 }
 
 #endif
@@ -569,14 +544,13 @@ namespace bind { namespace memory { namespace cpu {
 #ifndef BIND_MEMORY_CPU_DATA_BULK
 #define BIND_MEMORY_CPU_DATA_BULK
 
-#define DEFAULT_LIMIT 10
+#define DATA_BULK_LIMIT 10
 
 namespace bind { namespace memory { namespace cpu {
 
     class data_bulk : public bulk {
         data_bulk(){
-            this->soft_limit = (bind::isset("BIND_DATA_BULK_LIMIT") ? bind::getint("BIND_DATA_BULK_LIMIT") : DEFAULT_LIMIT) * 
-                               ((double)getRSSLimit() / BIND_DATA_BULK_CHUNK / 100);
+            this->soft_limit = DATA_BULK_LIMIT * ((double)getRSSLimit() / BIND_DATA_BULK_CHUNK / 100);
         }
     public:
         static data_bulk& instance(){
@@ -600,20 +574,19 @@ namespace bind { namespace memory { namespace cpu {
 
 } } }
 
-#undef DEFAULT_LIMIT
+#undef DATA_BULK_LIMIT
 #endif
 
 #ifndef BIND_MEMORY_CPU_COMM_BULK
 #define BIND_MEMORY_CPU_COMM_BULK
 
-#define DEFAULT_LIMIT 20
+#define COMM_BULK_LIMIT 20
 
 namespace bind { namespace memory { namespace cpu {
 
     class comm_bulk : public bulk {
         comm_bulk(){
-            this->soft_limit = (bind::isset("BIND_COMM_BULK_LIMIT") ? bind::getint("BIND_COMM_BULK_LIMIT") : DEFAULT_LIMIT) * 
-                               ((double)getRSSLimit() / BIND_COMM_BULK_CHUNK / 100);
+            this->soft_limit = COMM_BULK_LIMIT * ((double)getRSSLimit() / BIND_COMM_BULK_CHUNK / 100);
         }
     public:
         static comm_bulk& instance(){
@@ -634,7 +607,7 @@ namespace bind { namespace memory { namespace cpu {
 
 } } }
 
-#undef DEFAULT_LIMIT
+#undef COMM_BULK_LIMIT
 #endif
 
 #ifndef BIND_MEMORY_CPU_INSTR_BULK_H
