@@ -5,8 +5,8 @@ Bind
 Just drop off bind.hpp somewhere in your includes.
 
 ### Usage
-Compilation of the target application against Bind with C++11 enabled is generally sufficient.
-Note: to enable MPI use -DBIND_MPI=[MPI threading level, e.g. MPI_THREAD_FUNNELED]
+Compilation with C++11 enabled is the only requirement.
+To enable MPI use -DBIND_MPI=[MPI threading level, e.g. MPI_THREAD_FUNNELED].
 
 ### License
     Distributed under the Boost Software License, Version 1.0.  
