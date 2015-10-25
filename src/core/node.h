@@ -52,9 +52,9 @@ namespace bind {
         controller_type* controller;
     };
 
-    class node_zero : public node {
+    class nodeless : public node {
     public:
-        node_zero(typename node::controller_type* c);
+        nodeless(typename node::controller_type* c);
     };
 
 }

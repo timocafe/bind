@@ -1687,9 +1687,9 @@ namespace bind {
         controller_type* controller;
     };
 
-    class node_zero : public node {
+    class nodeless : public node {
     public:
-        node_zero(typename node::controller_type* c);
+        nodeless(typename node::controller_type* c);
     };
 
 }
@@ -1759,7 +1759,7 @@ namespace bind { namespace core {
         std::stack<node*, std::vector<node*> > nodes;
         std::stack<scope*, std::vector<scope*> > scopes;
         utils::funneled_io io_guard;
-        node_zero* base_node;
+        nodeless* base_node;
         int sid;
     public:
         template<class T>
@@ -1868,7 +1868,7 @@ namespace bind { namespace core {
         this->stack_s.reserve(STACK_RESERVE);
         this->garbage.reserve(STACK_RESERVE);
 
-        this->base_node = new node_zero(this);
+        this->base_node = new nodeless(this);
         nodes.push(base_node);
         this->push_scope(new bind::scope(get_num_procs()));
 

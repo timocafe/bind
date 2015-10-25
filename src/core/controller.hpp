@@ -40,7 +40,7 @@ namespace bind { namespace core {
         this->stack_s.reserve(STACK_RESERVE);
         this->garbage.reserve(STACK_RESERVE);
 
-        this->base_node = new node_zero(this);
+        this->base_node = new nodeless(this);
         nodes.push(base_node);
         this->push_scope(new bind::scope(get_num_procs()));
 
