@@ -2172,16 +2172,6 @@ namespace bind {
     inline dim2 get_dim(const V& obj){
         return obj.bind_allocator.desc->dim;
     }
-
-    template<typename V> 
-    inline size_t get_square_dim(V& obj){ 
-        return get_dim(obj).square();
-    }
-
-    template<typename V>
-    inline size_t get_length(V& obj){
-        return get_dim(obj).y;
-    }
     
     template<typename V> 
     inline size_t extent(V& obj){ 
@@ -2910,7 +2900,7 @@ namespace bind {
         template<typename T>
         void fill_value(volatile block<T>& a, T& value){
             block<T>& a_ = const_cast<block<T>&>(a);
-            size_t size = get_square_dim(a_);
+            size_t size = get_dim(a_).square();
             T* ad = a_.data();
             for(size_t i = 0; i < size; ++i) ad[i] = value;
         }
