@@ -60,7 +60,7 @@ namespace bind {
                 bind::sync();
                 valid = true;
             }
-            return (T)(*desc);
+            return *desc;
         }
         const ptr<T>& unfold() const {
             return *this;
