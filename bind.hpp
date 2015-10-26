@@ -2651,29 +2651,11 @@ namespace bind {
         template <typename F> friend class ptr;
         template<typename S> 
         ptr& operator= (const S& val) = delete;
+        mutable bool valid;
     public:
-        typedef T value_type;
+        mutable any* desc;
+        typedef T element_type;
 
-        T& operator* () const {
-            return *desc;
-        }
-        void init(value_type val = T()){
-            desc = new (memory::cpu::fixed::calloc<sizeof_any<T>()>()) any(val);
-            valid = true;
-        }
-        template<typename S>
-        void reuse(ptr<S>& f){
-            desc = (any*)f.desc; // unsafe - proper convertion should be done
-            valid = f.valid;
-            f.desc = NULL; 
-        }
-        T load() const {
-            if(!valid){
-                bind::sync();
-                valid = true;
-            }
-            return *desc;
-        }
         const ptr<T>& unfold() const {
             return *this;
         }
@@ -2681,8 +2663,15 @@ namespace bind {
             valid = false;
             return *this;
         }
+        void init(element_type val = T()){
+            desc = new (memory::cpu::fixed::calloc<sizeof_any<T>()>()) any(val);
+            valid = true;
+        }
        ~ptr(){ 
            if(desc) bind::destroy(desc); 
+        }
+        T& operator* () const {
+            return *desc;
         }
 
         // constructors //
@@ -2708,6 +2697,13 @@ namespace bind {
             *desc = f.load();
             return *this;
         }
+        T load() const {
+            if(!valid){
+                bind::sync();
+                valid = true;
+            }
+            return *desc;
+        }
 
         // move //
         ptr(ptr&& f){
@@ -2722,10 +2718,12 @@ namespace bind {
             reuse(f);
             return *this;
         }
-    private:
-        mutable bool valid;
-    public:
-        mutable any* desc;
+        template<typename S>
+        void reuse(ptr<S>& f){
+            desc = (any*)f.desc; // unsafe - proper convertion should be done
+            valid = f.valid;
+            f.desc = NULL; 
+        }
     };
 
     template<class T>
