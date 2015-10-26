@@ -34,7 +34,7 @@ namespace bind { namespace memory { namespace cpu {
     class use_fixed_new {
     public:
         void* operator new (size_t sz){ assert(sz == sizeof(T)); return bind::memory::cpu::fixed::malloc<sizeof(T)>(); }
-        void operator delete (void* ptr){ bind::memory::cpu::fixed::free<sizeof(T)>(ptr); }
+        void operator delete (void* ptr){ bind::memory::cpu::fixed::free(ptr); }
     };
 
     template<class T>

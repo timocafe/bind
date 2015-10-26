@@ -30,7 +30,6 @@ namespace bind { namespace memory {
     using model::history;
     using model::revision;
     using model::transformable;
-    using model::sizeof_transformable;
 
     inline void collector::reserve(size_t n){
         this->rev.reserve(n);
@@ -75,7 +74,7 @@ namespace bind { namespace memory {
     }
 
     inline void collector::delete_ptr::operator()( transformable* e ) const {
-        bind::memory::free<memory::cpu::fixed,sizeof_transformable()>(e);
+        memory::cpu::fixed::free(e);
     } 
 
     inline void collector::clear(){

@@ -42,11 +42,11 @@ namespace bind {
         template<size_t arg> static bool ready          (functor* m){ return true;           }
         template<size_t arg> static T&   revised        (functor* m){ EXTRACT(o); return *o; }
         template<size_t arg> static void modify (T& obj, functor* m){
-            m->arguments[arg] = (void*)new(bind::memory::malloc<memory::cpu::instr_bulk,sizeof(T)>()) T(obj); 
+            m->arguments[arg] = (void*)new(memory::cpu::instr_bulk::malloc<sizeof(T)>()) T(obj); 
         }
         template<size_t arg> static void modify_remote(T& obj)      {                        }
         template<size_t arg> static void modify_local(T& obj, functor* m){
-            m->arguments[arg] = (void*)new(bind::memory::malloc<memory::cpu::instr_bulk,sizeof(T)>()) T(obj);
+            m->arguments[arg] = (void*)new(memory::cpu::instr_bulk::malloc<sizeof(T)>()) T(obj);
         }
         static constexpr bool ReferenceOnly = false;
     };
@@ -66,10 +66,10 @@ namespace bind {
         template<size_t arg> static void modify_local(const T& obj, functor* m){
             obj.desc->generator = m;
             bind::select().lsync(obj.desc);
-            m->arguments[arg] = bind::memory::malloc<memory::cpu::instr_bulk,sizeof(T)>(); memcpy(m->arguments[arg], &obj, sizeof(T)); 
+            m->arguments[arg] = memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy(m->arguments[arg], &obj, sizeof(T)); 
         }
         template<size_t arg> static void modify(const T& obj, functor* m){
-            m->arguments[arg] = bind::memory::malloc<memory::cpu::instr_bulk,sizeof(T)>(); memcpy(m->arguments[arg], &obj, sizeof(T)); 
+            m->arguments[arg] = memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy(m->arguments[arg], &obj, sizeof(T)); 
         }
         static constexpr bool ReferenceOnly = true;
     };
@@ -77,7 +77,7 @@ namespace bind {
         template<size_t arg> static void deallocate(functor* m){ }
         template<size_t arg> static void modify_remote(T& obj){ }
         template<size_t arg> static void modify_local(const T& obj, functor* m){
-            m->arguments[arg] = bind::memory::malloc<memory::cpu::instr_bulk,sizeof(T)>(); memcpy(m->arguments[arg], &obj, sizeof(T)); 
+            m->arguments[arg] = memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy(m->arguments[arg], &obj, sizeof(T)); 
         }
     };
     // }}}
@@ -106,7 +106,7 @@ namespace bind {
         static void modify_local(T& obj, functor* m){
             auto o = obj.bind_allocator.desc;
             bind::select().touch(o, bind::rank());
-            T* var = (T*)bind::memory::malloc<memory::cpu::instr_bulk,sizeof(T)>(); memcpy((void*)var, &obj, sizeof(T)); 
+            T* var = (T*)memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy((void*)var, &obj, sizeof(T)); 
             m->arguments[arg] = (void*)var;
             bind::select().lsync(o->back());
             bind::select().use_revision(o);
@@ -123,7 +123,7 @@ namespace bind {
         static void modify(T& obj, functor* m){
             auto o = obj.bind_allocator.desc;
             bind::select().touch(o, bind::rank());
-            T* var = (T*)bind::memory::malloc<memory::cpu::instr_bulk,sizeof(T)>(); memcpy((void*)var, &obj, sizeof(T)); m->arguments[arg] = (void*)var;
+            T* var = (T*)memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy((void*)var, &obj, sizeof(T)); m->arguments[arg] = (void*)var;
             bind::select().sync(o->back());
             bind::select().use_revision(o);
 
@@ -178,7 +178,7 @@ namespace bind {
         template<size_t arg> static void modify_local(T& obj, functor* m){
             auto o = obj.bind_allocator.desc;
             bind::select().touch(o, bind::rank());
-            T* var = (T*)bind::memory::malloc<memory::cpu::instr_bulk,sizeof(T)>(); memcpy((void*)var, &obj, sizeof(T)); m->arguments[arg] = (void*)var;
+            T* var = (T*)memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy((void*)var, &obj, sizeof(T)); m->arguments[arg] = (void*)var;
             var->bind_allocator.before = var->bind_allocator.after = o->current;
             bind::select().lsync(o->back());
             bind::select().use_revision(o);
@@ -186,7 +186,7 @@ namespace bind {
         template<size_t arg> static void modify(T& obj, functor* m){
             auto o = obj.bind_allocator.desc;
             bind::select().touch(o, bind::rank());
-            T* var = (T*)bind::memory::malloc<memory::cpu::instr_bulk,sizeof(T)>(); memcpy((void*)var, &obj, sizeof(T)); m->arguments[arg] = (void*)var;
+            T* var = (T*)memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy((void*)var, &obj, sizeof(T)); m->arguments[arg] = (void*)var;
             var->bind_allocator.before = var->bind_allocator.after = o->current;
             bind::select().sync(o->back());
             bind::select().use_revision(o);
@@ -212,7 +212,7 @@ namespace bind {
         template<size_t arg> static void modify_local(T& obj, functor* m){
             auto o = obj.bind_allocator.desc;
             bind::select().touch(o, bind::rank());
-            T* var = (T*)bind::memory::malloc<memory::cpu::instr_bulk,sizeof(T)>(); memcpy((void*)var, (void*)&obj, sizeof(T)); m->arguments[arg] = (void*)var;
+            T* var = (T*)memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy((void*)var, (void*)&obj, sizeof(T)); m->arguments[arg] = (void*)var;
 
             bind::select().use_revision(o);
             bind::select().collect(o->back());
@@ -225,7 +225,7 @@ namespace bind {
         template<size_t arg> static void modify(T& obj, functor* m){
             auto o = obj.bind_allocator.desc;
             bind::select().touch(o, bind::rank());
-            T* var = (T*)bind::memory::malloc<memory::cpu::instr_bulk,sizeof(T)>(); memcpy((void*)var, (void*)&obj, sizeof(T)); m->arguments[arg] = (void*)var;
+            T* var = (T*)memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy((void*)var, (void*)&obj, sizeof(T)); m->arguments[arg] = (void*)var;
             bind::select().use_revision(o);
             bind::select().collect(o->back());
 

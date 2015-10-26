@@ -43,10 +43,10 @@ namespace bind {
         typedef T value_type;
 
         T& operator* () const {
-            return desc->value;
+            return *desc;
         }
         void init(value_type val = T()){
-            desc = new (bind::memory::calloc<memory::cpu::fixed,sizeof_transformable()>()) transformable(val);
+            desc = new (bind::memory::cpu::fixed::calloc<sizeof_transformable<T>()>()) transformable(val);
             valid = true;
         }
         template<typename S>
@@ -60,7 +60,7 @@ namespace bind {
                 bind::sync();
                 valid = true;
             }
-            return desc->value;
+            return (T)(*desc);
         }
         const ptr<T>& unfold() const {
             return *this;
@@ -93,7 +93,7 @@ namespace bind {
             init((T)f.load());
         }
         ptr& operator= (const ptr& f){
-            desc->value = f.load();
+            *desc = f.load();
             return *this;
         }
 

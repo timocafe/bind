@@ -679,7 +679,7 @@ namespace bind { namespace memory { namespace cpu {
         // boost::singleton_pool<fixed,S> can be used instead (implicit mutex)
         template<size_t S> static void* malloc(){ return std::malloc(S);   }
         template<size_t S> static void* calloc(){ return std::calloc(1,S); }
-        template<size_t S> static void free(void* ptr){ std::free(ptr);    }
+        static void free(void* ptr){ std::free(ptr);    }
     };
 
 } } }
@@ -695,7 +695,7 @@ namespace bind { namespace memory { namespace cpu {
     class use_fixed_new {
     public:
         void* operator new (size_t sz){ assert(sz == sizeof(T)); return bind::memory::cpu::fixed::malloc<sizeof(T)>(); }
-        void operator delete (void* ptr){ bind::memory::cpu::fixed::free<sizeof(T)>(ptr); }
+        void operator delete (void* ptr){ bind::memory::cpu::fixed::free(ptr); }
     };
 
     template<class T>
@@ -777,10 +777,6 @@ namespace bind { namespace memory {
         int persistency;
         int crefs;
     };
-
-    template<class Memory, size_t S> static void* malloc()         { return Memory::template malloc<S>();  }
-    template<class Memory, size_t S> static void* calloc()         { return Memory::template calloc<S>();  }
-    template<class Memory, size_t S> static void free(void* ptr)   { return Memory::template free<S>(ptr); }
 
 } }
 
@@ -938,40 +934,32 @@ namespace bind { namespace model {
 
 namespace bind { namespace model {
 
+    template<typename T>
+    constexpr size_t sizeof_64(){
+        return bind::memory::aligned_64< sizeof(T) >();
+    }
+
+    template<typename T>
+    constexpr size_t sizeof_transformable(){
+        return (sizeof(void*) + sizeof(size_t) + sizeof_64<T>());
+    }
+
     class transformable {
     public:
-        union numeric_union {
-            typedef std::complex<double> limit; 
-            bool b; 
-            double d; 
-            std::complex<double> c; 
-            int i; 
-            size_t s; 
-            operator bool& (){ return b; }
-            operator double& (){ return d; }
-            operator std::complex<double>& (){ return c; }
-            operator size_t& (){ return s; }
-            operator int& (){ return i; }
-            void operator = (bool value){ b = value; }
-            void operator = (double value){ d = value; }
-            void operator = (std::complex<double> value){ c = value; }
-            void operator = (size_t value){ s = value; }
-            void operator = (int value){ i = value; }
-            numeric_union(){ }
-        };
+        // WARNING: the correct allocation of sizeof_transformable required
         void* operator new (size_t, void* place){ return place; }
-        void operator delete (void*, void*){ /* doesn't throw */ }
+        void operator delete (void*, void*){}
 
-        template <typename T>
-        transformable(T val){
-            this->value = val;
-        }
-        mutable numeric_union value;
+        template<typename T>
+        transformable(T val) : size(sizeof_64<T>()) { *this = val; }
+        template<typename T> operator T& (){ return *(T*)&value;  }
+        template<typename T> void operator = (T val){ *(T*)&value = val; }
+
         functor* generator;
+        size_t size;
+        int value;
     };
 
-    // injecting templated T is also possible (except in collector) //
-    constexpr size_t sizeof_transformable(){ return bind::memory::aligned_64< sizeof(transformable) >(); }
 } }
 
 #endif
@@ -1192,7 +1180,7 @@ namespace bind { namespace transport { namespace mpi {
 
     // type information required //
     inline request_impl::request_impl(void(*impl)(request_impl*), typename channel::scalar_type& v, rank_t target, int tag)
-    : extent(sizeof(typename channel::scalar_type::numeric_union)/sizeof(double)), 
+    : extent(v.size/sizeof(double)), 
       data(&v.value),
       target(target),
       impl(impl),
@@ -1464,7 +1452,6 @@ namespace bind { namespace memory {
     using model::history;
     using model::revision;
     using model::transformable;
-    using model::sizeof_transformable;
 
     inline void collector::reserve(size_t n){
         this->rev.reserve(n);
@@ -1509,7 +1496,7 @@ namespace bind { namespace memory {
     }
 
     inline void collector::delete_ptr::operator()( transformable* e ) const {
-        bind::memory::free<memory::cpu::fixed,sizeof_transformable()>(e);
+        memory::cpu::fixed::free(e);
     } 
 
     inline void collector::clear(){
@@ -2082,11 +2069,11 @@ namespace bind {
         template<size_t arg> static bool ready          (functor* m){ return true;           }
         template<size_t arg> static T&   revised        (functor* m){ EXTRACT(o); return *o; }
         template<size_t arg> static void modify (T& obj, functor* m){
-            m->arguments[arg] = (void*)new(bind::memory::malloc<memory::cpu::instr_bulk,sizeof(T)>()) T(obj); 
+            m->arguments[arg] = (void*)new(memory::cpu::instr_bulk::malloc<sizeof(T)>()) T(obj); 
         }
         template<size_t arg> static void modify_remote(T& obj)      {                        }
         template<size_t arg> static void modify_local(T& obj, functor* m){
-            m->arguments[arg] = (void*)new(bind::memory::malloc<memory::cpu::instr_bulk,sizeof(T)>()) T(obj);
+            m->arguments[arg] = (void*)new(memory::cpu::instr_bulk::malloc<sizeof(T)>()) T(obj);
         }
         static constexpr bool ReferenceOnly = false;
     };
@@ -2106,10 +2093,10 @@ namespace bind {
         template<size_t arg> static void modify_local(const T& obj, functor* m){
             obj.desc->generator = m;
             bind::select().lsync(obj.desc);
-            m->arguments[arg] = bind::memory::malloc<memory::cpu::instr_bulk,sizeof(T)>(); memcpy(m->arguments[arg], &obj, sizeof(T)); 
+            m->arguments[arg] = memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy(m->arguments[arg], &obj, sizeof(T)); 
         }
         template<size_t arg> static void modify(const T& obj, functor* m){
-            m->arguments[arg] = bind::memory::malloc<memory::cpu::instr_bulk,sizeof(T)>(); memcpy(m->arguments[arg], &obj, sizeof(T)); 
+            m->arguments[arg] = memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy(m->arguments[arg], &obj, sizeof(T)); 
         }
         static constexpr bool ReferenceOnly = true;
     };
@@ -2117,7 +2104,7 @@ namespace bind {
         template<size_t arg> static void deallocate(functor* m){ }
         template<size_t arg> static void modify_remote(T& obj){ }
         template<size_t arg> static void modify_local(const T& obj, functor* m){
-            m->arguments[arg] = bind::memory::malloc<memory::cpu::instr_bulk,sizeof(T)>(); memcpy(m->arguments[arg], &obj, sizeof(T)); 
+            m->arguments[arg] = memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy(m->arguments[arg], &obj, sizeof(T)); 
         }
     };
     // }}}
@@ -2146,7 +2133,7 @@ namespace bind {
         static void modify_local(T& obj, functor* m){
             auto o = obj.bind_allocator.desc;
             bind::select().touch(o, bind::rank());
-            T* var = (T*)bind::memory::malloc<memory::cpu::instr_bulk,sizeof(T)>(); memcpy((void*)var, &obj, sizeof(T)); 
+            T* var = (T*)memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy((void*)var, &obj, sizeof(T)); 
             m->arguments[arg] = (void*)var;
             bind::select().lsync(o->back());
             bind::select().use_revision(o);
@@ -2163,7 +2150,7 @@ namespace bind {
         static void modify(T& obj, functor* m){
             auto o = obj.bind_allocator.desc;
             bind::select().touch(o, bind::rank());
-            T* var = (T*)bind::memory::malloc<memory::cpu::instr_bulk,sizeof(T)>(); memcpy((void*)var, &obj, sizeof(T)); m->arguments[arg] = (void*)var;
+            T* var = (T*)memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy((void*)var, &obj, sizeof(T)); m->arguments[arg] = (void*)var;
             bind::select().sync(o->back());
             bind::select().use_revision(o);
 
@@ -2218,7 +2205,7 @@ namespace bind {
         template<size_t arg> static void modify_local(T& obj, functor* m){
             auto o = obj.bind_allocator.desc;
             bind::select().touch(o, bind::rank());
-            T* var = (T*)bind::memory::malloc<memory::cpu::instr_bulk,sizeof(T)>(); memcpy((void*)var, &obj, sizeof(T)); m->arguments[arg] = (void*)var;
+            T* var = (T*)memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy((void*)var, &obj, sizeof(T)); m->arguments[arg] = (void*)var;
             var->bind_allocator.before = var->bind_allocator.after = o->current;
             bind::select().lsync(o->back());
             bind::select().use_revision(o);
@@ -2226,7 +2213,7 @@ namespace bind {
         template<size_t arg> static void modify(T& obj, functor* m){
             auto o = obj.bind_allocator.desc;
             bind::select().touch(o, bind::rank());
-            T* var = (T*)bind::memory::malloc<memory::cpu::instr_bulk,sizeof(T)>(); memcpy((void*)var, &obj, sizeof(T)); m->arguments[arg] = (void*)var;
+            T* var = (T*)memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy((void*)var, &obj, sizeof(T)); m->arguments[arg] = (void*)var;
             var->bind_allocator.before = var->bind_allocator.after = o->current;
             bind::select().sync(o->back());
             bind::select().use_revision(o);
@@ -2252,7 +2239,7 @@ namespace bind {
         template<size_t arg> static void modify_local(T& obj, functor* m){
             auto o = obj.bind_allocator.desc;
             bind::select().touch(o, bind::rank());
-            T* var = (T*)bind::memory::malloc<memory::cpu::instr_bulk,sizeof(T)>(); memcpy((void*)var, (void*)&obj, sizeof(T)); m->arguments[arg] = (void*)var;
+            T* var = (T*)memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy((void*)var, (void*)&obj, sizeof(T)); m->arguments[arg] = (void*)var;
 
             bind::select().use_revision(o);
             bind::select().collect(o->back());
@@ -2265,7 +2252,7 @@ namespace bind {
         template<size_t arg> static void modify(T& obj, functor* m){
             auto o = obj.bind_allocator.desc;
             bind::select().touch(o, bind::rank());
-            T* var = (T*)bind::memory::malloc<memory::cpu::instr_bulk,sizeof(T)>(); memcpy((void*)var, (void*)&obj, sizeof(T)); m->arguments[arg] = (void*)var;
+            T* var = (T*)memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy((void*)var, (void*)&obj, sizeof(T)); m->arguments[arg] = (void*)var;
             bind::select().use_revision(o);
             bind::select().collect(o->back());
 
@@ -2501,7 +2488,7 @@ namespace bind {
         #define inliner kernel_inliner<typename K::ftype,K::c>
         inline void operator delete (void* ptr){ }
         inline void* operator new (size_t size){
-            return bind::memory::malloc<memory::cpu::instr_bulk,sizeof(K)+sizeof(void*)*inliner::arity>();
+            return memory::cpu::instr_bulk::malloc<sizeof(K)+sizeof(void*)*inliner::arity>();
         }
         virtual bool ready(){ 
             return inliner::ready(this);
@@ -2681,10 +2668,10 @@ namespace bind {
         typedef T value_type;
 
         T& operator* () const {
-            return desc->value;
+            return *desc;
         }
         void init(value_type val = T()){
-            desc = new (bind::memory::calloc<memory::cpu::fixed,sizeof_transformable()>()) transformable(val);
+            desc = new (bind::memory::cpu::fixed::calloc<sizeof_transformable<T>()>()) transformable(val);
             valid = true;
         }
         template<typename S>
@@ -2698,7 +2685,7 @@ namespace bind {
                 bind::sync();
                 valid = true;
             }
-            return desc->value;
+            return (T)(*desc);
         }
         const ptr<T>& unfold() const {
             return *this;
@@ -2731,7 +2718,7 @@ namespace bind {
             init((T)f.load());
         }
         ptr& operator= (const ptr& f){
-            desc->value = f.load();
+            *desc = f.load();
             return *this;
         }
 
@@ -2829,8 +2816,8 @@ namespace bind {
     public:
         void* operator new (size_t size, void* ptr){ return ptr; }
         void  operator delete (void*, void*){ /* doesn't throw */ }
-        void* operator new (size_t sz){ return bind::memory::malloc<bind::memory::cpu::fixed,vector>(); }
-        void operator delete (void* ptr){ bind::memory::free<bind::memory::cpu::fixed,sizeof(vector)>(ptr); }
+        void* operator new (size_t sz){ return bind::memory::cpu::fixed::malloc<sizeof(vector)>(); }
+        void operator delete (void* ptr){ bind::memory::cpu::fixed::free(ptr); }
     public:
         typedef vector_async<T,Allocator> async_type;
         typedef Allocator allocator_type;

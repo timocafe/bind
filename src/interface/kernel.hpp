@@ -38,7 +38,7 @@ namespace bind {
         #define inliner kernel_inliner<typename K::ftype,K::c>
         inline void operator delete (void* ptr){ }
         inline void* operator new (size_t size){
-            return bind::memory::malloc<memory::cpu::instr_bulk,sizeof(K)+sizeof(void*)*inliner::arity>();
+            return memory::cpu::instr_bulk::malloc<sizeof(K)+sizeof(void*)*inliner::arity>();
         }
         virtual bool ready(){ 
             return inliner::ready(this);

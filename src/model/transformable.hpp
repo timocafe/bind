@@ -30,40 +30,32 @@
 
 namespace bind { namespace model {
 
+    template<typename T>
+    constexpr size_t sizeof_64(){
+        return bind::memory::aligned_64< sizeof(T) >();
+    }
+
+    template<typename T>
+    constexpr size_t sizeof_transformable(){
+        return (sizeof(void*) + sizeof(size_t) + sizeof_64<T>());
+    }
+
     class transformable {
     public:
-        union numeric_union {
-            typedef std::complex<double> limit; 
-            bool b; 
-            double d; 
-            std::complex<double> c; 
-            int i; 
-            size_t s; 
-            operator bool& (){ return b; }
-            operator double& (){ return d; }
-            operator std::complex<double>& (){ return c; }
-            operator size_t& (){ return s; }
-            operator int& (){ return i; }
-            void operator = (bool value){ b = value; }
-            void operator = (double value){ d = value; }
-            void operator = (std::complex<double> value){ c = value; }
-            void operator = (size_t value){ s = value; }
-            void operator = (int value){ i = value; }
-            numeric_union(){ }
-        };
+        // WARNING: the correct allocation of sizeof_transformable required
         void* operator new (size_t, void* place){ return place; }
-        void operator delete (void*, void*){ /* doesn't throw */ }
+        void operator delete (void*, void*){}
 
-        template <typename T>
-        transformable(T val){
-            this->value = val;
-        }
-        mutable numeric_union value;
+        template<typename T>
+        transformable(T val) : size(sizeof_64<T>()) { *this = val; }
+        template<typename T> operator T& (){ return *(T*)&value;  }
+        template<typename T> void operator = (T val){ *(T*)&value = val; }
+
         functor* generator;
+        size_t size;
+        int value;
     };
 
-    // injecting templated T is also possible (except in collector) //
-    constexpr size_t sizeof_transformable(){ return bind::memory::aligned_64< sizeof(transformable) >(); }
 } }
 
 #endif

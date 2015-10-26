@@ -38,8 +38,8 @@ namespace bind {
     public:
         void* operator new (size_t size, void* ptr){ return ptr; }
         void  operator delete (void*, void*){ /* doesn't throw */ }
-        void* operator new (size_t sz){ return bind::memory::malloc<bind::memory::cpu::fixed,vector>(); }
-        void operator delete (void* ptr){ bind::memory::free<bind::memory::cpu::fixed,sizeof(vector)>(ptr); }
+        void* operator new (size_t sz){ return bind::memory::cpu::fixed::malloc<sizeof(vector)>(); }
+        void operator delete (void* ptr){ bind::memory::cpu::fixed::free(ptr); }
     public:
         typedef vector_async<T,Allocator> async_type;
         typedef Allocator allocator_type;

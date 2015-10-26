@@ -77,10 +77,6 @@ namespace bind { namespace memory {
         int crefs;
     };
 
-    template<class Memory, size_t S> static void* malloc()         { return Memory::template malloc<S>();  }
-    template<class Memory, size_t S> static void* calloc()         { return Memory::template calloc<S>();  }
-    template<class Memory, size_t S> static void free(void* ptr)   { return Memory::template free<S>(ptr); }
-
 } }
 
 #endif
