@@ -88,7 +88,7 @@ namespace bind { namespace model {
         std::atomic<int> users;
         locality state;
         std::pair<size_t, functor*> assist;
-        bind::memory::descriptor spec;
+        memory::descriptor spec;
     };
 
     inline bool local(const revision* r){

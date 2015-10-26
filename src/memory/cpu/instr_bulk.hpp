@@ -54,15 +54,15 @@ namespace bind { namespace memory { namespace cpu {
             return malloc(S);
         }
         static void* malloc(size_t s){
-            return instance().memory.malloc(s);
+            return instance().impl.malloc(s);
         }
         static void drop(){
-            instance().memory.reset();
+            instance().impl.reset();
         }
     private:
-        bind::memory::private_region<BIND_INSTR_BULK_CHUNK, 
-                                       bind::memory::private_factory<BIND_INSTR_BULK_CHUNK> 
-                                       > memory;
+        memory::private_region<BIND_INSTR_BULK_CHUNK, 
+                               memory::private_factory<BIND_INSTR_BULK_CHUNK> 
+                              > impl;
     };
 
 } } }

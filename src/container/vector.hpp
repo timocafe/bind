@@ -121,8 +121,8 @@ namespace bind {
 
     template<typename T, class Allocator>
     void vector<T,Allocator>::shrink_to_fit(){
-        if(bind::memory::aligned_64(cached_size()*sizeof(T)+sizeof(size_t)) ==
-           bind::memory::aligned_64(capacity()*sizeof(T)+sizeof(size_t))) return;
+        if(memory::aligned_64(cached_size()*sizeof(T)+sizeof(size_t)) ==
+           memory::aligned_64(capacity()*sizeof(T)+sizeof(size_t))) return;
 
         size_t current_size = cached_size();
         vector shrinked(cached_size());

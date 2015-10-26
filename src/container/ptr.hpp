@@ -46,7 +46,7 @@ namespace bind {
             return *desc;
         }
         void init(value_type val = T()){
-            desc = new (bind::memory::cpu::fixed::calloc<sizeof_transformable<T>()>()) transformable(val);
+            desc = new (memory::cpu::fixed::calloc<sizeof_transformable<T>()>()) transformable(val);
             valid = true;
         }
         template<typename S>

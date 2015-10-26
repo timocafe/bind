@@ -32,7 +32,7 @@ namespace bind { namespace model {
 
     template<typename T>
     constexpr size_t sizeof_64(){
-        return bind::memory::aligned_64< sizeof(T) >();
+        return memory::aligned_64< sizeof(T) >();
     }
 
     template<typename T>

@@ -33,7 +33,7 @@ namespace bind { namespace model {
 
     class history : public memory::cpu::use_fixed_new<history> {
     public:
-        history(size_t size) : current(NULL), extent(bind::memory::aligned_64(size)) { }
+        history(size_t size) : current(NULL), extent(memory::aligned_64(size)) { }
         void init_state(rank_t owner){
             revision* r = new revision(extent, NULL, locality::common, owner);
             this->current = r;

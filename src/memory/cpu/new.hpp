@@ -33,14 +33,14 @@ namespace bind { namespace memory { namespace cpu {
     template<class T>
     class use_fixed_new {
     public:
-        void* operator new (size_t sz){ assert(sz == sizeof(T)); return bind::memory::cpu::fixed::malloc<sizeof(T)>(); }
-        void operator delete (void* ptr){ bind::memory::cpu::fixed::free(ptr); }
+        void* operator new (size_t sz){ assert(sz == sizeof(T)); return memory::cpu::fixed::malloc<sizeof(T)>(); }
+        void operator delete (void* ptr){ memory::cpu::fixed::free(ptr); }
     };
 
     template<class T>
     class use_bulk_new {
     public:
-        void* operator new (size_t sz){ assert(sz == sizeof(T)); return bind::memory::cpu::instr_bulk::malloc<sizeof(T)>(); }
+        void* operator new (size_t sz){ assert(sz == sizeof(T)); return memory::cpu::instr_bulk::malloc<sizeof(T)>(); }
         void operator delete (void* ptr){ }
     };
 

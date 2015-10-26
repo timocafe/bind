@@ -639,15 +639,15 @@ namespace bind { namespace memory { namespace cpu {
             return malloc(S);
         }
         static void* malloc(size_t s){
-            return instance().memory.malloc(s);
+            return instance().impl.malloc(s);
         }
         static void drop(){
-            instance().memory.reset();
+            instance().impl.reset();
         }
     private:
-        bind::memory::private_region<BIND_INSTR_BULK_CHUNK, 
-                                       bind::memory::private_factory<BIND_INSTR_BULK_CHUNK> 
-                                       > memory;
+        memory::private_region<BIND_INSTR_BULK_CHUNK, 
+                               memory::private_factory<BIND_INSTR_BULK_CHUNK> 
+                              > impl;
     };
 
 } } }
@@ -694,14 +694,14 @@ namespace bind { namespace memory { namespace cpu {
     template<class T>
     class use_fixed_new {
     public:
-        void* operator new (size_t sz){ assert(sz == sizeof(T)); return bind::memory::cpu::fixed::malloc<sizeof(T)>(); }
-        void operator delete (void* ptr){ bind::memory::cpu::fixed::free(ptr); }
+        void* operator new (size_t sz){ assert(sz == sizeof(T)); return memory::cpu::fixed::malloc<sizeof(T)>(); }
+        void operator delete (void* ptr){ memory::cpu::fixed::free(ptr); }
     };
 
     template<class T>
     class use_bulk_new {
     public:
-        void* operator new (size_t sz){ assert(sz == sizeof(T)); return bind::memory::cpu::instr_bulk::malloc<sizeof(T)>(); }
+        void* operator new (size_t sz){ assert(sz == sizeof(T)); return memory::cpu::instr_bulk::malloc<sizeof(T)>(); }
         void operator delete (void* ptr){ }
     };
 
@@ -875,7 +875,7 @@ namespace bind { namespace model {
         std::atomic<int> users;
         locality state;
         std::pair<size_t, functor*> assist;
-        bind::memory::descriptor spec;
+        memory::descriptor spec;
     };
 
     inline bool local(const revision* r){
@@ -906,7 +906,7 @@ namespace bind { namespace model {
 
     class history : public memory::cpu::use_fixed_new<history> {
     public:
-        history(size_t size) : current(NULL), extent(bind::memory::aligned_64(size)) { }
+        history(size_t size) : current(NULL), extent(memory::aligned_64(size)) { }
         void init_state(rank_t owner){
             revision* r = new revision(extent, NULL, locality::common, owner);
             this->current = r;
@@ -936,7 +936,7 @@ namespace bind { namespace model {
 
     template<typename T>
     constexpr size_t sizeof_64(){
-        return bind::memory::aligned_64< sizeof(T) >();
+        return memory::aligned_64< sizeof(T) >();
     }
 
     template<typename T>
@@ -1598,7 +1598,7 @@ namespace bind { namespace core {
         std::vector< functor* > stack_s;
         std::vector< functor* >* chains;
         std::vector< functor* >* mirror;
-        bind::memory::collector garbage;
+        memory::collector garbage;
         utils::funneled_io io_guard;
         node_each* each;
         node* which;
@@ -2671,7 +2671,7 @@ namespace bind {
             return *desc;
         }
         void init(value_type val = T()){
-            desc = new (bind::memory::cpu::fixed::calloc<sizeof_transformable<T>()>()) transformable(val);
+            desc = new (memory::cpu::fixed::calloc<sizeof_transformable<T>()>()) transformable(val);
             valid = true;
         }
         template<typename S>
@@ -2816,8 +2816,8 @@ namespace bind {
     public:
         void* operator new (size_t size, void* ptr){ return ptr; }
         void  operator delete (void*, void*){ /* doesn't throw */ }
-        void* operator new (size_t sz){ return bind::memory::cpu::fixed::malloc<sizeof(vector)>(); }
-        void operator delete (void* ptr){ bind::memory::cpu::fixed::free(ptr); }
+        void* operator new (size_t sz){ return memory::cpu::fixed::malloc<sizeof(vector)>(); }
+        void operator delete (void* ptr){ memory::cpu::fixed::free(ptr); }
     public:
         typedef vector_async<T,Allocator> async_type;
         typedef Allocator allocator_type;
@@ -2996,8 +2996,8 @@ namespace bind {
 
     template<typename T, class Allocator>
     void vector<T,Allocator>::shrink_to_fit(){
-        if(bind::memory::aligned_64(cached_size()*sizeof(T)+sizeof(size_t)) ==
-           bind::memory::aligned_64(capacity()*sizeof(T)+sizeof(size_t))) return;
+        if(memory::aligned_64(cached_size()*sizeof(T)+sizeof(size_t)) ==
+           memory::aligned_64(capacity()*sizeof(T)+sizeof(size_t))) return;
 
         size_t current_size = cached_size();
         vector shrinked(cached_size());
