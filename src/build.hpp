@@ -125,7 +125,7 @@
 #include "core/node.hpp"
 // }}}
 // {{{ interface package (requires :model :transport :core)
-#include "utils/auxiliary.hpp"
+#include "interface/shortcuts.hpp"
 #include "interface/typed.hpp"
 #include "interface/allocator.hpp"
 #include "interface/kernel_inliner.hpp"

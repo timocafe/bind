@@ -2015,8 +2015,8 @@ namespace bind {
 // }}}
 // {{{ interface package (requires :model :transport :core)
 
-#ifndef BIND_UTILS_AUXILIARY
-#define BIND_UTILS_AUXILIARY
+#ifndef BIND_INTERFACE_SHORTCUTS
+#define BIND_INTERFACE_SHORTCUTS
 
 namespace bind {
 
