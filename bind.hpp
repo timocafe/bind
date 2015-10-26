@@ -2366,14 +2366,14 @@ namespace bind {
         revision* after;
     };
 
-    struct default_allocator : public stateful {
-        default_allocator(const default_allocator&) = delete;
-        default_allocator& operator=(const default_allocator&) = delete;
-        default_allocator(){ }
-        default_allocator(size_t size){
+    struct allocator : public stateful {
+        allocator(const allocator&) = delete;
+        allocator& operator=(const allocator&) = delete;
+        allocator(){ }
+        allocator(size_t size){
             desc = new history(size);
         }
-        ~default_allocator(){
+        ~allocator(){
             if(desc->weak()) delete desc;
             else destroy(desc);
         }
@@ -2768,7 +2768,7 @@ namespace bind {
 
 namespace bind {
      
-    template<typename T, class Allocator = default_allocator> class block;
+    template<typename T, class Allocator = bind::allocator> class block;
     namespace detail { 
         template<typename T>
         void fill_value(volatile block<T>& a, T& value){
@@ -2824,7 +2824,7 @@ namespace bind {
     template<class T, class Allocator>
     class vector_async;
 
-    template <class T, class Allocator = default_allocator>
+    template <class T, class Allocator = bind::allocator>
     class vector {
     public:
         void* operator new (size_t size, void* ptr){ return ptr; }
@@ -2903,7 +2903,7 @@ namespace bind {
 namespace std {
 
     template<typename T>
-    class vector<T, bind::default_allocator> : public bind::vector<T, bind::default_allocator> {
+    class vector<T, bind::allocator> : public bind::vector<T, bind::allocator> {
     public:
         vector(int n){
             printf("my vector!\n");

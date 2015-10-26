@@ -1,7 +1,10 @@
 #include "utils/bind.hpp"
 
 template<typename T>
-void reverse(bind::vector<T>& vec){
+using vector = bind::vector<T, bind::allocator>;
+
+template<typename T>
+void reverse(vector<T>& vec){
     int start = 0;
     int end = vec.size();
     while((start != end) && (start != --end)){
@@ -10,11 +13,11 @@ void reverse(bind::vector<T>& vec){
 }
 
 int main(){
-    bind::vector<int> a(100);         // zero initialised vector
-    bind::cpu(reverse<int>, a);  // reverse vector asynchronously
-    bind::cpu([](bind::vector<int>& vec){ reverse(vec); }, a);
-    bind::sync();                     // wait for operations to finish
 
-    //std::vector<int, bind::default_allocator> test(12);
+    vector<int> a(100);
+    bind::cpu(reverse<int>, a);
+    bind::cpu([](vector<int>& vec){ reverse(vec); }, a);
+    bind::sync();
+
     return 0;
 }

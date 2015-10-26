@@ -37,14 +37,14 @@ namespace bind {
         revision* after;
     };
 
-    struct default_allocator : public stateful {
-        default_allocator(const default_allocator&) = delete;
-        default_allocator& operator=(const default_allocator&) = delete;
-        default_allocator(){ }
-        default_allocator(size_t size){
+    struct allocator : public stateful {
+        allocator(const allocator&) = delete;
+        allocator& operator=(const allocator&) = delete;
+        allocator(){ }
+        allocator(size_t size){
             desc = new history(size);
         }
-        ~default_allocator(){
+        ~allocator(){
             if(desc->weak()) delete desc;
             else destroy(desc);
         }

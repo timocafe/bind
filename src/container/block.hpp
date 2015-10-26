@@ -30,7 +30,7 @@
 
 namespace bind {
      
-    template<typename T, class Allocator = default_allocator> class block;
+    template<typename T, class Allocator = bind::allocator> class block;
     namespace detail { 
         template<typename T>
         void fill_value(volatile block<T>& a, T& value){

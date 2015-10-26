@@ -33,7 +33,7 @@ namespace bind {
     template<class T, class Allocator>
     class vector_async;
 
-    template <class T, class Allocator = default_allocator>
+    template <class T, class Allocator = bind::allocator>
     class vector {
     public:
         void* operator new (size_t size, void* ptr){ return ptr; }
@@ -112,7 +112,7 @@ namespace bind {
 namespace std {
 
     template<typename T>
-    class vector<T, bind::default_allocator> : public bind::vector<T, bind::default_allocator> {
+    class vector<T, bind::allocator> : public bind::vector<T, bind::allocator> {
     public:
         vector(int n){
             printf("my vector!\n");
