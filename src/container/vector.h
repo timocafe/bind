@@ -56,7 +56,7 @@ namespace bind {
         /* prohibited in async mode (sync mode only) */
 
         explicit vector(size_t n, T value = T());
-        vector(const vector& a);
+        vector(const vector& a) = default;
         vector& operator = (const vector& rhs);
         template<class OtherAllocator>
         vector& operator = (const vector<T,OtherAllocator>& rhs);

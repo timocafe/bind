@@ -75,11 +75,6 @@ namespace bind {
     }
 
     template <typename T, class Allocator>
-    vector<T,Allocator>::vector(const vector& a) : bind_allocator(a.capacity()*sizeof(T)+sizeof(size_t)) {
-        bind::merge(a, *this);
-    }
-    
-    template <typename T, class Allocator>
     vector<T,Allocator>& vector<T,Allocator>::operator = (const vector& rhs){
         vector c(rhs);
         this->swap(c);

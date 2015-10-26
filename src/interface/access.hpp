@@ -48,21 +48,6 @@ namespace bind {
         }
     }
 
-    template<typename V>
-    inline void merge(const V& src, V& dst){
-        assert(dst.bind_allocator.desc->current == NULL);
-        if(weak(src)) return;
-        revision* r = src.bind_allocator.desc->back();
-        dst.bind_allocator.desc->current = r;
-        // do not deallocate or reuse
-        if(!r->valid() && r->state != locality::remote){
-            assert(r->spec.signature != memory::delegated::signature);
-            r->spec.protect();
-        }
-        assert(!r->valid() || !r->spec.bulked() || model::remote(r)); // can't rely on bulk memory
-        r->spec.crefs++;
-    }
-
     template <typename T> static T& load(T& obj){ 
         bind::select().touch(obj.bind_allocator.desc, bind::rank());
         bind::sync(); 

@@ -38,13 +38,20 @@ namespace bind {
     };
 
     struct allocator : public stateful {
-        allocator(const allocator&) = delete;
         allocator& operator=(const allocator&) = delete;
         allocator(){ }
         allocator(size_t size){
             desc = new history(size);
         }
-        ~allocator(){
+        allocator(const allocator& origin){
+            desc = new history(origin.desc->extent);
+            revision* r = origin.desc->back(); if(!r) return;
+            desc->current = r;
+            if(!r->valid() && r->state != locality::remote)
+                r->spec.protect(); // keep origin intact
+            r->spec.crefs++;
+        }
+       ~allocator(){
             if(desc->weak()) delete desc;
             else destroy(desc);
         }

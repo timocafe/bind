@@ -2349,13 +2349,20 @@ namespace bind {
     };
 
     struct allocator : public stateful {
-        allocator(const allocator&) = delete;
         allocator& operator=(const allocator&) = delete;
         allocator(){ }
         allocator(size_t size){
             desc = new history(size);
         }
-        ~allocator(){
+        allocator(const allocator& origin){
+            desc = new history(origin.desc->extent);
+            revision* r = origin.desc->back(); if(!r) return;
+            desc->current = r;
+            if(!r->valid() && r->state != locality::remote)
+                r->spec.protect(); // keep origin intact
+            r->spec.crefs++;
+        }
+       ~allocator(){
             if(desc->weak()) delete desc;
             else destroy(desc);
         }
@@ -2527,21 +2534,6 @@ namespace bind {
             if(!is_polymorphic<T>::value) return;
             new ((void*)&obj) typename get_async_type<T>::type();
         }
-    }
-
-    template<typename V>
-    inline void merge(const V& src, V& dst){
-        assert(dst.bind_allocator.desc->current == NULL);
-        if(weak(src)) return;
-        revision* r = src.bind_allocator.desc->back();
-        dst.bind_allocator.desc->current = r;
-        // do not deallocate or reuse
-        if(!r->valid() && r->state != locality::remote){
-            assert(r->spec.signature != memory::delegated::signature);
-            r->spec.protect();
-        }
-        assert(!r->valid() || !r->spec.bulked() || model::remote(r)); // can't rely on bulk memory
-        r->spec.crefs++;
     }
 
     template <typename T> static T& load(T& obj){ 
@@ -2829,7 +2821,7 @@ namespace bind {
         /* prohibited in async mode (sync mode only) */
 
         explicit vector(size_t n, T value = T());
-        vector(const vector& a);
+        vector(const vector& a) = default;
         vector& operator = (const vector& rhs);
         template<class OtherAllocator>
         vector& operator = (const vector<T,OtherAllocator>& rhs);
@@ -2944,11 +2936,6 @@ namespace bind {
         this->init(value);
     }
 
-    template <typename T, class Allocator>
-    vector<T,Allocator>::vector(const vector& a) : bind_allocator(a.capacity()*sizeof(T)+sizeof(size_t)) {
-        bind::merge(a, *this);
-    }
-    
     template <typename T, class Allocator>
     vector<T,Allocator>& vector<T,Allocator>::operator = (const vector& rhs){
         vector c(rhs);
