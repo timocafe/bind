@@ -30,8 +30,8 @@
 
 namespace bind {
 
-    using model::transformable;
-    using model::sizeof_transformable;
+    using model::any;
+    using model::sizeof_any;
 
     template <typename T>
     class ptr {
@@ -46,12 +46,12 @@ namespace bind {
             return *desc;
         }
         void init(value_type val = T()){
-            desc = new (memory::cpu::fixed::calloc<sizeof_transformable<T>()>()) transformable(val);
+            desc = new (memory::cpu::fixed::calloc<sizeof_any<T>()>()) any(val);
             valid = true;
         }
         template<typename S>
         void reuse(ptr<S>& f){
-            desc = (transformable*)f.desc; // unsafe - proper convertion should be done
+            desc = (any*)f.desc; // unsafe - proper convertion should be done
             valid = f.valid;
             f.desc = NULL; 
         }
@@ -113,7 +113,7 @@ namespace bind {
     private:
         mutable bool valid;
     public:
-        mutable transformable* desc;
+        mutable any* desc;
     };
 
     template<class T>

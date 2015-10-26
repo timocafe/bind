@@ -41,7 +41,7 @@ namespace bind { namespace transport { namespace nop {
     class channel {
     public:
         typedef typename model::revision block_type;
-        typedef typename model::transformable scalar_type;
+        typedef typename model::any scalar_type;
         template<class T> using collective_type = collective<T>;
         size_t dim() const { return 1; }
         static void barrier(){}

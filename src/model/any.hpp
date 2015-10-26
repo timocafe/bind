@@ -25,31 +25,26 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef BIND_MODEL_TRANSFORMABLE
-#define BIND_MODEL_TRANSFORMABLE
+#ifndef BIND_MODEL_ANY
+#define BIND_MODEL_ANY
 
 namespace bind { namespace model {
 
     template<typename T>
-    constexpr size_t sizeof_64(){
-        return memory::aligned_64< sizeof(T) >();
+    constexpr size_t sizeof_any(){
+        return (sizeof(void*) + sizeof(size_t) + memory::aligned_64<sizeof(T)>());
     }
 
-    template<typename T>
-    constexpr size_t sizeof_transformable(){
-        return (sizeof(void*) + sizeof(size_t) + sizeof_64<T>());
-    }
-
-    class transformable {
+    class any {
     public:
-        // WARNING: the correct allocation of sizeof_transformable required
+        // WARNING: the correct allocation of sizeof_any required
         void* operator new (size_t, void* place){ return place; }
         void operator delete (void*, void*){}
 
         template<typename T>
-        transformable(T val) : size(sizeof_64<T>()) { *this = val; }
-        template<typename T> operator T& (){ return *(T*)&value;  }
+        any(T val) : size(memory::aligned_64<sizeof(T)>()) { *this = val; }
         template<typename T> void operator = (T val){ *(T*)&value = val; }
+        template<typename T> operator T& (){ return *(T*)&value;  }
 
         functor* generator;
         size_t size;

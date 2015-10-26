@@ -33,15 +33,15 @@ namespace bind { namespace core {
     template<class T> class get {};
 
     template<>
-    class get<transformable> : public functor, public memory::cpu::use_bulk_new<get<transformable> > {
+    class get<any> : public functor, public memory::cpu::use_bulk_new<get<any> > {
     public:
         template<class T> using collective = controller::channel_type::collective_type<T>;
-        static void spawn(transformable& v);
-        get(transformable& v);
+        static void spawn(any& v);
+        get(any& v);
         virtual void invoke();
         virtual bool ready();
     private:
-        collective<transformable>* handle;
+        collective<any>* handle;
     };
 
     template<>

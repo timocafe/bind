@@ -40,7 +40,7 @@ namespace bind { namespace transport { namespace mpi {
     class channel {
     public:
         typedef typename model::revision block_type;
-        typedef typename model::transformable scalar_type;
+        typedef typename model::any scalar_type;
         template<class T> using collective_type = collective<T>;
         struct mount {
             mount(); 

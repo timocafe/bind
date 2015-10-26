@@ -32,26 +32,26 @@ namespace bind{ namespace memory {
 
     using model::history;
     using model::revision;
-    using model::transformable;
+    using model::any;
 
     class collector {
     public:
         struct delete_ptr {
             void operator()( history* element ) const;
             void operator()( revision* element ) const;
-            void operator()( transformable* element ) const;
+            void operator()( any* element ) const;
         };
 
         void reserve(size_t n);
         void push_back(history* o);
         void push_back(revision* o);
-        void push_back(transformable* o);
+        void push_back(any* o);
         void clear();
     private:
         size_t reserve_limit;
-        std::vector< history* >       str;
-        std::vector< revision* >      rev;
-        std::vector< transformable* > raw;
+        std::vector< history* >  str;
+        std::vector< revision* > rev;
+        std::vector< any* >      raw;
     };
 
 } }

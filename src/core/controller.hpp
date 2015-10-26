@@ -129,13 +129,13 @@ namespace bind { namespace core {
         else get<revision>::spawn(*r); // assist
     }
 
-    inline void controller::lsync(transformable* v){
+    inline void controller::lsync(any* v){
         if(is_serial()) return;
-        set<transformable>::spawn(*v);
+        set<any>::spawn(*v);
     }
 
-    inline void controller::rsync(transformable* v){
-        get<transformable>::spawn(*v);
+    inline void controller::rsync(any* v){
+        get<any>::spawn(*v);
     }
 
     template<typename T> void controller::collect(T* o){

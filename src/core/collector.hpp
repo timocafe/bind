@@ -29,14 +29,14 @@ namespace bind { namespace memory {
 
     using model::history;
     using model::revision;
-    using model::transformable;
+    using model::any;
 
     inline void collector::reserve(size_t n){
         this->rev.reserve(n);
         this->str.reserve(n);
     }
 
-    inline void collector::push_back(transformable* o){
+    inline void collector::push_back(any* o){
         this->raw.push_back(o);
     }
 
@@ -73,7 +73,7 @@ namespace bind { namespace memory {
         delete e;
     }
 
-    inline void collector::delete_ptr::operator()( transformable* e ) const {
+    inline void collector::delete_ptr::operator()( any* e ) const {
         memory::cpu::fixed::free(e);
     } 
 

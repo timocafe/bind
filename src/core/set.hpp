@@ -27,18 +27,18 @@
 
 namespace bind { namespace core {
 
-    // {{{ transformable
+    // {{{ any
 
-    inline void set<transformable>::spawn(transformable& t){
+    inline void set<any>::spawn(any& t){
         t.generator->queue(new set(t));
     }
-    inline set<transformable>::set(transformable& t) : t(t) {
+    inline set<any>::set(any& t) : t(t) {
         handle = bind::select().get_channel().bcast(t, bind::nodes::which());
     }
-    inline bool set<transformable>::ready(){
+    inline bool set<any>::ready(){
         return (t.generator != NULL ? false : handle->test());
     }
-    inline void set<transformable>::invoke(){}
+    inline void set<any>::invoke(){}
 
     // }}}
     // {{{ revision

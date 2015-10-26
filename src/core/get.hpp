@@ -27,18 +27,18 @@
 
 namespace bind { namespace core {
 
-    // {{{ transformable
+    // {{{ any
 
-    inline void get<transformable>::spawn(transformable& t){
+    inline void get<any>::spawn(any& t){
         bind::select().queue(new get(t));
     }
-    inline get<transformable>::get(transformable& t){
+    inline get<any>::get(any& t){
         handle = bind::select().get_channel().bcast(t, bind::nodes::which());
     }
-    inline bool get<transformable>::ready(){
+    inline bool get<any>::ready(){
         return handle->test();
     }
-    inline void get<transformable>::invoke(){}
+    inline void get<any>::invoke(){}
 
     // }}}
     // {{{ revision

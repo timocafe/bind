@@ -32,7 +32,7 @@ namespace bind { namespace core {
 
     using model::history;
     using model::revision;
-    using model::transformable;
+    using model::any;
     using model::functor;
 
     class controller {
@@ -49,8 +49,8 @@ namespace bind { namespace core {
         void sync  (revision* r);
         void lsync (revision* r);
         void rsync (revision* r);
-        void lsync (transformable* v);
-        void rsync (transformable* v);
+        void lsync (any* v);
+        void rsync (any* v);
         template<typename T> void collect(T* o);
         void squeeze(revision* r) const;
 

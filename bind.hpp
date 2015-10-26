@@ -929,31 +929,26 @@ namespace bind { namespace model {
 
 #endif
 
-#ifndef BIND_MODEL_TRANSFORMABLE
-#define BIND_MODEL_TRANSFORMABLE
+#ifndef BIND_MODEL_ANY
+#define BIND_MODEL_ANY
 
 namespace bind { namespace model {
 
     template<typename T>
-    constexpr size_t sizeof_64(){
-        return memory::aligned_64< sizeof(T) >();
+    constexpr size_t sizeof_any(){
+        return (sizeof(void*) + sizeof(size_t) + memory::aligned_64<sizeof(T)>());
     }
 
-    template<typename T>
-    constexpr size_t sizeof_transformable(){
-        return (sizeof(void*) + sizeof(size_t) + sizeof_64<T>());
-    }
-
-    class transformable {
+    class any {
     public:
-        // WARNING: the correct allocation of sizeof_transformable required
+        // WARNING: the correct allocation of sizeof_any required
         void* operator new (size_t, void* place){ return place; }
         void operator delete (void*, void*){}
 
         template<typename T>
-        transformable(T val) : size(sizeof_64<T>()) { *this = val; }
-        template<typename T> operator T& (){ return *(T*)&value;  }
+        any(T val) : size(memory::aligned_64<sizeof(T)>()) { *this = val; }
         template<typename T> void operator = (T val){ *(T*)&value = val; }
+        template<typename T> operator T& (){ return *(T*)&value;  }
 
         functor* generator;
         size_t size;
@@ -1060,7 +1055,7 @@ namespace bind { namespace transport { namespace mpi {
     class channel {
     public:
         typedef typename model::revision block_type;
-        typedef typename model::transformable scalar_type;
+        typedef typename model::any scalar_type;
         template<class T> using collective_type = collective<T>;
         struct mount {
             mount(); 
@@ -1395,7 +1390,7 @@ namespace bind { namespace transport { namespace nop {
     class channel {
     public:
         typedef typename model::revision block_type;
-        typedef typename model::transformable scalar_type;
+        typedef typename model::any scalar_type;
         template<class T> using collective_type = collective<T>;
         size_t dim() const { return 1; }
         static void barrier(){}
@@ -1420,26 +1415,26 @@ namespace bind{ namespace memory {
 
     using model::history;
     using model::revision;
-    using model::transformable;
+    using model::any;
 
     class collector {
     public:
         struct delete_ptr {
             void operator()( history* element ) const;
             void operator()( revision* element ) const;
-            void operator()( transformable* element ) const;
+            void operator()( any* element ) const;
         };
 
         void reserve(size_t n);
         void push_back(history* o);
         void push_back(revision* o);
-        void push_back(transformable* o);
+        void push_back(any* o);
         void clear();
     private:
         size_t reserve_limit;
-        std::vector< history* >       str;
-        std::vector< revision* >      rev;
-        std::vector< transformable* > raw;
+        std::vector< history* >  str;
+        std::vector< revision* > rev;
+        std::vector< any* >      raw;
     };
 
 } }
@@ -1451,14 +1446,14 @@ namespace bind { namespace memory {
 
     using model::history;
     using model::revision;
-    using model::transformable;
+    using model::any;
 
     inline void collector::reserve(size_t n){
         this->rev.reserve(n);
         this->str.reserve(n);
     }
 
-    inline void collector::push_back(transformable* o){
+    inline void collector::push_back(any* o){
         this->raw.push_back(o);
     }
 
@@ -1495,7 +1490,7 @@ namespace bind { namespace memory {
         delete e;
     }
 
-    inline void collector::delete_ptr::operator()( transformable* e ) const {
+    inline void collector::delete_ptr::operator()( any* e ) const {
         memory::cpu::fixed::free(e);
     } 
 
@@ -1552,7 +1547,7 @@ namespace bind { namespace core {
 
     using model::history;
     using model::revision;
-    using model::transformable;
+    using model::any;
     using model::functor;
 
     class controller {
@@ -1569,8 +1564,8 @@ namespace bind { namespace core {
         void sync  (revision* r);
         void lsync (revision* r);
         void rsync (revision* r);
-        void lsync (transformable* v);
-        void rsync (transformable* v);
+        void lsync (any* v);
+        void rsync (any* v);
         template<typename T> void collect(T* o);
         void squeeze(revision* r) const;
 
@@ -1627,15 +1622,15 @@ namespace bind { namespace core {
     template<class T> class get {};
 
     template<>
-    class get<transformable> : public functor, public memory::cpu::use_bulk_new<get<transformable> > {
+    class get<any> : public functor, public memory::cpu::use_bulk_new<get<any> > {
     public:
         template<class T> using collective = controller::channel_type::collective_type<T>;
-        static void spawn(transformable& v);
-        get(transformable& v);
+        static void spawn(any& v);
+        get(any& v);
         virtual void invoke();
         virtual bool ready();
     private:
-        collective<transformable>* handle;
+        collective<any>* handle;
     };
 
     template<>
@@ -1666,16 +1661,16 @@ namespace bind { namespace core {
     template<class T> class set {};
 
     template<>
-    class set<transformable> : public functor, public memory::cpu::use_bulk_new<set<transformable> > {
+    class set<any> : public functor, public memory::cpu::use_bulk_new<set<any> > {
     public:
         template<class T> using collective = controller::channel_type::collective_type<T>;
-        static void spawn(transformable& v);
-        set(transformable& v);
+        static void spawn(any& v);
+        set(any& v);
         virtual void invoke();
         virtual bool ready();
     private:
-        collective<transformable>* handle;
-        transformable& t;
+        collective<any>* handle;
+        any& t;
     };
 
     template<>
@@ -1801,13 +1796,13 @@ namespace bind { namespace core {
         else get<revision>::spawn(*r); // assist
     }
 
-    inline void controller::lsync(transformable* v){
+    inline void controller::lsync(any* v){
         if(is_serial()) return;
-        set<transformable>::spawn(*v);
+        set<any>::spawn(*v);
     }
 
-    inline void controller::rsync(transformable* v){
-        get<transformable>::spawn(*v);
+    inline void controller::rsync(any* v){
+        get<any>::spawn(*v);
     }
 
     template<typename T> void controller::collect(T* o){
@@ -1866,18 +1861,18 @@ namespace bind { namespace core {
 
 namespace bind { namespace core {
 
-    // {{{ transformable
+    // {{{ any
 
-    inline void get<transformable>::spawn(transformable& t){
+    inline void get<any>::spawn(any& t){
         bind::select().queue(new get(t));
     }
-    inline get<transformable>::get(transformable& t){
+    inline get<any>::get(any& t){
         handle = bind::select().get_channel().bcast(t, bind::nodes::which());
     }
-    inline bool get<transformable>::ready(){
+    inline bool get<any>::ready(){
         return handle->test();
     }
-    inline void get<transformable>::invoke(){}
+    inline void get<any>::invoke(){}
 
     // }}}
     // {{{ revision
@@ -1915,18 +1910,18 @@ namespace bind { namespace core {
 
 namespace bind { namespace core {
 
-    // {{{ transformable
+    // {{{ any
 
-    inline void set<transformable>::spawn(transformable& t){
+    inline void set<any>::spawn(any& t){
         t.generator->queue(new set(t));
     }
-    inline set<transformable>::set(transformable& t) : t(t) {
+    inline set<any>::set(any& t) : t(t) {
         handle = bind::select().get_channel().bcast(t, bind::nodes::which());
     }
-    inline bool set<transformable>::ready(){
+    inline bool set<any>::ready(){
         return (t.generator != NULL ? false : handle->test());
     }
-    inline void set<transformable>::invoke(){}
+    inline void set<any>::invoke(){}
 
     // }}}
     // {{{ revision
@@ -2655,8 +2650,8 @@ namespace bind {
 
 namespace bind {
 
-    using model::transformable;
-    using model::sizeof_transformable;
+    using model::any;
+    using model::sizeof_any;
 
     template <typename T>
     class ptr {
@@ -2671,12 +2666,12 @@ namespace bind {
             return *desc;
         }
         void init(value_type val = T()){
-            desc = new (memory::cpu::fixed::calloc<sizeof_transformable<T>()>()) transformable(val);
+            desc = new (memory::cpu::fixed::calloc<sizeof_any<T>()>()) any(val);
             valid = true;
         }
         template<typename S>
         void reuse(ptr<S>& f){
-            desc = (transformable*)f.desc; // unsafe - proper convertion should be done
+            desc = (any*)f.desc; // unsafe - proper convertion should be done
             valid = f.valid;
             f.desc = NULL; 
         }
@@ -2738,7 +2733,7 @@ namespace bind {
     private:
         mutable bool valid;
     public:
-        mutable transformable* desc;
+        mutable any* desc;
     };
 
     template<class T>
