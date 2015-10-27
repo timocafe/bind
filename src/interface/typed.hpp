@@ -58,14 +58,14 @@ namespace bind {
     };
     template <typename T> struct ptr_info : public singular_info<T> {
         template<size_t arg> static void deallocate(functor* m){
-            EXTRACT(o); o->desc->generator = NULL;
+            EXTRACT(o); o->impl->generator = NULL;
         }
         template<size_t arg> static void modify_remote(T& obj){
-            bind::select().rsync(obj.desc);
+            bind::select().rsync(obj.impl);
         }
         template<size_t arg> static void modify_local(const T& obj, functor* m){
-            obj.desc->generator = m;
-            bind::select().lsync(obj.desc);
+            obj.impl->generator = m;
+            bind::select().lsync(obj.impl);
             m->arguments[arg] = memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy(m->arguments[arg], &obj, sizeof(T)); 
         }
         template<size_t arg> static void modify(const T& obj, functor* m){

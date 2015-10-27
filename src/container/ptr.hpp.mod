@@ -35,25 +35,19 @@ namespace bind {
 
     template <typename T>
     class ptr {
-    private:
+        typedef T element_type;
         template <typename F> friend class ptr;
         template<typename S> 
         ptr& operator= (const S& val) = delete;
-        mutable bool valid;
     public:
         mutable any* impl;
-        typedef T element_type;
+        mutable any* origin = NULL;
 
         const ptr<T>& unfold() const {
             return *this;
         }
         ptr<T>& unfold(){
-            valid = false;
             return *this;
-        }
-        void init(element_type val = T()){
-            impl = new (memory::cpu::fixed::calloc<sizeof_any<T>()>()) any(val);
-            valid = true;
         }
        ~ptr(){ 
            if(impl) bind::destroy(impl); 
@@ -61,62 +55,32 @@ namespace bind {
         T& operator* () const {
             return *impl;
         }
-
         // constructors //
-        ptr(){ 
-            init();  
+        ptr(element_type val = T()){
+            impl = new (memory::cpu::fixed::calloc<sizeof_any<T>()>()) any(val);
         }
-        ptr(double val){ 
-            init(val);
-        }
-        ptr(std::complex<double> val){
-            init(val);
-        }
-
-        // copy //
         ptr(const ptr& f){
-            init(f.load()); /* important */
-        }
-        template<typename S>
-        ptr(const ptr<S>& f){
-            init((T)f.load());
+            impl = new (memory::cpu::fixed::calloc<sizeof_any<T>()>()) any(T());
+            origin = f.impl;
         }
         ptr& operator= (const ptr& f){
-            *impl = f.load();
+            origin = f.impl;
             return *this;
         }
-        T load() const {
-            if(!valid){
-                bind::sync();
-                valid = true;
-            }
-            return *impl;
-        }
-
         // move //
         ptr(ptr&& f){
-            reuse(f);
-        }
-        template<typename S> 
-        ptr(ptr<S>&& f){
-            reuse(f);
+            impl = f.impl; f.impl = NULL; 
         }
         ptr& operator= (ptr&& f){ 
             if(impl) bind::destroy(impl);
-            reuse(f);
+            impl = f.impl; f.impl = NULL; 
             return *this;
-        }
-        template<typename S>
-        void reuse(ptr<S>& f){
-            impl = f.impl; // unsafe - proper convertion should be done
-            valid = f.valid;
-            f.impl = NULL; 
         }
     };
 
     template<class T>
     std::ostream& operator << (std::ostream& os, const ptr<T>& obj){
-        os << obj.load();
+        os << *obj;
         return os;
     }
 }

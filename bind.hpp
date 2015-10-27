@@ -2080,14 +2080,14 @@ namespace bind {
     };
     template <typename T> struct ptr_info : public singular_info<T> {
         template<size_t arg> static void deallocate(functor* m){
-            EXTRACT(o); o->desc->generator = NULL;
+            EXTRACT(o); o->impl->generator = NULL;
         }
         template<size_t arg> static void modify_remote(T& obj){
-            bind::select().rsync(obj.desc);
+            bind::select().rsync(obj.impl);
         }
         template<size_t arg> static void modify_local(const T& obj, functor* m){
-            obj.desc->generator = m;
-            bind::select().lsync(obj.desc);
+            obj.impl->generator = m;
+            bind::select().lsync(obj.impl);
             m->arguments[arg] = memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy(m->arguments[arg], &obj, sizeof(T)); 
         }
         template<size_t arg> static void modify(const T& obj, functor* m){
@@ -2653,7 +2653,7 @@ namespace bind {
         ptr& operator= (const S& val) = delete;
         mutable bool valid;
     public:
-        mutable any* desc;
+        mutable any* impl;
         typedef T element_type;
 
         const ptr<T>& unfold() const {
@@ -2664,14 +2664,14 @@ namespace bind {
             return *this;
         }
         void init(element_type val = T()){
-            desc = new (memory::cpu::fixed::calloc<sizeof_any<T>()>()) any(val);
+            impl = new (memory::cpu::fixed::calloc<sizeof_any<T>()>()) any(val);
             valid = true;
         }
        ~ptr(){ 
-           if(desc) bind::destroy(desc); 
+           if(impl) bind::destroy(impl); 
         }
         T& operator* () const {
-            return *desc;
+            return *impl;
         }
 
         // constructors //
@@ -2694,7 +2694,7 @@ namespace bind {
             init((T)f.load());
         }
         ptr& operator= (const ptr& f){
-            *desc = f.load();
+            *impl = f.load();
             return *this;
         }
         T load() const {
@@ -2702,7 +2702,7 @@ namespace bind {
                 bind::sync();
                 valid = true;
             }
-            return *desc;
+            return *impl;
         }
 
         // move //
@@ -2714,15 +2714,15 @@ namespace bind {
             reuse(f);
         }
         ptr& operator= (ptr&& f){ 
-            if(desc) bind::destroy(desc);
+            if(impl) bind::destroy(impl);
             reuse(f);
             return *this;
         }
         template<typename S>
         void reuse(ptr<S>& f){
-            desc = (any*)f.desc; // unsafe - proper convertion should be done
+            impl = f.impl; // unsafe - proper convertion should be done
             valid = f.valid;
-            f.desc = NULL; 
+            f.impl = NULL; 
         }
     };
 
