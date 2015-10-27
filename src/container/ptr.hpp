@@ -77,10 +77,6 @@ namespace bind {
         ptr(const ptr& f){
             init(f.load()); /* important */
         }
-        template<typename S>
-        ptr(const ptr<S>& f){
-            init((T)f.load());
-        }
         ptr& operator= (const ptr& f){
             *impl = f.load();
             return *this;
@@ -97,17 +93,12 @@ namespace bind {
         ptr(ptr&& f){
             reuse(f);
         }
-        template<typename S> 
-        ptr(ptr<S>&& f){
-            reuse(f);
-        }
         ptr& operator= (ptr&& f){ 
             if(impl) bind::destroy(impl);
             reuse(f);
             return *this;
         }
-        template<typename S>
-        void reuse(ptr<S>& f){
+        void reuse(ptr& f){
             impl = f.impl; // unsafe - proper convertion should be done
             valid = f.valid;
             f.impl = NULL; 
