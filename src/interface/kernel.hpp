@@ -40,10 +40,10 @@ namespace bind {
         inline void* operator new (size_t size){
             return memory::cpu::instr_bulk::malloc<sizeof(K)+sizeof(void*)*inliner::arity>();
         }
-        virtual bool ready(){ 
+        virtual bool ready() override { 
             return inliner::ready(this);
         }
-        virtual void invoke(){
+        virtual void invoke() override {
             inliner::invoke(this);
             inliner::cleanup(this);
         }

@@ -38,8 +38,8 @@ namespace bind { namespace core {
         template<class T> using collective = controller::channel_type::collective_type<T>;
         static void spawn(any& v);
         set(any& v);
-        virtual void invoke();
-        virtual bool ready();
+        virtual void invoke() override;
+        virtual bool ready() override;
     private:
         collective<any>* handle;
         any& t;
@@ -51,8 +51,8 @@ namespace bind { namespace core {
         template<class T> using collective = controller::channel_type::collective_type<T>;
         static void spawn(revision& r);
         set(revision& r);
-        virtual void invoke();
-        virtual bool ready();
+        virtual void invoke() override;
+        virtual bool ready() override;
     private:
         void operator += (rank_t rank);
     private:

@@ -15,8 +15,17 @@ void reverse(vector<T>& vec){
 int main(){
 
     vector<int> a(100);
+    bind::cpu([](vector<int>& vec){
+        for(int i = 0; i < vec.size(); i++) vec[i] = i;
+    }, a);
+
     bind::cpu(reverse<int>, a);
-    bind::cpu([](vector<int>& vec){ reverse(vec); }, a);
+
+    bind::cpu([](vector<int>& vec){
+        for(int i = 0; i < vec.size(); i++) std::cout << vec[i] << " ";
+    }, a);
+
+
     bind::sync();
 
     return 0;

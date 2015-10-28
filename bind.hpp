@@ -1629,8 +1629,8 @@ namespace bind { namespace core {
         template<class T> using collective = controller::channel_type::collective_type<T>;
         static void spawn(any& v);
         get(any& v);
-        virtual void invoke();
-        virtual bool ready();
+        virtual void invoke() override;
+        virtual bool ready() override;
     private:
         collective<any>* handle;
         any& t;
@@ -1642,8 +1642,8 @@ namespace bind { namespace core {
         template<class T> using collective = controller::channel_type::collective_type<T>;
         static void spawn(revision& r);
         get(revision& r);
-        virtual void invoke();
-        virtual bool ready();
+        virtual void invoke() override;
+        virtual bool ready() override;
     private:
         void operator += (rank_t rank);
     private:
@@ -1669,8 +1669,8 @@ namespace bind { namespace core {
         template<class T> using collective = controller::channel_type::collective_type<T>;
         static void spawn(any& v);
         set(any& v);
-        virtual void invoke();
-        virtual bool ready();
+        virtual void invoke() override;
+        virtual bool ready() override;
     private:
         collective<any>* handle;
         any& t;
@@ -1682,8 +1682,8 @@ namespace bind { namespace core {
         template<class T> using collective = controller::channel_type::collective_type<T>;
         static void spawn(revision& r);
         set(revision& r);
-        virtual void invoke();
-        virtual bool ready();
+        virtual void invoke() override;
+        virtual bool ready() override;
     private:
         void operator += (rank_t rank);
     private:
@@ -2513,10 +2513,10 @@ namespace bind {
         inline void* operator new (size_t size){
             return memory::cpu::instr_bulk::malloc<sizeof(K)+sizeof(void*)*inliner::arity>();
         }
-        virtual bool ready(){ 
+        virtual bool ready() override { 
             return inliner::ready(this);
         }
-        virtual void invoke(){
+        virtual void invoke() override {
             inliner::invoke(this);
             inliner::cleanup(this);
         }
