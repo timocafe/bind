@@ -2954,31 +2954,34 @@ namespace bind {
 
     template<class T, class Allocator>
     void vector<T,Allocator>::swap(vector<T,Allocator>& r){
-        //bind::ext::swap(*this, r);
         std::swap(this->cached_size_, r.cached_size_);
+        std::swap(this->bind_allocator.after->data, r.bind_allocator.after->data);
     }
 
     template<class T, class Allocator>
     size_t vector<T,Allocator>::size() const {
-        return cached_size();
+        if(this->bind_allocator.after->valid())
+            return bind::delegated(*this).size_;
+        else
+            return cached_size();
     }
 
     template<class T, class Allocator>
     bool vector<T,Allocator>::empty() const {
-        return (bind::weak(*this) || (cached_size() == 0));
+        return ((size() == 0) || bind::weak(*this));
     }
 
     template<class T, class Allocator>
     void vector<T,Allocator>::resize(size_t sz){
         reserve(sz);
         cached_size_ = sz;
-        bind::cpu(detail::set_size<T,Allocator>, *this, sz);
+        if(this->bind_allocator.after->valid())
+            bind::delegated(*this).size_ = sz;
     }
 
     template<typename T, class Allocator>
     void vector<T,Allocator>::clear(){
-        vector tmp;
-        this->swap(tmp);
+        this->resize(0);
     }
 
     /* using data-access methods (load required if not async) */
@@ -3057,31 +3060,27 @@ namespace bind {
 
     template<class T, class Allocator>
     void vector<T,Allocator>::push_back(value_type value){
-        auto_reserve();
-        bind::sync();
-        (*this)[cached_size_] = value;
-        bind::delegated(*this).size_ = ++cached_size_;
+        (*this)[size()] = value;
+        bind::delegated(*this).size_++;
     }
 
     template<class T, class Allocator>
     void vector<T,Allocator>::pop_back(){
-        bind::delegated(*this).size_ = --cached_size_;
+        bind::delegated(*this).size_--;
     }
 
     template<typename T, class Allocator>
     typename vector<T,Allocator>::iterator vector<T,Allocator>::insert(const_iterator position, value_type val){
-        auto_reserve();
-        bind::sync();
         for(int i = size(); i > (position-this->cbegin()); i--) (*this)[i] = (*this)[i-1];
         (*this)[position-this->cbegin()] = val;
-        bind::delegated(*this).size_ = ++cached_size_;
+        bind::delegated(*this).size_++;
         return (this->begin()+(position-this->cbegin()));
     }
 
     template<typename T, class Allocator>
     typename vector<T,Allocator>::iterator vector<T,Allocator>::erase(const_iterator position){
         for(int i = (position-this->cbegin()); i < size()-1; i++) (*this)[i] = (*this)[i+1];
-        bind::delegated(*this).size_ = --cached_size_;
+        bind::delegated(*this).size_--;
         return (this->begin()+(position-this->cbegin()));
     }
 
