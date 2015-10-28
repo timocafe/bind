@@ -64,18 +64,18 @@ namespace bind {
         void init(T value);
         void auto_reserve();
 
-        virtual void reserve(size_t n);
-        virtual void shrink_to_fit();
-        virtual size_t measure() const; // causes sync, updates cached size
-        virtual void load() const;      // causes sync, sets right pointers
+        void reserve(size_t n);
+        void shrink_to_fit();
+        size_t measure() const; // causes sync, updates cached size
+        void load() const;      // causes sync, sets right pointers
 
         /* using cached size */
 
-        virtual void swap(vector<T,Allocator>& r);
-        virtual size_t size() const;
-        virtual bool empty() const;
-        virtual void resize(size_t sz);
-        virtual void clear();
+        void swap(vector<T,Allocator>& r);
+        size_t size() const;
+        bool empty() const;
+        void resize(size_t sz);
+        void clear();
 
         /* using data-access (load required if not async) */
 
@@ -95,10 +95,10 @@ namespace bind {
         const_iterator cbegin() const;
         const_iterator cend() const;
 
-        virtual void push_back(value_type value);
-        virtual void pop_back();
-        virtual iterator insert(const_iterator position, value_type val);
-        virtual iterator erase(const_iterator position);
+        void push_back(value_type value);
+        void pop_back();
+        iterator insert(const_iterator position, value_type val);
+        iterator erase(const_iterator position);
     private:
         mutable size_t cached_size_;
     public:
