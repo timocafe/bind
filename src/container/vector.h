@@ -110,13 +110,11 @@ namespace bind {
 }
 
 namespace std {
-
     template<typename T>
     class vector<T, bind::allocator> : public bind::vector<T, bind::allocator> {
     public:
-        vector(int n){
-            printf("my vector!\n");
-        }
+        template<typename... Args>
+        vector(Args&&... args) : bind::vector<T, bind::allocator>(std::forward<Args>(args)...) { }
     };
 }
 
