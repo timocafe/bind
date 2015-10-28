@@ -2290,44 +2290,35 @@ namespace bind {
     template <typename T>
     struct info {
         typedef typename versioned_info<has_versioning<T>::value,T>::type typed;
-        template <typename U> static U& unfold(T& naked){ return *static_cast<U*>(&naked); }
     };
     template <typename T>
     struct info <const T> {
         typedef typename const_versioned_info<has_versioning<T>::value,T>::type typed;
-        template <typename U> static const T& unfold(const T& naked){ return naked; }
     };
 
     template <typename T>
     struct info <volatile T> {
         typedef write_iteratable_info<volatile T> typed;
-        template <typename U> static volatile T& unfold(volatile T& naked){ return naked; }
     };
 
     template <typename S>
     struct info < ptr<S> > {
-        typedef ptr<S> type;
-        typedef ptr_info<type> typed; 
-        template <typename U> static type& unfold(type& folded){ return folded.unfold(); }
+        typedef ptr_info<ptr<S> > typed; 
     };
 
     template <typename S>
     struct info < const ptr<S> > { 
-        typedef const ptr<S> type;
-        typedef read_ptr_info<type> typed; 
-        template <typename U> static type& unfold(type& folded){ return folded.unfold(); }
+        typedef read_ptr_info<const ptr<S> > typed; 
     };
 
     template <>
     struct info < size_t > {
-        typedef size_t type;
-        typedef singular_inplace_info<type> typed; 
-        template <typename U> static type& unfold(type& naked){ return naked; }
+        typedef singular_inplace_info<size_t> typed; 
     };
 
     // }}}
 
-    #define BIND_DELEGATE(...)       struct      bind_type_structure { __VA_ARGS__ }; \
+    #define BIND_DELEGATE(...)       struct  bind_type_structure { __VA_ARGS__ }; \
                                      mutable allocator_type bind_allocator;
 
     #define BIND_VAR_LENGTH 1
@@ -2454,7 +2445,7 @@ namespace bind {
         static inline void latch(functor* o, TF&... args){
             if(bind::select().get_node().remote())   { expand_modify_remote<0>(args...); return; }
             else if(bind::select().get_node().local()) expand_modify_local<0>(o, args...);
-            else                                           expand_modify<0>(o, args...);
+            else                                       expand_modify<0>(o, args...);
             expand_pin<0,TF...>(o) || bind::select().queue(o);
         }
         static inline void cleanup(functor* o){
@@ -2501,7 +2492,7 @@ namespace bind {
         }
         template<size_t...I, typename... Args>
         static void expand_spawn(std::index_sequence<I...>, Args&... args){
-            inliner::latch(new kernel(), info<Args>::template unfold<typename inliner::template get_type<I> >(args)...);
+            inliner::latch(new kernel(), args...);
         }
         template<typename... Args>
         static inline void spawn(Args&... args){
@@ -2651,21 +2642,12 @@ namespace bind {
         template <typename F> friend class ptr;
         template<typename S> 
         ptr& operator= (const S& val) = delete;
-        mutable bool valid;
     public:
         mutable any* impl;
         typedef T element_type;
 
-        const ptr<T>& unfold() const {
-            return *this;
-        }
-        ptr<T>& unfold(){
-            valid = false;
-            return *this;
-        }
         void init(element_type val = T()){
             impl = new (memory::cpu::fixed::calloc<sizeof_any<T>()>()) any(val);
-            valid = true;
         }
        ~ptr(){ 
            if(impl) bind::destroy(impl); 
@@ -2673,7 +2655,6 @@ namespace bind {
         T& operator* () const {
             return *impl;
         }
-
         // constructors //
         ptr(){ 
             init();  
@@ -2684,24 +2665,16 @@ namespace bind {
         ptr(std::complex<double> val){
             init(val);
         }
-
         // copy //
         ptr(const ptr& f){
             init(f.load()); /* important */
-        }
-        template<typename S>
-        ptr(const ptr<S>& f){
-            init((T)f.load());
         }
         ptr& operator= (const ptr& f){
             *impl = f.load();
             return *this;
         }
         T load() const {
-            if(!valid){
-                bind::sync();
-                valid = true;
-            }
+            bind::sync();
             return *impl;
         }
 
@@ -2709,19 +2682,13 @@ namespace bind {
         ptr(ptr&& f){
             reuse(f);
         }
-        template<typename S> 
-        ptr(ptr<S>&& f){
-            reuse(f);
-        }
         ptr& operator= (ptr&& f){ 
             if(impl) bind::destroy(impl);
             reuse(f);
             return *this;
         }
-        template<typename S>
-        void reuse(ptr<S>& f){
+        void reuse(ptr& f){
             impl = f.impl; // unsafe - proper convertion should be done
-            valid = f.valid;
             f.impl = NULL; 
         }
     };
@@ -2987,9 +2954,10 @@ namespace bind {
 
     template<class T, class Allocator>
     size_t vector<T,Allocator>::measure() const {
-        bind::ptr<size_t> measured;
+        bind::ptr<size_t> measured(0);
         bind::cpu(detail::measure_size<T,Allocator>, *this, measured);
-        cached_size_ = measured.load();
+        bind::sync();
+        cached_size_ = *measured;
         return cached_size();
     }
 

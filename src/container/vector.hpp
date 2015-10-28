@@ -127,9 +127,10 @@ namespace bind {
 
     template<class T, class Allocator>
     size_t vector<T,Allocator>::measure() const {
-        bind::ptr<size_t> measured;
+        bind::ptr<size_t> measured(0);
         bind::cpu(detail::measure_size<T,Allocator>, *this, measured);
-        cached_size_ = measured.load();
+        bind::sync();
+        cached_size_ = *measured;
         return cached_size();
     }
 

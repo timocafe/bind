@@ -39,21 +39,12 @@ namespace bind {
         template <typename F> friend class ptr;
         template<typename S> 
         ptr& operator= (const S& val) = delete;
-        mutable bool valid;
     public:
         mutable any* impl;
         typedef T element_type;
 
-        const ptr<T>& unfold() const {
-            return *this;
-        }
-        ptr<T>& unfold(){
-            valid = false;
-            return *this;
-        }
         void init(element_type val = T()){
             impl = new (memory::cpu::fixed::calloc<sizeof_any<T>()>()) any(val);
-            valid = true;
         }
        ~ptr(){ 
            if(impl) bind::destroy(impl); 
@@ -61,7 +52,6 @@ namespace bind {
         T& operator* () const {
             return *impl;
         }
-
         // constructors //
         ptr(){ 
             init();  
@@ -72,7 +62,6 @@ namespace bind {
         ptr(std::complex<double> val){
             init(val);
         }
-
         // copy //
         ptr(const ptr& f){
             init(f.load()); /* important */
@@ -82,10 +71,7 @@ namespace bind {
             return *this;
         }
         T load() const {
-            if(!valid){
-                bind::sync();
-                valid = true;
-            }
+            bind::sync();
             return *impl;
         }
 
@@ -100,7 +86,6 @@ namespace bind {
         }
         void reuse(ptr& f){
             impl = f.impl; // unsafe - proper convertion should be done
-            valid = f.valid;
             f.impl = NULL; 
         }
     };

@@ -49,7 +49,7 @@ namespace bind {
         }
         template<size_t...I, typename... Args>
         static void expand_spawn(std::index_sequence<I...>, Args&... args){
-            inliner::latch(new kernel(), info<Args>::template unfold<typename inliner::template get_type<I> >(args)...);
+            inliner::latch(new kernel(), args...);
         }
         template<typename... Args>
         static inline void spawn(Args&... args){

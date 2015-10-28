@@ -268,44 +268,35 @@ namespace bind {
     template <typename T>
     struct info {
         typedef typename versioned_info<has_versioning<T>::value,T>::type typed;
-        template <typename U> static U& unfold(T& naked){ return *static_cast<U*>(&naked); }
     };
     template <typename T>
     struct info <const T> {
         typedef typename const_versioned_info<has_versioning<T>::value,T>::type typed;
-        template <typename U> static const T& unfold(const T& naked){ return naked; }
     };
 
     template <typename T>
     struct info <volatile T> {
         typedef write_iteratable_info<volatile T> typed;
-        template <typename U> static volatile T& unfold(volatile T& naked){ return naked; }
     };
 
     template <typename S>
     struct info < ptr<S> > {
-        typedef ptr<S> type;
-        typedef ptr_info<type> typed; 
-        template <typename U> static type& unfold(type& folded){ return folded.unfold(); }
+        typedef ptr_info<ptr<S> > typed; 
     };
 
     template <typename S>
     struct info < const ptr<S> > { 
-        typedef const ptr<S> type;
-        typedef read_ptr_info<type> typed; 
-        template <typename U> static type& unfold(type& folded){ return folded.unfold(); }
+        typedef read_ptr_info<const ptr<S> > typed; 
     };
 
     template <>
     struct info < size_t > {
-        typedef size_t type;
-        typedef singular_inplace_info<type> typed; 
-        template <typename U> static type& unfold(type& naked){ return naked; }
+        typedef singular_inplace_info<size_t> typed; 
     };
 
     // }}}
 
-    #define BIND_DELEGATE(...)       struct      bind_type_structure { __VA_ARGS__ }; \
+    #define BIND_DELEGATE(...)       struct  bind_type_structure { __VA_ARGS__ }; \
                                      mutable allocator_type bind_allocator;
 
     #define BIND_VAR_LENGTH 1
