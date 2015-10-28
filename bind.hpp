@@ -1705,6 +1705,10 @@ namespace bind { namespace nodes {
     inline rank_t which(){
         return select().get_node().which();
     }
+    template<typename V>
+    inline rank_t which(const V& o){
+        return o.bind_allocator.desc->current->owner;
+    }
 } }
 
 namespace bind { namespace core {
@@ -2031,11 +2035,6 @@ namespace bind {
     template<typename V>
     inline size_t extent(V& obj){ 
         return obj.bind_allocator.desc->extent;
-    }
-
-    template<typename V>
-    inline rank_t get_owner(const V& o){
-        return o.bind_allocator.desc->current->owner;
     }
 
     template<typename V>

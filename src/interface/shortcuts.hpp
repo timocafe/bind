@@ -62,11 +62,6 @@ namespace bind {
     }
 
     template<typename V>
-    inline rank_t get_owner(const V& o){
-        return o.bind_allocator.desc->current->owner;
-    }
-
-    template<typename V>
     inline bool locked_once(const V& o){
         return o.bind_allocator.before->locked_once();
     }

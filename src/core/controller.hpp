@@ -38,6 +38,10 @@ namespace bind { namespace nodes {
     inline rank_t which(){
         return select().get_node().which();
     }
+    template<typename V>
+    inline rank_t which(const V& o){
+        return o.bind_allocator.desc->current->owner;
+    }
 } }
 
 namespace bind { namespace core {
