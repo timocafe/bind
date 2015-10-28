@@ -25,27 +25,27 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef BIND_ASSOCIATED_ITERATOR
-#define BIND_ASSOCIATED_ITERATOR
+#ifndef BIND_ITERATOR
+#define BIND_ITERATOR
 
 namespace bind {
 
     template<class Container>
-    class associated_iterator {
+    class iterator {
     public:
         typedef Container container_type;
         typedef typename Container::value_type value_type;
 
-        associated_iterator() : container(NULL), position(0) {}
-        associated_iterator(container_type& owner, size_t p) : container(&owner), position(p) {}
+        iterator() : container(NULL), position(0) {}
+        iterator(container_type& owner, size_t p) : container(&owner), position(p) {}
         void operator++ (){
             position++;
         }
-        associated_iterator& operator += (size_t offset){
+        iterator& operator += (size_t offset){
             position += offset;
             return *this;
         }
-        associated_iterator& operator -= (size_t offset){
+        iterator& operator -= (size_t offset){
             position -= offset;
             return *this;
         }
@@ -64,37 +64,37 @@ namespace bind {
         size_t position;
     private:
         template<typename T>
-        friend bool operator == (const associated_iterator<T>& lhs, const associated_iterator<T>& rhs);
+        friend bool operator == (const iterator<T>& lhs, const iterator<T>& rhs);
         container_type* container;
     };
 
     template <class Container> 
-    bool operator == (const associated_iterator<Container>& lhs, const associated_iterator<Container>& rhs){
+    bool operator == (const iterator<Container>& lhs, const iterator<Container>& rhs){
         return (lhs.position == rhs.position && lhs.container == rhs.container);
     }
 
     template <class Container, class OtherContainer> 
-    size_t operator - (const associated_iterator<Container>& lhs, const associated_iterator<OtherContainer>& rhs){ 
+    size_t operator - (const iterator<Container>& lhs, const iterator<OtherContainer>& rhs){ 
         return lhs.position - rhs.position;
     }
 
     template <class Container> 
-    associated_iterator<Container> operator + (associated_iterator<Container> lhs, size_t offset){ 
+    iterator<Container> operator + (iterator<Container> lhs, size_t offset){ 
         return (lhs += offset);
     }
 
     template <class Container> 
-    associated_iterator<Container> operator - (associated_iterator<Container> lhs, size_t offset){ 
+    iterator<Container> operator - (iterator<Container> lhs, size_t offset){ 
         return (lhs -= offset);
     }
 
     template <class Container> 
-    bool operator < (const associated_iterator<Container>& lhs, const associated_iterator<Container>& rhs){
+    bool operator < (const iterator<Container>& lhs, const iterator<Container>& rhs){
         return (lhs.position < rhs.position);
     }
 
     template <class Container> 
-    bool operator > (const associated_iterator<Container>& lhs, const associated_iterator<Container>& rhs){
+    bool operator > (const iterator<Container>& lhs, const iterator<Container>& rhs){
         return (lhs.position > rhs.position);
     }
 
@@ -103,7 +103,7 @@ namespace bind {
 namespace std {
 
     template<class Container>
-    class iterator_traits<bind::associated_iterator<Container> > {
+    class iterator_traits<bind::iterator<Container> > {
     public:
         typedef typename Container::value_type value_type;
     };

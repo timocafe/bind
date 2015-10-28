@@ -2688,54 +2688,88 @@ namespace bind {
 
 #endif
 
-#ifndef BIND_CONTAINER_BLOCK
-#define BIND_CONTAINER_BLOCK
+#ifndef BIND_ITERATOR
+#define BIND_ITERATOR
 
 namespace bind {
-     
-    template<typename T, class Allocator = bind::allocator> class block;
-    namespace detail { 
-        template<typename T>
-        void fill_value(volatile block<T>& a, T& value){
-            block<T>& a_ = const_cast<block<T>&>(a);
-            size_t size = a_.num_rows()*a_.num_cols();
-            T* ad = a_.data();
-            for(size_t i = 0; i < size; ++i) ad[i] = value;
+
+    template<class Container>
+    class iterator {
+    public:
+        typedef Container container_type;
+        typedef typename Container::value_type value_type;
+
+        iterator() : container(NULL), position(0) {}
+        iterator(container_type& owner, size_t p) : container(&owner), position(p) {}
+        void operator++ (){
+            position++;
         }
+        iterator& operator += (size_t offset){
+            position += offset;
+            return *this;
+        }
+        iterator& operator -= (size_t offset){
+            position -= offset;
+            return *this;
+        }
+        value_type& operator* (){
+            return (*container)[position];
+        }
+        const value_type& operator* () const {
+            return (*container)[position];
+        }
+        container_type& get_container(){
+            return *container;
+        }
+        const container_type& get_container() const {
+            return *container;
+        }
+        size_t position;
+    private:
+        template<typename T>
+        friend bool operator == (const iterator<T>& lhs, const iterator<T>& rhs);
+        container_type* container;
+    };
+
+    template <class Container> 
+    bool operator == (const iterator<Container>& lhs, const iterator<Container>& rhs){
+        return (lhs.position == rhs.position && lhs.container == rhs.container);
     }
 
-    template <class T, class Allocator>
-    class block {
+    template <class Container, class OtherContainer> 
+    size_t operator - (const iterator<Container>& lhs, const iterator<OtherContainer>& rhs){ 
+        return lhs.position - rhs.position;
+    }
+
+    template <class Container> 
+    iterator<Container> operator + (iterator<Container> lhs, size_t offset){ 
+        return (lhs += offset);
+    }
+
+    template <class Container> 
+    iterator<Container> operator - (iterator<Container> lhs, size_t offset){ 
+        return (lhs -= offset);
+    }
+
+    template <class Container> 
+    bool operator < (const iterator<Container>& lhs, const iterator<Container>& rhs){
+        return (lhs.position < rhs.position);
+    }
+
+    template <class Container> 
+    bool operator > (const iterator<Container>& lhs, const iterator<Container>& rhs){
+        return (lhs.position > rhs.position);
+    }
+
+}
+
+namespace std {
+
+    template<class Container>
+    class iterator_traits<bind::iterator<Container> > {
     public:
-        typedef Allocator allocator_type;
-        typedef T value_type;
-        block(size_t m, size_t n) : bind_allocator(sizeof(T)*m*n), rows(m), cols(n) {}
-        void init(T value){
-            bind::cpu(detail::fill_value<T>, *this, value);
-        }
-        value_type& operator()(size_t i, size_t j){
-            return data()[ j*rows + i ];
-        }
-        const value_type& operator()(size_t i, size_t j) const {
-            return data()[ j*rows + i ];
-        }
-        value_type* data() volatile {
-            return bind::delegated(*this).data;
-        }
-        const value_type* data() const volatile {
-            return bind::delegated(*this).data;
-        }
-        size_t num_rows() const {
-            return rows;
-        }
-        size_t num_cols() const {
-            return cols;
-        }
-        size_t rows;
-        size_t cols;
-    BIND_DELEGATE(
-        value_type data[ BIND_VAR_LENGTH ]; 
-    )};
+        typedef typename Container::value_type value_type;
+    };
 
 }
 
@@ -3083,6 +3117,59 @@ namespace bind {
         bind::delegated(*this).size_--;
         return (this->begin()+(position-this->cbegin()));
     }
+
+}
+
+#endif
+
+#ifndef BIND_CONTAINER_BLOCK
+#define BIND_CONTAINER_BLOCK
+
+namespace bind {
+     
+    template<typename T, class Allocator = bind::allocator> class block;
+    namespace detail { 
+        template<typename T>
+        void fill_value(volatile block<T>& a, T& value){
+            block<T>& a_ = const_cast<block<T>&>(a);
+            size_t size = a_.num_rows()*a_.num_cols();
+            T* ad = a_.data();
+            for(size_t i = 0; i < size; ++i) ad[i] = value;
+        }
+    }
+
+    template <class T, class Allocator>
+    class block {
+    public:
+        typedef Allocator allocator_type;
+        typedef T value_type;
+        block(size_t m, size_t n) : bind_allocator(sizeof(T)*m*n), rows(m), cols(n) {}
+        void init(T value){
+            bind::cpu(detail::fill_value<T>, *this, value);
+        }
+        value_type& operator()(size_t i, size_t j){
+            return data()[ j*rows + i ];
+        }
+        const value_type& operator()(size_t i, size_t j) const {
+            return data()[ j*rows + i ];
+        }
+        value_type* data() volatile {
+            return bind::delegated(*this).data;
+        }
+        const value_type* data() const volatile {
+            return bind::delegated(*this).data;
+        }
+        size_t num_rows() const {
+            return rows;
+        }
+        size_t num_cols() const {
+            return cols;
+        }
+        size_t rows;
+        size_t cols;
+    BIND_DELEGATE(
+        value_type data[ BIND_VAR_LENGTH ]; 
+    )};
 
 }
 

@@ -135,9 +135,10 @@
 // }}}
 // {{{ bonus container package (requires :*)
 #include "container/ptr.hpp"
-#include "container/block.hpp"
+#include "container/iterator.hpp"
 #include "container/vector.h"
 #include "container/vector.hpp"
+#include "container/block.hpp"
 // }}}
 // {{{ bonus utils package (requires :*)
 #include "utils/timer.hpp"
