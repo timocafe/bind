@@ -2293,16 +2293,6 @@ namespace bind {
 
     // {{{ compile-time type info: specialization for forwarded types
 
-    template <typename T>
-    struct is_polymorphic {
-        template <typename T1> static typename T1::async_type test(int);
-        template <typename>    static void test(...);
-        enum { value = !std::is_void<decltype(test<T>(0))>::value };
-    };
-    template <bool HAS, typename T> struct checked_get_async_type { typedef int type; };
-    template <typename T> struct checked_get_async_type<true, T>  { typedef typename T::async_type type; };
-    template <typename T> struct get_async_type { typedef typename checked_get_async_type<is_polymorphic<T>::value, T>::type type; };
-
     template <typename T> struct has_versioning {
         template <typename T1> static typename T1::bind_type_structure test(int);
         template <typename>    static void test(...);
@@ -2541,22 +2531,6 @@ namespace bind {
 
     using model::revision;
 
-    namespace ext {
-
-        template<typename V>
-        void swap(V& left, V& right){
-            // swapping allocators should be better
-            std::swap(left.bind_allocator.desc, right.bind_allocator.desc);
-            left.bind_allocator.after = left.bind_allocator.desc->current;
-            right.bind_allocator.after = right.bind_allocator.desc->current;
-        }
-
-        template <typename T> static void transform(const T& obj){
-            if(!is_polymorphic<T>::value) return;
-            new ((void*)&obj) typename get_async_type<T>::type();
-        }
-    }
-
     template <typename T> static T& load(T& obj){ 
         bind::select().touch(obj.bind_allocator.desc, bind::rank());
         bind::sync(); 
@@ -2572,13 +2546,11 @@ namespace bind {
     }
 
     template <typename T> static void revise(const T& obj){
-        ext::transform(obj);
         revision& c = *obj.bind_allocator.before; if(c.valid()) return;
         c.embed(obj.bind_allocator.calloc(c.spec));
     }
 
     template <typename T> static void revise(volatile T& obj){
-        ext::transform(obj);
         revision& c = *obj.bind_allocator.after; if(c.valid()) return;
         revision& p = *obj.bind_allocator.before;
         if(p.valid() && p.locked_once() && !p.referenced() && c.spec.conserves(p.spec)) c.reuse(p);
@@ -2586,7 +2558,6 @@ namespace bind {
     }
 
     template <typename T> static void revise(T& obj){
-        ext::transform(obj);
         revision& c = *obj.bind_allocator.after; if(c.valid()) return;
         revision& p = *obj.bind_allocator.before;
         if(!p.valid()) c.embed(obj.bind_allocator.calloc(c.spec));
@@ -2855,7 +2826,6 @@ namespace bind {
 }
 
 namespace std {
-
     template<typename T>
     class vector<T, bind::allocator> : public bind::vector<T, bind::allocator> {
     public:
@@ -2984,7 +2954,7 @@ namespace bind {
 
     template<class T, class Allocator>
     void vector<T,Allocator>::swap(vector<T,Allocator>& r){
-        bind::ext::swap(*this, r);
+        //bind::ext::swap(*this, r);
         std::swap(this->cached_size_, r.cached_size_);
     }
 
@@ -3112,158 +3082,6 @@ namespace bind {
     typename vector<T,Allocator>::iterator vector<T,Allocator>::erase(const_iterator position){
         for(int i = (position-this->cbegin()); i < size()-1; i++) (*this)[i] = (*this)[i+1];
         bind::delegated(*this).size_ = --cached_size_;
-        return (this->begin()+(position-this->cbegin()));
-    }
-
-}
-
-#endif
-
-#ifndef BIND_CONTAINER_VECTOR_VECTOR_ASYNC_H
-#define BIND_CONTAINER_VECTOR_VECTOR_ASYNC_H
-
-
-namespace bind {
-
-    template <class T, class Allocator>
-    class vector_async : public vector<T,Allocator> {
-    public:
-        typedef typename vector<T,Allocator>::allocator_type allocator_type;
-        typedef typename vector<T,Allocator>::value_type value_type;
-        typedef typename vector<T,Allocator>::size_type size_type;
-        typedef typename vector<T,Allocator>::difference_type difference_type;
-        typedef typename vector<T,Allocator>::iterator iterator;
-        typedef typename vector<T,Allocator>::const_iterator const_iterator;
-        explicit vector_async(){}
-
-        /* disabled methods, sync mode only (throw) */
-
-        /* from vector.h */
-        /* vector(size_t n, T value = T());
-           vector(const vector& a);
-           vector& operator = (const vector& rhs);
-           template<class OtherAllocator>
-           vector& operator = (const vector<T,OtherAllocator>& rhs);
-           
-           void init(T value);
-           void auto_reserve();*/
-
-        virtual void reserve(size_t n);
-        virtual void shrink_to_fit();
-        virtual size_t measure() const;
-        virtual void load() const;
-
-        /* using immidiate size */
-
-        virtual void swap(vector<T,Allocator>& r);
-        virtual size_t size() const;
-        virtual bool empty() const;
-        virtual void resize(size_t sz);
-        virtual void clear();
-
-        /* using data-access */
-
-        /* from vector.h */
-        /* value_type* data();
-           value_type& operator[](size_t i);
-           value_type& at(size_type i);
-           value_type& front();
-           value_type& back();
-           iterator begin();
-           iterator end(); */
-
-        virtual void push_back(value_type value);
-        virtual void pop_back();
-        virtual iterator insert(const_iterator position, value_type val);
-        virtual iterator erase(const_iterator position);
-    };
-
-}
-
-#endif
-
-#ifndef BIND_CONTAINER_VECTOR_VECTOR_ASYNC_HPP
-#define BIND_CONTAINER_VECTOR_VECTOR_ASYNC_HPP
-
-namespace bind {
-
-    /* disabled methods, sync mode only (throw) */
-
-    template<class T, class Allocator>
-    void vector_async<T,Allocator>::reserve(size_t sz){
-        throw std::runtime_error("Error: can't realloc in async mode.");
-    }
-
-    template<class T, class Allocator>
-    void vector_async<T,Allocator>::shrink_to_fit(){
-        throw std::runtime_error("Error: can't realloc in async mode.");
-    }
-
-    template<class T, class Allocator>
-    size_t vector_async<T,Allocator>::measure() const {
-        throw std::runtime_error("Error: can't measure in async mode.");
-    }
-
-    template<typename T, class Allocator>
-    void vector_async<T,Allocator>::load() const {
-        throw std::runtime_error("Error: can't load in async mode.");
-    }
-
-    /* using immidiate size */
-
-    template<class T, class Allocator>
-    void vector_async<T,Allocator>::swap(vector<T,Allocator>& r){
-        std::swap(this->bind_allocator.after->data, r.bind_allocator.after->data);
-    }
-
-    template<class T, class Allocator>
-    size_t vector_async<T,Allocator>::size() const {
-        return bind::delegated(*this).size_;
-    }
-
-    template<class T, class Allocator>
-    bool vector_async<T,Allocator>::empty() const {
-        return (size() == 0);
-    }
-
-    template<class T, class Allocator>
-    void vector_async<T,Allocator>::resize(size_t sz){
-        bind::delegated(*this).size_ = sz;
-    }
-
-    template<typename T, class Allocator>
-    void vector_async<T,Allocator>::clear(){
-        this->resize(0);
-    }
-
-    /* using data-access */
-
-    template<class T, class Allocator>
-    void vector_async<T,Allocator>::push_back(value_type value){
-        if(this->size() == this->capacity()) printf("Capacity overflow!\n");
-        (*this)[size()] = value;
-        resize(size()+1);
-    }
-
-    template<class T, class Allocator>
-    void vector_async<T,Allocator>::pop_back(){
-        resize(size()-1);
-    }
-
-    template<typename T, class Allocator>
-    typename vector_async<T,Allocator>::iterator vector_async<T,Allocator>::insert(const_iterator position, value_type val){
-        for(int i = size(); i > (position-this->cbegin()); i--)
-            (*this)[i] = (*this)[i-1];
-        (*this)[position-this->cbegin()] = val;
-        resize(size()+1);
-        return (this->begin()+(position-this->cbegin()));
-    }
-
-    template<typename T, class Allocator>
-    typename vector_async<T,Allocator>::iterator vector_async<T,Allocator>::erase(const_iterator position){
-        for(int i = (position-this->cbegin()); i < size()-1; i++)
-            (*this)[i] = (*this)[i+1];
-        resize(size()-1);
         return (this->begin()+(position-this->cbegin()));
     }
 

@@ -138,8 +138,6 @@
 #include "container/block.hpp"
 #include "container/vector.h"
 #include "container/vector.hpp"
-#include "container/vector_async.h"
-#include "container/vector_async.hpp"
 // }}}
 // {{{ bonus utils package (requires :*)
 #include "utils/timer.hpp"

@@ -143,7 +143,7 @@ namespace bind {
 
     template<class T, class Allocator>
     void vector<T,Allocator>::swap(vector<T,Allocator>& r){
-        bind::ext::swap(*this, r);
+        //bind::ext::swap(*this, r);
         std::swap(this->cached_size_, r.cached_size_);
     }
 

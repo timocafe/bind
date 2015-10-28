@@ -266,16 +266,6 @@ namespace bind {
 
     // {{{ compile-time type info: specialization for forwarded types
 
-    template <typename T>
-    struct is_polymorphic {
-        template <typename T1> static typename T1::async_type test(int);
-        template <typename>    static void test(...);
-        enum { value = !std::is_void<decltype(test<T>(0))>::value };
-    };
-    template <bool HAS, typename T> struct checked_get_async_type { typedef int type; };
-    template <typename T> struct checked_get_async_type<true, T>  { typedef typename T::async_type type; };
-    template <typename T> struct get_async_type { typedef typename checked_get_async_type<is_polymorphic<T>::value, T>::type type; };
-
     template <typename T> struct has_versioning {
         template <typename T1> static typename T1::bind_type_structure test(int);
         template <typename>    static void test(...);

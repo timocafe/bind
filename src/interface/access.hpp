@@ -32,22 +32,6 @@ namespace bind {
 
     using model::revision;
 
-    namespace ext {
-
-        template<typename V>
-        void swap(V& left, V& right){
-            // swapping allocators should be better
-            std::swap(left.bind_allocator.desc, right.bind_allocator.desc);
-            left.bind_allocator.after = left.bind_allocator.desc->current;
-            right.bind_allocator.after = right.bind_allocator.desc->current;
-        }
-
-        template <typename T> static void transform(const T& obj){
-            if(!is_polymorphic<T>::value) return;
-            new ((void*)&obj) typename get_async_type<T>::type();
-        }
-    }
-
     template <typename T> static T& load(T& obj){ 
         bind::select().touch(obj.bind_allocator.desc, bind::rank());
         bind::sync(); 
@@ -63,13 +47,11 @@ namespace bind {
     }
 
     template <typename T> static void revise(const T& obj){
-        ext::transform(obj);
         revision& c = *obj.bind_allocator.before; if(c.valid()) return;
         c.embed(obj.bind_allocator.calloc(c.spec));
     }
 
     template <typename T> static void revise(volatile T& obj){
-        ext::transform(obj);
         revision& c = *obj.bind_allocator.after; if(c.valid()) return;
         revision& p = *obj.bind_allocator.before;
         if(p.valid() && p.locked_once() && !p.referenced() && c.spec.conserves(p.spec)) c.reuse(p);
@@ -77,7 +59,6 @@ namespace bind {
     }
 
     template <typename T> static void revise(T& obj){
-        ext::transform(obj);
         revision& c = *obj.bind_allocator.after; if(c.valid()) return;
         revision& p = *obj.bind_allocator.before;
         if(!p.valid()) c.embed(obj.bind_allocator.calloc(c.spec));
