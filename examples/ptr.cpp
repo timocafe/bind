@@ -1,16 +1,18 @@
 #include "utils/bind.hpp"
+#define N 9
+
+void norm(bind::ptr<double>& norm, bind::vector<double>& vec){
+    for(int i = 0; i < vec.size(); i++) *norm += vec[i]*vec[i];
+    *norm = std::sqrt(*norm);
+}
 
 int main(){
-    bind::ptr<double> sum;
-    int a = 10, b = 20;
+    bind::ptr<double> n(0);
+    bind::vector<double> vec(N, 1);
 
-    {
-        bind::node first = bind::nodes::begin();
-        bind::cpu([](bind::ptr<double>& sum_, int a, int b){
-            *sum_ = a + b;
-        }, sum, a, b);
-    }
+    bind::cpu(norm, n, vec);
+    bind::sync();
 
-    std::cout << sum << "\n";
+    std::cout << "Norm: " << n << "\n";
     return 0;
 }
