@@ -32,13 +32,16 @@ namespace bind { namespace core {
     inline void get<any>::spawn(any& t){
         bind::select().queue(new get(t));
     }
-    inline get<any>::get(any& t){
+    inline get<any>::get(any& ptr) : t(ptr) {
         handle = bind::select().get_channel().bcast(t, bind::nodes::which());
+        t.generator = this;
     }
     inline bool get<any>::ready(){
         return handle->test();
     }
-    inline void get<any>::invoke(){}
+    inline void get<any>::invoke(){
+        t.complete();
+    }
 
     // }}}
     // {{{ revision

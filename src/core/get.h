@@ -42,6 +42,7 @@ namespace bind { namespace core {
         virtual bool ready();
     private:
         collective<any>* handle;
+        any& t;
     };
 
     template<>

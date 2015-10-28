@@ -936,7 +936,7 @@ namespace bind { namespace model {
 
     template<typename T>
     constexpr size_t sizeof_any(){
-        return (sizeof(void*) + sizeof(size_t) + memory::aligned_64<sizeof(T)>());
+        return (2*sizeof(void*) + sizeof(size_t) + memory::aligned_64<sizeof(T)>());
     }
 
     class any {
@@ -949,8 +949,10 @@ namespace bind { namespace model {
         any(T val) : size(memory::aligned_64<sizeof(T)>()) { *this = val; }
         template<typename T> void operator = (T val){ *(T*)&value = val; }
         template<typename T> operator T& (){ return *(T*)&value;  }
+        void complete(){ generator = NULL; }
 
         functor* generator;
+        any* origin;
         size_t size;
         int value;
     };
@@ -1631,6 +1633,7 @@ namespace bind { namespace core {
         virtual bool ready();
     private:
         collective<any>* handle;
+        any& t;
     };
 
     template<>
@@ -1870,13 +1873,16 @@ namespace bind { namespace core {
     inline void get<any>::spawn(any& t){
         bind::select().queue(new get(t));
     }
-    inline get<any>::get(any& t){
+    inline get<any>::get(any& ptr) : t(ptr) {
         handle = bind::select().get_channel().bcast(t, bind::nodes::which());
+        t.generator = this;
     }
     inline bool get<any>::ready(){
         return handle->test();
     }
-    inline void get<any>::invoke(){}
+    inline void get<any>::invoke(){
+        t.complete();
+    }
 
     // }}}
     // {{{ revision
@@ -2079,26 +2085,51 @@ namespace bind {
     };
     template <typename T> struct ptr_info : public singular_info<T> {
         template<size_t arg> static void deallocate(functor* m){
-            EXTRACT(o); o->impl->generator = NULL;
+            EXTRACT(o); o->impl->complete();
         }
         template<size_t arg> static void modify_remote(T& obj){
+            obj.resit();
             bind::select().rsync(obj.impl);
         }
         template<size_t arg> static void modify_local(const T& obj, functor* m){
+            obj.resit();
             obj.impl->generator = m;
             bind::select().lsync(obj.impl);
             m->arguments[arg] = memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy(m->arguments[arg], &obj, sizeof(T)); 
         }
         template<size_t arg> static void modify(const T& obj, functor* m){
+            obj.resit();
+            obj.impl->generator = m;
             m->arguments[arg] = memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy(m->arguments[arg], &obj, sizeof(T)); 
+        }
+        template<size_t arg> static bool ready(functor* m){
+            EXTRACT(o);
+            if(o->impl->origin && o->impl->origin->generator != NULL) return false;
+            return (o->impl->generator == m || o->impl->generator == NULL);
+        }
+        template<size_t arg> static T& revised(functor* m){
+            EXTRACT(o);
+            if(o->impl->origin){
+                *o->impl = (typename T::element_type&)*o->impl->origin;
+                o->impl->origin = NULL;
+            }
+            return *o;
         }
         static constexpr bool ReferenceOnly = true;
     };
     template <typename T> struct read_ptr_info : public ptr_info<T> {
-        template<size_t arg> static void deallocate(functor* m){ }
-        template<size_t arg> static void modify_remote(T& obj){ }
+        template<size_t arg> static void deallocate(functor* m){ 
+        }
+        template<size_t arg> static void modify_remote(T& obj){
+        }
         template<size_t arg> static void modify_local(const T& obj, functor* m){
             m->arguments[arg] = memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy(m->arguments[arg], &obj, sizeof(T)); 
+        }
+        template<size_t arg> static void modify(const T& obj, functor* m){
+            m->arguments[arg] = memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy(m->arguments[arg], &obj, sizeof(T)); 
+        }
+        template<size_t arg> static T& revised(functor* m){
+            EXTRACT(o); return *o;
         }
     };
     // }}}
@@ -2645,56 +2676,41 @@ namespace bind {
         mutable any* impl;
         typedef T element_type;
 
-        void init(element_type val = T()){
-            impl = new (memory::cpu::fixed::calloc<sizeof_any<T>()>()) any(val);
+        void resit() const {
+            ptr clone(*this);
+            std::swap(this->impl, clone.impl);
+            this->impl->origin = clone.impl;
         }
-       ~ptr(){ 
+       ~ptr(){
            if(impl) bind::destroy(impl); 
         }
         T& operator* () const {
             return *impl;
         }
-        // constructors //
-        ptr(){ 
-            init();  
+        ptr(element_type val){
+            impl = new (memory::cpu::fixed::calloc<sizeof_any<T>()>()) any(val);
         }
-        ptr(double val){ 
-            init(val);
-        }
-        ptr(std::complex<double> val){
-            init(val);
-        }
-        // copy //
         ptr(const ptr& f){
-            init(f.load()); /* important */
+            impl = new (memory::cpu::fixed::calloc<sizeof_any<T>()>()) any((element_type&)*f);
+            impl->origin = f.impl;
         }
         ptr& operator= (const ptr& f){
-            *impl = f.load();
+            *impl = (element_type&)*f;
+            impl->origin = f.impl;
             return *this;
         }
-        T load() const {
-            bind::sync();
-            return *impl;
-        }
-
-        // move //
         ptr(ptr&& f){
-            reuse(f);
+            impl = f.impl; f.impl = NULL; 
         }
         ptr& operator= (ptr&& f){ 
-            if(impl) bind::destroy(impl);
-            reuse(f);
+            std::swap(impl, f.impl);
             return *this;
-        }
-        void reuse(ptr& f){
-            impl = f.impl; // unsafe - proper convertion should be done
-            f.impl = NULL; 
         }
     };
 
     template<class T>
     std::ostream& operator << (std::ostream& os, const ptr<T>& obj){
-        os << obj.load();
+        os << *obj;
         return os;
     }
 }

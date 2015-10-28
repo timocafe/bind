@@ -43,56 +43,41 @@ namespace bind {
         mutable any* impl;
         typedef T element_type;
 
-        void init(element_type val = T()){
-            impl = new (memory::cpu::fixed::calloc<sizeof_any<T>()>()) any(val);
+        void resit() const {
+            ptr clone(*this);
+            std::swap(this->impl, clone.impl);
+            this->impl->origin = clone.impl;
         }
-       ~ptr(){ 
+       ~ptr(){
            if(impl) bind::destroy(impl); 
         }
         T& operator* () const {
             return *impl;
         }
-        // constructors //
-        ptr(){ 
-            init();  
+        ptr(element_type val){
+            impl = new (memory::cpu::fixed::calloc<sizeof_any<T>()>()) any(val);
         }
-        ptr(double val){ 
-            init(val);
-        }
-        ptr(std::complex<double> val){
-            init(val);
-        }
-        // copy //
         ptr(const ptr& f){
-            init(f.load()); /* important */
+            impl = new (memory::cpu::fixed::calloc<sizeof_any<T>()>()) any((element_type&)*f);
+            impl->origin = f.impl;
         }
         ptr& operator= (const ptr& f){
-            *impl = f.load();
+            *impl = (element_type&)*f;
+            impl->origin = f.impl;
             return *this;
         }
-        T load() const {
-            bind::sync();
-            return *impl;
-        }
-
-        // move //
         ptr(ptr&& f){
-            reuse(f);
+            impl = f.impl; f.impl = NULL; 
         }
         ptr& operator= (ptr&& f){ 
-            if(impl) bind::destroy(impl);
-            reuse(f);
+            std::swap(impl, f.impl);
             return *this;
-        }
-        void reuse(ptr& f){
-            impl = f.impl; // unsafe - proper convertion should be done
-            f.impl = NULL; 
         }
     };
 
     template<class T>
     std::ostream& operator << (std::ostream& os, const ptr<T>& obj){
-        os << obj.load();
+        os << *obj;
         return os;
     }
 }

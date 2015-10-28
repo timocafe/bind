@@ -32,7 +32,7 @@ namespace bind { namespace model {
 
     template<typename T>
     constexpr size_t sizeof_any(){
-        return (sizeof(void*) + sizeof(size_t) + memory::aligned_64<sizeof(T)>());
+        return (2*sizeof(void*) + sizeof(size_t) + memory::aligned_64<sizeof(T)>());
     }
 
     class any {
@@ -45,8 +45,10 @@ namespace bind { namespace model {
         any(T val) : size(memory::aligned_64<sizeof(T)>()) { *this = val; }
         template<typename T> void operator = (T val){ *(T*)&value = val; }
         template<typename T> operator T& (){ return *(T*)&value;  }
+        void complete(){ generator = NULL; }
 
         functor* generator;
+        any* origin;
         size_t size;
         int value;
     };
