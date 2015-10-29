@@ -32,16 +32,6 @@ namespace bind {
 
     using model::revision;
 
-    template <typename T> static T& load(T& obj){ 
-        bind::select().touch(obj.bind_allocator.desc, bind::rank());
-        bind::sync(); 
-        revision& c = *obj.bind_allocator.desc->current;
-        assert(c.state == locality::local || c.state == locality::common);
-        if(!c.valid()) c.embed(obj.bind_allocator.calloc(c.spec));
-        obj.bind_allocator.after = obj.bind_allocator.desc->current;
-        return obj;
-    }
-
     template <typename T> static auto delegated(T& obj) -> typename T::bind_type_structure& {
         return *(typename T::bind_type_structure*)(*obj.bind_allocator.after);
     }

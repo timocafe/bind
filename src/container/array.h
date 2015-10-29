@@ -38,12 +38,11 @@ namespace bind {
         void* operator new (size_t sz){ return memory::cpu::fixed::malloc<sizeof(array)>(); }
         void operator delete (void* ptr){ memory::cpu::fixed::free(ptr); }
     public:
-        typedef Allocator allocator_type;
-        typedef T value_type;
-        typedef size_t size_type;
-        typedef size_t difference_type;
-        typedef T* iterator;
-        typedef const T* const_iterator;
+        using allocator_type = Allocator;
+        using value_type = T;
+        using size_type = size_t;
+        using const_iterator = iterator<const array>;
+        using iterator = iterator<array>;
         explicit array(){}
 
         explicit array(size_t n, T value = T());
@@ -53,7 +52,6 @@ namespace bind {
         array& operator = (const array<T,OtherAllocator>& rhs);
 
         void fill(T value);
-        void load() const;
 
         void swap(array<T,Allocator>& r);
         size_t size() const;

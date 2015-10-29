@@ -2169,7 +2169,7 @@ namespace bind {
                 bind::select().add_revision<locality::local>(o, m, bind::rank());
             }
             bind::select().use_revision(o);
-            var->bind_allocator.after = o->current;
+            var->bind_allocator.after = obj.bind_allocator.after = o->current;
         }
         template<size_t arg>
         static void modify(T& obj, functor* m){
@@ -2185,7 +2185,7 @@ namespace bind {
                 bind::select().add_revision<locality::common>(o, m, bind::rank()); 
             }
             bind::select().use_revision(o);
-            var->bind_allocator.after = o->current;
+            var->bind_allocator.after = obj.bind_allocator.after = o->current;
         }
         template<size_t arg>
         static T& revised(functor* m){ 
@@ -2272,7 +2272,7 @@ namespace bind {
             var->bind_allocator.before = o->current;
             bind::select().add_revision<locality::local>(o, m, bind::rank()); 
             bind::select().use_revision(o);
-            var->bind_allocator.after = o->current;
+            var->bind_allocator.after = obj.bind_allocator.after = o->current;
         }
         template<size_t arg> static void modify(T& obj, functor* m){
             auto o = obj.bind_allocator.desc;
@@ -2284,7 +2284,7 @@ namespace bind {
             var->bind_allocator.before = o->current;
             bind::select().add_revision<locality::common>(o, m, bind::rank()); 
             bind::select().use_revision(o);
-            var->bind_allocator.after = o->current;
+            var->bind_allocator.after = obj.bind_allocator.after = o->current;
         }
         template<size_t arg> static bool pin(functor* m){ return false; }
         template<size_t arg> static bool ready (functor* m){ return true;  }
@@ -2355,8 +2355,8 @@ namespace bind {
     using model::revision;
 
     struct stateful {
-        revision* before;
-        revision* after;
+        revision* before = NULL;
+        revision* after = NULL;
     };
 
     struct allocator : public stateful {
@@ -2530,16 +2530,6 @@ namespace bind {
 namespace bind {
 
     using model::revision;
-
-    template <typename T> static T& load(T& obj){ 
-        bind::select().touch(obj.bind_allocator.desc, bind::rank());
-        bind::sync(); 
-        revision& c = *obj.bind_allocator.desc->current;
-        assert(c.state == locality::local || c.state == locality::common);
-        if(!c.valid()) c.embed(obj.bind_allocator.calloc(c.spec));
-        obj.bind_allocator.after = obj.bind_allocator.desc->current;
-        return obj;
-    }
 
     template <typename T> static auto delegated(T& obj) -> typename T::bind_type_structure& {
         return *(typename T::bind_type_structure*)(*obj.bind_allocator.after);
@@ -2728,12 +2718,19 @@ namespace bind {
     private:
         template<typename T>
         friend bool operator == (const iterator<T>& lhs, const iterator<T>& rhs);
+        template<typename T>
+        friend bool operator != (const iterator<T>& lhs, const iterator<T>& rhs);
         container_type* container;
     };
 
     template <class Container> 
     bool operator == (const iterator<Container>& lhs, const iterator<Container>& rhs){
         return (lhs.position == rhs.position && lhs.container == rhs.container);
+    }
+
+    template <class Container> 
+    bool operator != (const iterator<Container>& lhs, const iterator<Container>& rhs){
+        return (lhs.position != rhs.position || lhs.container != rhs.container);
     }
 
     template <class Container, class OtherContainer> 
@@ -2788,12 +2785,11 @@ namespace bind {
         void* operator new (size_t sz){ return memory::cpu::fixed::malloc<sizeof(array)>(); }
         void operator delete (void* ptr){ memory::cpu::fixed::free(ptr); }
     public:
-        typedef Allocator allocator_type;
-        typedef T value_type;
-        typedef size_t size_type;
-        typedef size_t difference_type;
-        typedef T* iterator;
-        typedef const T* const_iterator;
+        using allocator_type = Allocator;
+        using value_type = T;
+        using size_type = size_t;
+        using const_iterator = iterator<const array>;
+        using iterator = iterator<array>;
         explicit array(){}
 
         explicit array(size_t n, T value = T());
@@ -2803,7 +2799,6 @@ namespace bind {
         array& operator = (const array<T,OtherAllocator>& rhs);
 
         void fill(T value);
-        void load() const;
 
         void swap(array<T,Allocator>& r);
         size_t size() const;
@@ -2839,7 +2834,8 @@ namespace bind {
 #define BIND_CONTAINER_ARRAY_HPP
 
 namespace bind {
-     
+
+    // {{{ array helper functions
     template<class T, class Allocator> class array;
     namespace detail {
         template<class T, class Allocator>
@@ -2853,6 +2849,7 @@ namespace bind {
             for(size_t i = 0; i < n; ++i) dst_[i] = src[i];
         }
     }
+    // }}}
 
     template<class T, class Allocator>
     array<T,Allocator>::array(size_t n, T value) : bind_allocator(n*sizeof(T)), size_(n) {
@@ -2878,11 +2875,6 @@ namespace bind {
     template<class T, class Allocator>
     void array<T,Allocator>::fill(T value){
         bind::cpu(detail::fill_array<T,Allocator>, *this, value);
-    }
-
-    template<typename T, class Allocator>
-    void array<T,Allocator>::load() const {
-        bind::load(*this); // shouldn't be needed
     }
 
     template<class T, class Allocator>
@@ -2929,12 +2921,12 @@ namespace bind {
 
     template<typename T, class Allocator>
     typename array<T,Allocator>::iterator array<T,Allocator>::begin(){
-        return this->data();
+        return iterator(*this, 0);
     }
 
     template<typename T, class Allocator>
     typename array<T,Allocator>::iterator array<T,Allocator>::end(){
-        return this->begin()+size();
+        return iterator(*this, size());
     }
 
     template<class T, class Allocator>
@@ -2965,12 +2957,12 @@ namespace bind {
 
     template<typename T, class Allocator>
     typename array<T,Allocator>::const_iterator array<T,Allocator>::cbegin() const {
-        return this->data();
+        return const_iterator(*this, 0);
     }
 
     template<typename T, class Allocator>
     typename array<T,Allocator>::const_iterator array<T,Allocator>::cend() const {
-        return this->begin()+size();
+        return const_iterator(*this, size());
     }
 
 }

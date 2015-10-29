@@ -272,17 +272,18 @@ public:
     border<T>& right()  const { return *f->right;  }
 
     void print(){
-        for(int j = 0; j < IB; j++) printf("%.2f ", bind::load(top())(j,0));
+        bind::sync();
+        for(int j = 0; j < IB; j++) printf("%.2f ", top()(j,0));
         printf("\n");
         for(int i = 0; i < IB-2; i++){
-            printf("%.2f ", bind::load(left())(i,0));
+            printf("%.2f ", left()(i,0));
             for(int j = 0; j < IB-2; j++){
-                printf("%.2f ", bind::load(*this)(i,j));
+                printf("%.2f ", (*this)(i,j));
             }
-            printf("%.2f ", bind::load(right())(i,0));
+            printf("%.2f ", right()(i,0));
             printf("\n");
         }
-        for(int j = 0; j < IB; j++) printf("%.2f ", bind::load(bottom())(j,0));
+        for(int j = 0; j < IB; j++) printf("%.2f ", bottom()(j,0));
         printf("\n");
     }
 

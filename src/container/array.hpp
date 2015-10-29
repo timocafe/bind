@@ -29,7 +29,8 @@
 #define BIND_CONTAINER_ARRAY_HPP
 
 namespace bind {
-     
+
+    // {{{ array helper functions
     template<class T, class Allocator> class array;
     namespace detail {
         template<class T, class Allocator>
@@ -43,6 +44,7 @@ namespace bind {
             for(size_t i = 0; i < n; ++i) dst_[i] = src[i];
         }
     }
+    // }}}
 
     template<class T, class Allocator>
     array<T,Allocator>::array(size_t n, T value) : bind_allocator(n*sizeof(T)), size_(n) {
@@ -68,11 +70,6 @@ namespace bind {
     template<class T, class Allocator>
     void array<T,Allocator>::fill(T value){
         bind::cpu(detail::fill_array<T,Allocator>, *this, value);
-    }
-
-    template<typename T, class Allocator>
-    void array<T,Allocator>::load() const {
-        bind::load(*this); // shouldn't be needed
     }
 
     template<class T, class Allocator>
@@ -119,12 +116,12 @@ namespace bind {
 
     template<typename T, class Allocator>
     typename array<T,Allocator>::iterator array<T,Allocator>::begin(){
-        return this->data();
+        return iterator(*this, 0);
     }
 
     template<typename T, class Allocator>
     typename array<T,Allocator>::iterator array<T,Allocator>::end(){
-        return this->begin()+size();
+        return iterator(*this, size());
     }
 
     template<class T, class Allocator>
@@ -155,12 +152,12 @@ namespace bind {
 
     template<typename T, class Allocator>
     typename array<T,Allocator>::const_iterator array<T,Allocator>::cbegin() const {
-        return this->data();
+        return const_iterator(*this, 0);
     }
 
     template<typename T, class Allocator>
     typename array<T,Allocator>::const_iterator array<T,Allocator>::cend() const {
-        return this->begin()+size();
+        return const_iterator(*this, size());
     }
 
 }

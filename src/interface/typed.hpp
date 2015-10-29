@@ -142,7 +142,7 @@ namespace bind {
                 bind::select().add_revision<locality::local>(o, m, bind::rank());
             }
             bind::select().use_revision(o);
-            var->bind_allocator.after = o->current;
+            var->bind_allocator.after = obj.bind_allocator.after = o->current;
         }
         template<size_t arg>
         static void modify(T& obj, functor* m){
@@ -158,7 +158,7 @@ namespace bind {
                 bind::select().add_revision<locality::common>(o, m, bind::rank()); 
             }
             bind::select().use_revision(o);
-            var->bind_allocator.after = o->current;
+            var->bind_allocator.after = obj.bind_allocator.after = o->current;
         }
         template<size_t arg>
         static T& revised(functor* m){ 
@@ -245,7 +245,7 @@ namespace bind {
             var->bind_allocator.before = o->current;
             bind::select().add_revision<locality::local>(o, m, bind::rank()); 
             bind::select().use_revision(o);
-            var->bind_allocator.after = o->current;
+            var->bind_allocator.after = obj.bind_allocator.after = o->current;
         }
         template<size_t arg> static void modify(T& obj, functor* m){
             auto o = obj.bind_allocator.desc;
@@ -257,7 +257,7 @@ namespace bind {
             var->bind_allocator.before = o->current;
             bind::select().add_revision<locality::common>(o, m, bind::rank()); 
             bind::select().use_revision(o);
-            var->bind_allocator.after = o->current;
+            var->bind_allocator.after = obj.bind_allocator.after = o->current;
         }
         template<size_t arg> static bool pin(functor* m){ return false; }
         template<size_t arg> static bool ready (functor* m){ return true;  }
