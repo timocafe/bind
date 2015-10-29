@@ -25,108 +25,108 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef BIND_CONTAINER_VECTOR_VECTOR_HPP
-#define BIND_CONTAINER_VECTOR_VECTOR_HPP
+#ifndef BIND_CONTAINER_ARRAY_HPP
+#define BIND_CONTAINER_ARRAY_HPP
 
 namespace bind {
      
-    template<class T, class Allocator> class vector;
+    template<class T, class Allocator> class array;
     namespace detail {
         template<typename T, typename Allocator>
-        void set_size(bind::vector<T,Allocator>& a, const size_t& size){
+        void set_size(bind::array<T,Allocator>& a, const size_t& size){
             a.resize(size);
         }
         template<typename T, typename Allocator>
-        void measure_size(const bind::vector<T,Allocator>& a, bind::ptr<size_t>& size){
+        void measure_size(const bind::array<T,Allocator>& a, bind::ptr<size_t>& size){
             *size = a.size();
         }
         template<class T, class Allocator>
-        void init_value_vector(volatile bind::vector<T,Allocator>& a, T& value){
-            bind::vector<T,Allocator>& a_ = const_cast<bind::vector<T,Allocator>&>(a);
+        void init_value_array(volatile bind::array<T,Allocator>& a, T& value){
+            bind::array<T,Allocator>& a_ = const_cast<bind::array<T,Allocator>&>(a);
             a_.resize(a_.cached_size());
             for(size_t i = 0; i < a_.size(); ++i) a_[i] = value;
         }
         template<class T, class Allocator, class OtherAllocator = Allocator>
-        void copy_vector(volatile bind::vector<T,Allocator>& dst, const bind::vector<T,OtherAllocator>& src, const size_t& n){
-            bind::vector<T,Allocator>& dst_ = const_cast<bind::vector<T,Allocator>&>(dst);
+        void copy_array(volatile bind::array<T,Allocator>& dst, const bind::array<T,OtherAllocator>& src, const size_t& n){
+            bind::array<T,Allocator>& dst_ = const_cast<bind::array<T,Allocator>&>(dst);
             for(size_t i = 0; i < n; ++i) dst_[i] = src[i];
         }
         template<typename T, typename Allocator>
-        void add(bind::vector<T,Allocator>& a, const bind::vector<T,Allocator>& b){
+        void add(bind::array<T,Allocator>& a, const bind::array<T,Allocator>& b){
             for(int i = 0; i < a.size(); ++i) a[i] += b[i];
         }
     }
 
     template<class T, class Allocator>
-    size_t vector<T,Allocator>::capacity() const {
+    size_t array<T,Allocator>::capacity() const {
         return (bind::extent(*this)-sizeof(size_t))/sizeof(T);
     }
 
     template<class T, class Allocator>
-    size_t vector<T,Allocator>::cached_size() const {
+    size_t array<T,Allocator>::cached_size() const {
         return cached_size_;
     }
 
     /* prohibited in async mode (sync mode only) */
 
     template<class T, class Allocator>
-    vector<T,Allocator>::vector(size_t n, T value) : bind_allocator(n*sizeof(T)+sizeof(size_t)), cached_size_(n) {
+    array<T,Allocator>::array(size_t n, T value) : bind_allocator(n*sizeof(T)+sizeof(size_t)), cached_size_(n) {
         this->init(value);
     }
 
     template <typename T, class Allocator>
-    vector<T,Allocator>& vector<T,Allocator>::operator = (const vector& rhs){
-        vector c(rhs);
+    array<T,Allocator>& array<T,Allocator>::operator = (const array& rhs){
+        array c(rhs);
         this->swap(c);
         return *this;
     }
 
     template <typename T, class Allocator>
     template <class OtherAllocator>
-    vector<T,Allocator>& vector<T,Allocator>::operator = (const vector<T,OtherAllocator>& rhs){
-        vector resized(rhs.capacity());
+    array<T,Allocator>& array<T,Allocator>::operator = (const array<T,OtherAllocator>& rhs){
+        array resized(rhs.capacity());
         this->swap(resized);
         this->cached_size_ = rhs.cached_size();
 
-        if(!bind::weak(rhs)) bind::cpu(detail::copy_vector<T,Allocator,OtherAllocator>, *this, rhs, this->cached_size_);
+        if(!bind::weak(rhs)) bind::cpu(detail::copy_array<T,Allocator,OtherAllocator>, *this, rhs, this->cached_size_);
         return *this;
     }
 
     template<class T, class Allocator>
-    void vector<T,Allocator>::init(T value){
-        bind::cpu(detail::init_value_vector<T,Allocator>, *this, value);
+    void array<T,Allocator>::init(T value){
+        bind::cpu(detail::init_value_array<T,Allocator>, *this, value);
     }
 
     template<typename T, class Allocator>
-    void vector<T,Allocator>::auto_reserve(){
+    void array<T,Allocator>::auto_reserve(){
         if(this->cached_size() == this->capacity()){
             this->reserve(this->cached_size()*2);
         }
     }
 
     template<class T, class Allocator>
-    void vector<T,Allocator>::reserve(size_t n){
+    void array<T,Allocator>::reserve(size_t n){
         if(capacity() >= n) return;
         size_t current_size = cached_size();
-        vector reserved(n);
-        if(!bind::weak(*this)) bind::cpu(detail::copy_vector<T,Allocator>, reserved, *this, current_size);
+        array reserved(n);
+        if(!bind::weak(*this)) bind::cpu(detail::copy_array<T,Allocator>, reserved, *this, current_size);
         this->swap(reserved);
         cached_size_ = current_size;
     }
 
     template<typename T, class Allocator>
-    void vector<T,Allocator>::shrink_to_fit(){
+    void array<T,Allocator>::shrink_to_fit(){
         if(memory::aligned_64(cached_size()*sizeof(T)+sizeof(size_t)) ==
            memory::aligned_64(capacity()*sizeof(T)+sizeof(size_t))) return;
 
         size_t current_size = cached_size();
-        vector shrinked(cached_size());
-        if(!bind::weak(*this)) bind::cpu(detail::copy_vector<T,Allocator>, shrinked, *this, current_size);
+        array shrinked(cached_size());
+        if(!bind::weak(*this)) bind::cpu(detail::copy_array<T,Allocator>, shrinked, *this, current_size);
         this->swap(shrinked);
     }
 
     template<class T, class Allocator>
-    size_t vector<T,Allocator>::measure() const {
+    size_t array<T,Allocator>::measure() const {
         bind::ptr<size_t> measured(0);
         bind::cpu(detail::measure_size<T,Allocator>, *this, measured);
         bind::sync();
@@ -135,20 +135,20 @@ namespace bind {
     }
 
     template<typename T, class Allocator>
-    void vector<T,Allocator>::load() const {
+    void array<T,Allocator>::load() const {
         bind::load(*this);
     }
 
     /* using cached size */
 
     template<class T, class Allocator>
-    void vector<T,Allocator>::swap(vector<T,Allocator>& r){
+    void array<T,Allocator>::swap(array<T,Allocator>& r){
         std::swap(this->cached_size_, r.cached_size_);
         std::swap(this->bind_allocator.after->data, r.bind_allocator.after->data);
     }
 
     template<class T, class Allocator>
-    size_t vector<T,Allocator>::size() const {
+    size_t array<T,Allocator>::size() const {
         if(this->bind_allocator.after->valid())
             return bind::delegated(*this).size_;
         else
@@ -156,12 +156,12 @@ namespace bind {
     }
 
     template<class T, class Allocator>
-    bool vector<T,Allocator>::empty() const {
+    bool array<T,Allocator>::empty() const {
         return ((size() == 0) || bind::weak(*this));
     }
 
     template<class T, class Allocator>
-    void vector<T,Allocator>::resize(size_t sz){
+    void array<T,Allocator>::resize(size_t sz){
         reserve(sz);
         cached_size_ = sz;
         if(this->bind_allocator.after->valid())
@@ -169,97 +169,97 @@ namespace bind {
     }
 
     template<typename T, class Allocator>
-    void vector<T,Allocator>::clear(){
+    void array<T,Allocator>::clear(){
         this->resize(0);
     }
 
     /* using data-access methods (load required if not async) */
 
     template<class T, class Allocator>
-    typename vector<T,Allocator>::value_type* vector<T,Allocator>::data(){
+    typename array<T,Allocator>::value_type* array<T,Allocator>::data(){
         return bind::delegated(*this).data;
     }
 
     template<class T, class Allocator>
-    typename vector<T,Allocator>::value_type& vector<T,Allocator>::operator[](size_t i){
+    typename array<T,Allocator>::value_type& array<T,Allocator>::operator[](size_t i){
         return bind::delegated(*this).data[ i ];
     }
 
     template<typename T, class Allocator>
-    typename vector<T,Allocator>::value_type& vector<T,Allocator>::at(size_type i){
-        if(i >= size()) throw std::out_of_range("vector::out_of_range");
+    typename array<T,Allocator>::value_type& array<T,Allocator>::at(size_type i){
+        if(i >= size()) throw std::out_of_range("array::out_of_range");
         return (*this)[i];
     }
 
     template<typename T, class Allocator>
-    typename vector<T,Allocator>::value_type& vector<T,Allocator>::front(){
+    typename array<T,Allocator>::value_type& array<T,Allocator>::front(){
         return (*this)[0];
     }
 
     template<typename T, class Allocator>
-    typename vector<T,Allocator>::value_type& vector<T,Allocator>::back(){
+    typename array<T,Allocator>::value_type& array<T,Allocator>::back(){
         return (*this)[size()-1];
     }
 
     template<typename T, class Allocator>
-    typename vector<T,Allocator>::iterator vector<T,Allocator>::begin(){
+    typename array<T,Allocator>::iterator array<T,Allocator>::begin(){
         return this->data();
     }
 
     template<typename T, class Allocator>
-    typename vector<T,Allocator>::iterator vector<T,Allocator>::end(){
+    typename array<T,Allocator>::iterator array<T,Allocator>::end(){
         return this->begin()+size();
     }
 
     template<class T, class Allocator>
-    const typename vector<T,Allocator>::value_type* vector<T,Allocator>::data() const {
+    const typename array<T,Allocator>::value_type* array<T,Allocator>::data() const {
         return bind::delegated(*this).data;
     }
 
     template<class T, class Allocator>
-    const typename vector<T,Allocator>::value_type& vector<T,Allocator>::operator[](size_t i) const {
+    const typename array<T,Allocator>::value_type& array<T,Allocator>::operator[](size_t i) const {
         return bind::delegated(*this).data[ i ];
     }
 
     template<typename T, class Allocator>
-    const typename vector<T,Allocator>::value_type& vector<T,Allocator>::at(size_type i) const {
-        if(i >= size()) throw std::out_of_range("vector::out_of_range");
+    const typename array<T,Allocator>::value_type& array<T,Allocator>::at(size_type i) const {
+        if(i >= size()) throw std::out_of_range("array::out_of_range");
         return (*this)[i];
     }
 
     template<typename T, class Allocator>
-    const typename vector<T,Allocator>::value_type& vector<T,Allocator>::front() const {
+    const typename array<T,Allocator>::value_type& array<T,Allocator>::front() const {
         return (*this)[0];
     }
 
     template<typename T, class Allocator>
-    const typename vector<T,Allocator>::value_type& vector<T,Allocator>::back() const {
+    const typename array<T,Allocator>::value_type& array<T,Allocator>::back() const {
         return (*this)[size()-1];
     }
 
     template<typename T, class Allocator>
-    typename vector<T,Allocator>::const_iterator vector<T,Allocator>::cbegin() const {
+    typename array<T,Allocator>::const_iterator array<T,Allocator>::cbegin() const {
         return this->data();
     }
 
     template<typename T, class Allocator>
-    typename vector<T,Allocator>::const_iterator vector<T,Allocator>::cend() const {
+    typename array<T,Allocator>::const_iterator array<T,Allocator>::cend() const {
         return this->begin()+size();
     }
 
     template<class T, class Allocator>
-    void vector<T,Allocator>::push_back(value_type value){
+    void array<T,Allocator>::push_back(value_type value){
         (*this)[size()] = value;
         bind::delegated(*this).size_++;
     }
 
     template<class T, class Allocator>
-    void vector<T,Allocator>::pop_back(){
+    void array<T,Allocator>::pop_back(){
         bind::delegated(*this).size_--;
     }
 
     template<typename T, class Allocator>
-    typename vector<T,Allocator>::iterator vector<T,Allocator>::insert(const_iterator position, value_type val){
+    typename array<T,Allocator>::iterator array<T,Allocator>::insert(const_iterator position, value_type val){
         for(int i = size(); i > (position-this->cbegin()); i--) (*this)[i] = (*this)[i-1];
         (*this)[position-this->cbegin()] = val;
         bind::delegated(*this).size_++;
@@ -267,7 +267,7 @@ namespace bind {
     }
 
     template<typename T, class Allocator>
-    typename vector<T,Allocator>::iterator vector<T,Allocator>::erase(const_iterator position){
+    typename array<T,Allocator>::iterator array<T,Allocator>::erase(const_iterator position){
         for(int i = (position-this->cbegin()); i < size()-1; i++) (*this)[i] = (*this)[i+1];
         bind::delegated(*this).size_--;
         return (this->begin()+(position-this->cbegin()));

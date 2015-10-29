@@ -25,41 +25,37 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef BIND_CONTAINER_VECTOR_VECTOR_H
-#define BIND_CONTAINER_VECTOR_VECTOR_H
+#ifndef BIND_CONTAINER_ARRAY_H
+#define BIND_CONTAINER_ARRAY_H
 
 namespace bind {
 
-    template<class T, class Allocator>
-    class vector_async;
-
     template <class T, class Allocator = bind::allocator>
-    class vector {
+    class array {
     public:
         void* operator new (size_t size, void* ptr){ return ptr; }
         void  operator delete (void*, void*){ /* doesn't throw */ }
-        void* operator new (size_t sz){ return memory::cpu::fixed::malloc<sizeof(vector)>(); }
+        void* operator new (size_t sz){ return memory::cpu::fixed::malloc<sizeof(array)>(); }
         void operator delete (void* ptr){ memory::cpu::fixed::free(ptr); }
     public:
-        typedef vector_async<T,Allocator> async_type;
         typedef Allocator allocator_type;
         typedef T value_type;
         typedef size_t size_type;
         typedef size_t difference_type;
         typedef T* iterator;
         typedef const T* const_iterator;
-        explicit vector(){}
+        explicit array(){}
 
         size_t capacity() const;
         size_t cached_size() const;
 
         /* prohibited in async mode (sync mode only) */
 
-        explicit vector(size_t n, T value = T());
-        vector(const vector& a) = default;
-        vector& operator = (const vector& rhs);
+        explicit array(size_t n, T value = T());
+        array(const array& a) = default;
+        array& operator = (const array& rhs);
         template<class OtherAllocator>
-        vector& operator = (const vector<T,OtherAllocator>& rhs);
+        array& operator = (const array<T,OtherAllocator>& rhs);
 
         void init(T value);
         void auto_reserve();
@@ -71,7 +67,7 @@ namespace bind {
 
         /* using cached size */
 
-        void swap(vector<T,Allocator>& r);
+        void swap(array<T,Allocator>& r);
         size_t size() const;
         bool empty() const;
         void resize(size_t sz);
@@ -107,15 +103,6 @@ namespace bind {
         value_type data[ BIND_VAR_LENGTH ]; 
     )};
 
-}
-
-namespace std {
-    template<typename T>
-    class vector<T, bind::allocator> : public bind::vector<T, bind::allocator> {
-    public:
-        template<typename... Args>
-        vector(Args&&... args) : bind::vector<T, bind::allocator>(std::forward<Args>(args)...) { }
-    };
 }
 
 #endif
