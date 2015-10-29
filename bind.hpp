@@ -819,9 +819,6 @@ namespace bind { namespace model {
 
     class revision : public memory::cpu::use_fixed_new<revision> {
     public:
-        template<typename T> operator T* (){ return (T*)data; }
-        operator revision* (){ return NULL; }
-
         revision(size_t extent, functor* g, locality l, rank_t owner)
         : spec(extent), generator(g), state(l), 
           data(NULL), users(0), owner(owner)
@@ -2302,7 +2299,7 @@ namespace bind {
     // {{{ compile-time type info: specialization for forwarded types
 
     template <typename T> struct has_versioning {
-        template <typename T1> static typename T1::bind_type_structure test(int);
+        template <typename T1> static typename T1::allocator_type::bind_type test(int);
         template <typename>    static void test(...);
         enum { value = !std::is_void<decltype(test<T>(0))>::value };
     };
@@ -2345,11 +2342,6 @@ namespace bind {
     };
 
     // }}}
-
-    #define BIND_DELEGATE(...)       struct  bind_type_structure { __VA_ARGS__ }; \
-                                     mutable allocator_type allocator_;
-
-    #define BIND_VAR_LENGTH 1
 }
 
 #undef EXTRACT
@@ -2368,13 +2360,15 @@ namespace bind {
     };
 
     struct allocator : public stateful {
+        typedef history bind_type;
+
         allocator& operator=(const allocator&) = delete;
         allocator(){ }
         allocator(size_t size){
-            desc = new history(size);
+            desc = new bind_type(size);
         }
         allocator(const allocator& origin){
-            desc = new history(origin.desc->extent);
+            desc = new bind_type(origin.desc->extent);
             revision* r = origin.desc->back(); if(!r) return;
             desc->current = r;
             if(!r->valid() && r->state != locality::remote)
@@ -2394,7 +2388,10 @@ namespace bind {
         static void free(void* ptr, memory::descriptor& spec){
             spec.free(ptr);
         }
-        history* desc;
+        void* data() volatile {
+            return after->data;
+        }
+        bind_type* desc;
     };
 }
 
@@ -2539,10 +2536,6 @@ namespace bind {
 
     using model::revision;
 
-    template <typename T> static auto delegated(T& obj) -> typename T::bind_type_structure& {
-        return *(typename T::bind_type_structure*)(*obj.allocator_.after);
-    }
-
     template <typename T> static void revise(const T& obj){
         revision& c = *obj.allocator_.before; if(c.valid()) return;
         c.embed(obj.allocator_.calloc(c.spec));
@@ -2562,7 +2555,7 @@ namespace bind {
         else if(p.locked_once() && !p.referenced() && c.spec.conserves(p.spec)) c.reuse(p);
         else{
             c.embed(obj.allocator_.alloc(c.spec));
-            memcpy((T*)c, (T*)p, p.spec.extent);
+            memcpy(c.data, p.data, p.spec.extent);
         }
     }
 }
@@ -2830,9 +2823,8 @@ namespace bind {
     private:
         mutable size_t size_;
     public:
-    BIND_DELEGATE(
-        value_type data[ BIND_VAR_LENGTH ]; 
-    )};
+        mutable allocator_type allocator_;
+    };
 
 }
 
@@ -2903,12 +2895,12 @@ namespace bind {
 
     template<class T, class Allocator>
     typename array<T,Allocator>::value_type* array<T,Allocator>::data(){
-        return bind::delegated(*this).data;
+        return (value_type*)allocator_.data();
     }
 
     template<class T, class Allocator>
     typename array<T,Allocator>::value_type& array<T,Allocator>::operator[](size_t i){
-        return bind::delegated(*this).data[ i ];
+        return data()[ i ];
     }
 
     template<typename T, class Allocator>
@@ -2939,12 +2931,12 @@ namespace bind {
 
     template<class T, class Allocator>
     const typename array<T,Allocator>::value_type* array<T,Allocator>::data() const {
-        return bind::delegated(*this).data;
+        return (value_type*)allocator_.data();
     }
 
     template<class T, class Allocator>
     const typename array<T,Allocator>::value_type& array<T,Allocator>::operator[](size_t i) const {
-        return bind::delegated(*this).data[ i ];
+        return data()[ i ];
     }
 
     template<typename T, class Allocator>
@@ -3009,10 +3001,10 @@ namespace bind {
             return data()[ j*rows + i ];
         }
         value_type* data() volatile {
-            return bind::delegated(*this).data;
+            return (value_type*)allocator_.data();
         }
         const value_type* data() const volatile {
-            return bind::delegated(*this).data;
+            return (value_type*)allocator_.data();
         }
         size_t num_rows() const {
             return rows;
@@ -3022,9 +3014,8 @@ namespace bind {
         }
         size_t rows;
         size_t cols;
-    BIND_DELEGATE(
-        value_type data[ BIND_VAR_LENGTH ]; 
-    )};
+        mutable allocator_type allocator_;
+    };
 
 }
 
