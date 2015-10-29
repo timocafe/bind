@@ -65,12 +65,19 @@ namespace bind {
     private:
         template<typename T>
         friend bool operator == (const iterator<T>& lhs, const iterator<T>& rhs);
+        template<typename T>
+        friend bool operator != (const iterator<T>& lhs, const iterator<T>& rhs);
         container_type* container;
     };
 
     template <class Container> 
     bool operator == (const iterator<Container>& lhs, const iterator<Container>& rhs){
         return (lhs.position == rhs.position && lhs.container == rhs.container);
+    }
+
+    template <class Container> 
+    bool operator != (const iterator<Container>& lhs, const iterator<Container>& rhs){
+        return (lhs.position != rhs.position || lhs.container != rhs.container);
     }
 
     template <class Container, class OtherContainer> 
