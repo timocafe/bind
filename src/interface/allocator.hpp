@@ -33,8 +33,8 @@ namespace bind {
     using model::revision;
 
     struct stateful {
-        revision* before;
-        revision* after;
+        revision* before = NULL;
+        revision* after = NULL;
     };
 
     struct allocator : public stateful {
