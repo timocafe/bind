@@ -33,7 +33,7 @@ namespace bind { namespace core {
         t.generator->queue(new set(t));
     }
     inline set<any>::set(any& t) : t(t) {
-        handle = bind::select().get_channel().bcast(t, bind::nodes::which());
+        handle = bind::select().get_channel().bcast(t, bind::nodes::which_());
     }
     inline bool set<any>::ready(){
         return (t.generator != NULL ? false : handle->test());
@@ -46,7 +46,7 @@ namespace bind { namespace core {
     inline void set<revision>::spawn(revision& r){
         set*& transfer = (set*&)r.assist.second;
         if(bind::select().update(r)) transfer = new set(r);
-        *transfer += bind::nodes::which();
+        *transfer += bind::nodes::which_();
     }
     inline set<revision>::set(revision& r) : t(r) {
         t.use();

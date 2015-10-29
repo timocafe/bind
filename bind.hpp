@@ -1705,12 +1705,16 @@ namespace bind { namespace nodes {
     inline std::vector<rank_t>::const_iterator end(){
         return select().nodes.end();
     }
-    inline rank_t which(){
+    inline rank_t which_(){
         return select().get_node().which();
     }
     template<typename V>
     inline rank_t which(const V& o){
         return o.bind_allocator.desc->current->owner;
+    }
+    inline rank_t which(){
+        rank_t w = which_();
+        return (w == select().get_shared_rank() ? select().get_rank() : w);
     }
 } }
 
@@ -1874,7 +1878,7 @@ namespace bind { namespace core {
         bind::select().queue(new get(t));
     }
     inline get<any>::get(any& ptr) : t(ptr) {
-        handle = bind::select().get_channel().bcast(t, bind::nodes::which());
+        handle = bind::select().get_channel().bcast(t, bind::nodes::which_());
         t.generator = this;
     }
     inline bool get<any>::ready(){
@@ -1890,7 +1894,7 @@ namespace bind { namespace core {
     inline void get<revision>::spawn(revision& r){
         get*& transfer = (get*&)r.assist.second;
         if(bind::select().update(r)) transfer = new get(r);
-        *transfer += bind::nodes::which();
+        *transfer += bind::nodes::which_();
     }
     inline get<revision>::get(revision& r) : t(r) {
         handle = bind::select().get_channel().get(t);
@@ -1926,7 +1930,7 @@ namespace bind { namespace core {
         t.generator->queue(new set(t));
     }
     inline set<any>::set(any& t) : t(t) {
-        handle = bind::select().get_channel().bcast(t, bind::nodes::which());
+        handle = bind::select().get_channel().bcast(t, bind::nodes::which_());
     }
     inline bool set<any>::ready(){
         return (t.generator != NULL ? false : handle->test());
@@ -1939,7 +1943,7 @@ namespace bind { namespace core {
     inline void set<revision>::spawn(revision& r){
         set*& transfer = (set*&)r.assist.second;
         if(bind::select().update(r)) transfer = new set(r);
-        *transfer += bind::nodes::which();
+        *transfer += bind::nodes::which_();
     }
     inline set<revision>::set(revision& r) : t(r) {
         t.use();
@@ -2149,10 +2153,10 @@ namespace bind {
         static void modify_remote(T& obj){
             auto o = obj.bind_allocator.desc;
             bind::select().touch(o, bind::rank());
-            if(o->back()->owner != bind::nodes::which())
+            if(o->back()->owner != bind::nodes::which_())
                 bind::select().rsync(o->back());
             bind::select().collect(o->back());
-            bind::select().add_revision<locality::remote>(o, NULL, bind::nodes::which()); 
+            bind::select().add_revision<locality::remote>(o, NULL, bind::nodes::which_()); 
         }
         template<size_t arg>
         static void modify_local(T& obj, functor* m){
@@ -2224,7 +2228,7 @@ namespace bind {
         template<size_t arg> static void modify_remote(T& obj){
             auto o = obj.bind_allocator.desc;
             bind::select().touch(o, bind::rank());
-            if(o->back()->owner != bind::nodes::which())
+            if(o->back()->owner != bind::nodes::which_())
                 bind::select().rsync(o->back());
         }
         template<size_t arg> static void modify_local(T& obj, functor* m){
@@ -2259,7 +2263,7 @@ namespace bind {
             auto o = obj.bind_allocator.desc;
             bind::select().touch(o, bind::rank());
             bind::select().collect(o->back());
-            bind::select().add_revision<locality::remote>(o, NULL, bind::nodes::which()); 
+            bind::select().add_revision<locality::remote>(o, NULL, bind::nodes::which_()); 
         }
         template<size_t arg> static void modify_local(T& obj, functor* m){
             auto o = obj.bind_allocator.desc;

@@ -35,12 +35,16 @@ namespace bind { namespace nodes {
     inline std::vector<rank_t>::const_iterator end(){
         return select().nodes.end();
     }
-    inline rank_t which(){
+    inline rank_t which_(){
         return select().get_node().which();
     }
     template<typename V>
     inline rank_t which(const V& o){
         return o.bind_allocator.desc->current->owner;
+    }
+    inline rank_t which(){
+        rank_t w = which_();
+        return (w == select().get_shared_rank() ? select().get_rank() : w);
     }
 } }
 

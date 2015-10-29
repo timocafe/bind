@@ -122,10 +122,10 @@ namespace bind {
         static void modify_remote(T& obj){
             auto o = obj.bind_allocator.desc;
             bind::select().touch(o, bind::rank());
-            if(o->back()->owner != bind::nodes::which())
+            if(o->back()->owner != bind::nodes::which_())
                 bind::select().rsync(o->back());
             bind::select().collect(o->back());
-            bind::select().add_revision<locality::remote>(o, NULL, bind::nodes::which()); 
+            bind::select().add_revision<locality::remote>(o, NULL, bind::nodes::which_()); 
         }
         template<size_t arg>
         static void modify_local(T& obj, functor* m){
@@ -197,7 +197,7 @@ namespace bind {
         template<size_t arg> static void modify_remote(T& obj){
             auto o = obj.bind_allocator.desc;
             bind::select().touch(o, bind::rank());
-            if(o->back()->owner != bind::nodes::which())
+            if(o->back()->owner != bind::nodes::which_())
                 bind::select().rsync(o->back());
         }
         template<size_t arg> static void modify_local(T& obj, functor* m){
@@ -232,7 +232,7 @@ namespace bind {
             auto o = obj.bind_allocator.desc;
             bind::select().touch(o, bind::rank());
             bind::select().collect(o->back());
-            bind::select().add_revision<locality::remote>(o, NULL, bind::nodes::which()); 
+            bind::select().add_revision<locality::remote>(o, NULL, bind::nodes::which_()); 
         }
         template<size_t arg> static void modify_local(T& obj, functor* m){
             auto o = obj.bind_allocator.desc;
