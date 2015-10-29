@@ -1,10 +1,10 @@
 #include "utils/bind.hpp"
 
 template<typename T>
-using vector = bind::vector<T, bind::allocator>;
+using array = bind::array<T, bind::allocator>;
 
 template<typename T>
-void reverse(vector<T>& vec){
+void reverse(array<T>& vec){
     int start = 0;
     int end = vec.size();
     while((start != end) && (start != --end)){
@@ -14,14 +14,14 @@ void reverse(vector<T>& vec){
 
 int main(){
 
-    vector<int> a(100);
-    bind::cpu([](vector<int>& vec){
+    array<int> a(100);
+    bind::cpu([](array<int>& vec){
         for(int i = 0; i < vec.size(); i++) vec[i] = i;
     }, a);
 
     bind::cpu(reverse<int>, a);
 
-    bind::cpu([](vector<int>& vec){
+    bind::cpu([](array<int>& vec){
         for(int i = 0; i < vec.size(); i++) std::cout << vec[i] << " ";
     }, a);
 
