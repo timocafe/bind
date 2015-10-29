@@ -46,34 +46,18 @@ namespace bind {
         typedef const T* const_iterator;
         explicit array(){}
 
-        size_t capacity() const;
-        size_t cached_size() const;
-
-        /* prohibited in async mode (sync mode only) */
-
         explicit array(size_t n, T value = T());
         array(const array& a) = default;
         array& operator = (const array& rhs);
         template<class OtherAllocator>
         array& operator = (const array<T,OtherAllocator>& rhs);
 
-        void init(T value);
-        void auto_reserve();
-
-        void reserve(size_t n);
-        void shrink_to_fit();
-        size_t measure() const; // causes sync, updates cached size
-        void load() const;      // causes sync, sets right pointers
-
-        /* using cached size */
+        void fill(T value);
+        void load() const;
 
         void swap(array<T,Allocator>& r);
         size_t size() const;
         bool empty() const;
-        void resize(size_t sz);
-        void clear();
-
-        /* using data-access (load required if not async) */
 
         value_type* data();
         value_type& operator[](size_t i);
@@ -90,16 +74,10 @@ namespace bind {
         const value_type& back() const;
         const_iterator cbegin() const;
         const_iterator cend() const;
-
-        void push_back(value_type value);
-        void pop_back();
-        iterator insert(const_iterator position, value_type val);
-        iterator erase(const_iterator position);
     private:
-        mutable size_t cached_size_;
+        mutable size_t size_;
     public:
     BIND_DELEGATE(
-        size_t size_;
         value_type data[ BIND_VAR_LENGTH ]; 
     )};
 

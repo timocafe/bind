@@ -32,18 +32,9 @@ namespace bind {
      
     template<class T, class Allocator> class array;
     namespace detail {
-        template<typename T, typename Allocator>
-        void set_size(bind::array<T,Allocator>& a, const size_t& size){
-            a.resize(size);
-        }
-        template<typename T, typename Allocator>
-        void measure_size(const bind::array<T,Allocator>& a, bind::ptr<size_t>& size){
-            *size = a.size();
-        }
         template<class T, class Allocator>
-        void init_value_array(volatile bind::array<T,Allocator>& a, T& value){
+        void fill_array(volatile bind::array<T,Allocator>& a, T& value){
             bind::array<T,Allocator>& a_ = const_cast<bind::array<T,Allocator>&>(a);
-            a_.resize(a_.cached_size());
             for(size_t i = 0; i < a_.size(); ++i) a_[i] = value;
         }
         template<class T, class Allocator, class OtherAllocator = Allocator>
@@ -51,27 +42,11 @@ namespace bind {
             bind::array<T,Allocator>& dst_ = const_cast<bind::array<T,Allocator>&>(dst);
             for(size_t i = 0; i < n; ++i) dst_[i] = src[i];
         }
-        template<typename T, typename Allocator>
-        void add(bind::array<T,Allocator>& a, const bind::array<T,Allocator>& b){
-            for(int i = 0; i < a.size(); ++i) a[i] += b[i];
-        }
     }
 
     template<class T, class Allocator>
-    size_t array<T,Allocator>::capacity() const {
-        return (bind::extent(*this)-sizeof(size_t))/sizeof(T);
-    }
-
-    template<class T, class Allocator>
-    size_t array<T,Allocator>::cached_size() const {
-        return cached_size_;
-    }
-
-    /* prohibited in async mode (sync mode only) */
-
-    template<class T, class Allocator>
-    array<T,Allocator>::array(size_t n, T value) : bind_allocator(n*sizeof(T)+sizeof(size_t)), cached_size_(n) {
-        this->init(value);
+    array<T,Allocator>::array(size_t n, T value) : bind_allocator(n*sizeof(T)), size_(n) {
+        this->fill(value);
     }
 
     template <typename T, class Allocator>
@@ -84,96 +59,37 @@ namespace bind {
     template <typename T, class Allocator>
     template <class OtherAllocator>
     array<T,Allocator>& array<T,Allocator>::operator = (const array<T,OtherAllocator>& rhs){
-        array resized(rhs.capacity());
+        array resized(rhs.size());
         this->swap(resized);
-        this->cached_size_ = rhs.cached_size();
-
-        if(!bind::weak(rhs)) bind::cpu(detail::copy_array<T,Allocator,OtherAllocator>, *this, rhs, this->cached_size_);
+        if(!bind::weak(rhs)) bind::cpu(detail::copy_array<T,Allocator,OtherAllocator>, *this, rhs, this->size_);
         return *this;
     }
 
     template<class T, class Allocator>
-    void array<T,Allocator>::init(T value){
-        bind::cpu(detail::init_value_array<T,Allocator>, *this, value);
-    }
-
-    template<typename T, class Allocator>
-    void array<T,Allocator>::auto_reserve(){
-        if(this->cached_size() == this->capacity()){
-            this->reserve(this->cached_size()*2);
-        }
-    }
-
-    template<class T, class Allocator>
-    void array<T,Allocator>::reserve(size_t n){
-        if(capacity() >= n) return;
-        size_t current_size = cached_size();
-        array reserved(n);
-        if(!bind::weak(*this)) bind::cpu(detail::copy_array<T,Allocator>, reserved, *this, current_size);
-        this->swap(reserved);
-        cached_size_ = current_size;
-    }
-
-    template<typename T, class Allocator>
-    void array<T,Allocator>::shrink_to_fit(){
-        if(memory::aligned_64(cached_size()*sizeof(T)+sizeof(size_t)) ==
-           memory::aligned_64(capacity()*sizeof(T)+sizeof(size_t))) return;
-
-        size_t current_size = cached_size();
-        array shrinked(cached_size());
-        if(!bind::weak(*this)) bind::cpu(detail::copy_array<T,Allocator>, shrinked, *this, current_size);
-        this->swap(shrinked);
-    }
-
-    template<class T, class Allocator>
-    size_t array<T,Allocator>::measure() const {
-        bind::ptr<size_t> measured(0);
-        bind::cpu(detail::measure_size<T,Allocator>, *this, measured);
-        bind::sync();
-        cached_size_ = *measured;
-        return cached_size();
+    void array<T,Allocator>::fill(T value){
+        bind::cpu(detail::fill_array<T,Allocator>, *this, value);
     }
 
     template<typename T, class Allocator>
     void array<T,Allocator>::load() const {
-        bind::load(*this);
+        bind::load(*this); // shouldn't be needed
     }
-
-    /* using cached size */
 
     template<class T, class Allocator>
     void array<T,Allocator>::swap(array<T,Allocator>& r){
-        std::swap(this->cached_size_, r.cached_size_);
-        std::swap(this->bind_allocator.after->data, r.bind_allocator.after->data);
+        std::swap(this->size_, r.size_);
+        std::swap(this->bind_allocator.after->data, r.bind_allocator.after->data); // fixme
     }
 
     template<class T, class Allocator>
     size_t array<T,Allocator>::size() const {
-        if(this->bind_allocator.after->valid())
-            return bind::delegated(*this).size_;
-        else
-            return cached_size();
+        return size_;
     }
 
     template<class T, class Allocator>
     bool array<T,Allocator>::empty() const {
         return ((size() == 0) || bind::weak(*this));
     }
-
-    template<class T, class Allocator>
-    void array<T,Allocator>::resize(size_t sz){
-        reserve(sz);
-        cached_size_ = sz;
-        if(this->bind_allocator.after->valid())
-            bind::delegated(*this).size_ = sz;
-    }
-
-    template<typename T, class Allocator>
-    void array<T,Allocator>::clear(){
-        this->resize(0);
-    }
-
-    /* using data-access methods (load required if not async) */
 
     template<class T, class Allocator>
     typename array<T,Allocator>::value_type* array<T,Allocator>::data(){
@@ -245,32 +161,6 @@ namespace bind {
     template<typename T, class Allocator>
     typename array<T,Allocator>::const_iterator array<T,Allocator>::cend() const {
         return this->begin()+size();
-    }
-
-    template<class T, class Allocator>
-    void array<T,Allocator>::push_back(value_type value){
-        (*this)[size()] = value;
-        bind::delegated(*this).size_++;
-    }
-
-    template<class T, class Allocator>
-    void array<T,Allocator>::pop_back(){
-        bind::delegated(*this).size_--;
-    }
-
-    template<typename T, class Allocator>
-    typename array<T,Allocator>::iterator array<T,Allocator>::insert(const_iterator position, value_type val){
-        for(int i = size(); i > (position-this->cbegin()); i--) (*this)[i] = (*this)[i-1];
-        (*this)[position-this->cbegin()] = val;
-        bind::delegated(*this).size_++;
-        return (this->begin()+(position-this->cbegin()));
-    }
-
-    template<typename T, class Allocator>
-    typename array<T,Allocator>::iterator array<T,Allocator>::erase(const_iterator position){
-        for(int i = (position-this->cbegin()); i < size()-1; i++) (*this)[i] = (*this)[i+1];
-        bind::delegated(*this).size_--;
-        return (this->begin()+(position-this->cbegin()));
     }
 
 }
