@@ -57,10 +57,10 @@ namespace bind {
             return data()[ j*rows + i ];
         }
         value_type* data() volatile {
-            return bind::delegated(*this).data;
+            return (value_type*)allocator_.data();
         }
         const value_type* data() const volatile {
-            return bind::delegated(*this).data;
+            return (value_type*)allocator_.data();
         }
         size_t num_rows() const {
             return rows;
@@ -70,9 +70,8 @@ namespace bind {
         }
         size_t rows;
         size_t cols;
-    BIND_DELEGATE(
-        value_type data[ BIND_VAR_LENGTH ]; 
-    )};
+        mutable allocator_type allocator_;
+    };
 
 }
 

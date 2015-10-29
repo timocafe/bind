@@ -32,10 +32,6 @@ namespace bind {
 
     using model::revision;
 
-    template <typename T> static auto delegated(T& obj) -> typename T::bind_type_structure& {
-        return *(typename T::bind_type_structure*)(*obj.allocator_.after);
-    }
-
     template <typename T> static void revise(const T& obj){
         revision& c = *obj.allocator_.before; if(c.valid()) return;
         c.embed(obj.allocator_.calloc(c.spec));
@@ -55,7 +51,7 @@ namespace bind {
         else if(p.locked_once() && !p.referenced() && c.spec.conserves(p.spec)) c.reuse(p);
         else{
             c.embed(obj.allocator_.alloc(c.spec));
-            memcpy((T*)c, (T*)p, p.spec.extent);
+            memcpy(c.data, p.data, p.spec.extent);
         }
     }
 }

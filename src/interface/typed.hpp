@@ -267,7 +267,7 @@ namespace bind {
     // {{{ compile-time type info: specialization for forwarded types
 
     template <typename T> struct has_versioning {
-        template <typename T1> static typename T1::bind_type_structure test(int);
+        template <typename T1> static typename T1::allocator_type::bind_type test(int);
         template <typename>    static void test(...);
         enum { value = !std::is_void<decltype(test<T>(0))>::value };
     };
@@ -310,11 +310,6 @@ namespace bind {
     };
 
     // }}}
-
-    #define BIND_DELEGATE(...)       struct  bind_type_structure { __VA_ARGS__ }; \
-                                     mutable allocator_type allocator_;
-
-    #define BIND_VAR_LENGTH 1
 }
 
 #undef EXTRACT

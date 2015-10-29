@@ -75,9 +75,8 @@ namespace bind {
     private:
         mutable size_t size_;
     public:
-    BIND_DELEGATE(
-        value_type data[ BIND_VAR_LENGTH ]; 
-    )};
+        mutable allocator_type allocator_;
+    };
 
 }
 

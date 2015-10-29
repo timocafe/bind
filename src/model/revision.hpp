@@ -32,9 +32,6 @@ namespace bind { namespace model {
 
     class revision : public memory::cpu::use_fixed_new<revision> {
     public:
-        template<typename T> operator T* (){ return (T*)data; }
-        operator revision* (){ return NULL; }
-
         revision(size_t extent, functor* g, locality l, rank_t owner)
         : spec(extent), generator(g), state(l), 
           data(NULL), users(0), owner(owner)

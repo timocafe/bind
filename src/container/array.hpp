@@ -90,12 +90,12 @@ namespace bind {
 
     template<class T, class Allocator>
     typename array<T,Allocator>::value_type* array<T,Allocator>::data(){
-        return bind::delegated(*this).data;
+        return (value_type*)allocator_.data();
     }
 
     template<class T, class Allocator>
     typename array<T,Allocator>::value_type& array<T,Allocator>::operator[](size_t i){
-        return bind::delegated(*this).data[ i ];
+        return data()[ i ];
     }
 
     template<typename T, class Allocator>
@@ -126,12 +126,12 @@ namespace bind {
 
     template<class T, class Allocator>
     const typename array<T,Allocator>::value_type* array<T,Allocator>::data() const {
-        return bind::delegated(*this).data;
+        return (value_type*)allocator_.data();
     }
 
     template<class T, class Allocator>
     const typename array<T,Allocator>::value_type& array<T,Allocator>::operator[](size_t i) const {
-        return bind::delegated(*this).data[ i ];
+        return data()[ i ];
     }
 
     template<typename T, class Allocator>

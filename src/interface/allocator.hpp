@@ -38,13 +38,15 @@ namespace bind {
     };
 
     struct allocator : public stateful {
+        typedef history bind_type;
+
         allocator& operator=(const allocator&) = delete;
         allocator(){ }
         allocator(size_t size){
-            desc = new history(size);
+            desc = new bind_type(size);
         }
         allocator(const allocator& origin){
-            desc = new history(origin.desc->extent);
+            desc = new bind_type(origin.desc->extent);
             revision* r = origin.desc->back(); if(!r) return;
             desc->current = r;
             if(!r->valid() && r->state != locality::remote)
@@ -64,7 +66,10 @@ namespace bind {
         static void free(void* ptr, memory::descriptor& spec){
             spec.free(ptr);
         }
-        history* desc;
+        void* data() volatile {
+            return after->data;
+        }
+        bind_type* desc;
     };
 }
 
