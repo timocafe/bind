@@ -36,10 +36,13 @@ namespace bind {
         if(!controller) return;
         bind::select().deactivate(this);
     }
-    inline node::node(std::vector<rank_t>::const_iterator it){
+    inline node::node(const rank_t r){
         if(! (controller = bind::select().activate(this)) ) return;
-        this->rank = *it;
-        this->state = (rank == controller->get_rank()) ? locality::local : locality::remote;
+        this->state = (r == controller->get_rank()) ? locality::local : locality::remote;
+        this->rank = r;
+    }
+    inline node::node(std::vector<rank_t>::const_iterator it) : node(*it)
+    {
     }
     inline bool node::remote() const {
         return (state == locality::remote);

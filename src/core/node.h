@@ -41,6 +41,7 @@ namespace bind {
     public:
        ~node();
         node(std::vector<rank_t>::const_iterator it);
+        node(const rank_t r);
         bool remote() const;
         bool local()  const;
         bool common() const;

@@ -1523,6 +1523,7 @@ namespace bind {
     public:
        ~node();
         node(std::vector<rank_t>::const_iterator it);
+        node(const rank_t r);
         bool remote() const;
         bool local()  const;
         bool common() const;
@@ -1977,10 +1978,13 @@ namespace bind {
         if(!controller) return;
         bind::select().deactivate(this);
     }
-    inline node::node(std::vector<rank_t>::const_iterator it){
+    inline node::node(const rank_t r){
         if(! (controller = bind::select().activate(this)) ) return;
-        this->rank = *it;
+        this->rank = r;
         this->state = (rank == controller->get_rank()) ? locality::local : locality::remote;
+    }
+    inline node::node(std::vector<rank_t>::const_iterator it) : node(*it)
+    {
     }
     inline bool node::remote() const {
         return (state == locality::remote);
