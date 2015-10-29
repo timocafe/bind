@@ -45,14 +45,13 @@ namespace bind {
         using iterator = iterator<array>;
         explicit array(){}
 
-        explicit array(size_t n, T value = T());
+        explicit array(size_t n);
         array(const array& a) = default;
         array& operator = (const array& rhs);
         template<class OtherAllocator>
         array& operator = (const array<T,OtherAllocator>& rhs);
 
         void fill(T value);
-
         void swap(array<T,Allocator>& r);
         size_t size() const;
         bool empty() const;

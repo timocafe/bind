@@ -2793,14 +2793,13 @@ namespace bind {
         using iterator = iterator<array>;
         explicit array(){}
 
-        explicit array(size_t n, T value = T());
+        explicit array(size_t n);
         array(const array& a) = default;
         array& operator = (const array& rhs);
         template<class OtherAllocator>
         array& operator = (const array<T,OtherAllocator>& rhs);
 
         void fill(T value);
-
         void swap(array<T,Allocator>& r);
         size_t size() const;
         bool empty() const;
@@ -2852,8 +2851,7 @@ namespace bind {
     // }}}
 
     template<class T, class Allocator>
-    array<T,Allocator>::array(size_t n, T value) : allocator_(n*sizeof(T)), size_(n) {
-        this->fill(value);
+    array<T,Allocator>::array(size_t n) : allocator_(n*sizeof(T)), size_(n) {
     }
 
     template <typename T, class Allocator>

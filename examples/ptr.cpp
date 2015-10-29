@@ -8,7 +8,8 @@ void norm(bind::ptr<double>& norm, bind::array<double>& vec){
 
 int main(){
     bind::ptr<double> n(0);
-    bind::array<double> vec(N, 1);
+    bind::array<double> vec(N);
+    vec.fill(1);
 
     bind::cpu(norm, n, vec);
     bind::sync();

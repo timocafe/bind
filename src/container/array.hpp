@@ -47,8 +47,7 @@ namespace bind {
     // }}}
 
     template<class T, class Allocator>
-    array<T,Allocator>::array(size_t n, T value) : allocator_(n*sizeof(T)), size_(n) {
-        this->fill(value);
+    array<T,Allocator>::array(size_t n) : allocator_(n*sizeof(T)), size_(n) {
     }
 
     template <typename T, class Allocator>
