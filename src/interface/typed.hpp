@@ -111,8 +111,8 @@ namespace bind {
         template<size_t arg> 
         static void deallocate(functor* m){
             EXTRACT(o);
-            revision& parent  = *o->bind_allocator.before;
-            revision& current = *o->bind_allocator.after;
+            revision& parent  = *o->allocator_.before;
+            revision& current = *o->allocator_.after;
             current.complete();
             current.release();
             bind::select().squeeze(&parent);
@@ -120,7 +120,7 @@ namespace bind {
         }
         template<size_t arg>
         static void modify_remote(T& obj){
-            auto o = obj.bind_allocator.desc;
+            auto o = obj.allocator_.desc;
             bind::select().touch(o, bind::rank());
             if(o->back()->owner != bind::nodes::which_())
                 bind::select().rsync(o->back());
@@ -129,36 +129,36 @@ namespace bind {
         }
         template<size_t arg>
         static void modify_local(T& obj, functor* m){
-            auto o = obj.bind_allocator.desc;
+            auto o = obj.allocator_.desc;
             bind::select().touch(o, bind::rank());
             T* var = (T*)memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy((void*)var, &obj, sizeof(T)); 
             m->arguments[arg] = (void*)var;
             bind::select().lsync(o->back());
             bind::select().use_revision(o);
 
-            var->bind_allocator.before = o->current;
+            var->allocator_.before = o->current;
             if(o->current->generator != m){
                 bind::select().collect(o->back());
                 bind::select().add_revision<locality::local>(o, m, bind::rank());
             }
             bind::select().use_revision(o);
-            var->bind_allocator.after = obj.bind_allocator.after = o->current;
+            var->allocator_.after = obj.allocator_.after = o->current;
         }
         template<size_t arg>
         static void modify(T& obj, functor* m){
-            auto o = obj.bind_allocator.desc;
+            auto o = obj.allocator_.desc;
             bind::select().touch(o, bind::rank());
             T* var = (T*)memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy((void*)var, &obj, sizeof(T)); m->arguments[arg] = (void*)var;
             bind::select().sync(o->back());
             bind::select().use_revision(o);
 
-            var->bind_allocator.before = o->current;
+            var->allocator_.before = o->current;
             if(o->current->generator != m){
                 bind::select().collect(o->back());
                 bind::select().add_revision<locality::common>(o, m, bind::rank()); 
             }
             bind::select().use_revision(o);
-            var->bind_allocator.after = obj.bind_allocator.after = o->current;
+            var->allocator_.after = obj.allocator_.after = o->current;
         }
         template<size_t arg>
         static T& revised(functor* m){ 
@@ -168,7 +168,7 @@ namespace bind {
         template<size_t arg> 
         static bool pin(functor* m){ 
             EXTRACT(o);
-            revision& r = *o->bind_allocator.before;
+            revision& r = *o->allocator_.before;
             if(r.generator != NULL && r.generator != m){
                 (r.generator.load())->queue(m);
                 return true;
@@ -178,7 +178,7 @@ namespace bind {
         template<size_t arg> 
         static bool ready(functor* m){
             EXTRACT(o);
-            revision& r = *o->bind_allocator.before;
+            revision& r = *o->allocator_.before;
             if(r.generator == NULL || r.generator == m) return true;
             return false;
         }
@@ -190,36 +190,36 @@ namespace bind {
     template <typename T> struct read_iteratable_info : public iteratable_info<T> {
         template<size_t arg> static void deallocate(functor* m){
             EXTRACT(o);
-            revision& r = *o->bind_allocator.before;
+            revision& r = *o->allocator_.before;
             bind::select().squeeze(&r);
             r.release();
         }
         template<size_t arg> static void modify_remote(T& obj){
-            auto o = obj.bind_allocator.desc;
+            auto o = obj.allocator_.desc;
             bind::select().touch(o, bind::rank());
             if(o->back()->owner != bind::nodes::which_())
                 bind::select().rsync(o->back());
         }
         template<size_t arg> static void modify_local(T& obj, functor* m){
-            auto o = obj.bind_allocator.desc;
+            auto o = obj.allocator_.desc;
             bind::select().touch(o, bind::rank());
             T* var = (T*)memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy((void*)var, &obj, sizeof(T)); m->arguments[arg] = (void*)var;
-            var->bind_allocator.before = var->bind_allocator.after = o->current;
+            var->allocator_.before = var->allocator_.after = o->current;
             bind::select().lsync(o->back());
             bind::select().use_revision(o);
         }
         template<size_t arg> static void modify(T& obj, functor* m){
-            auto o = obj.bind_allocator.desc;
+            auto o = obj.allocator_.desc;
             bind::select().touch(o, bind::rank());
             T* var = (T*)memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy((void*)var, &obj, sizeof(T)); m->arguments[arg] = (void*)var;
-            var->bind_allocator.before = var->bind_allocator.after = o->current;
+            var->allocator_.before = var->allocator_.after = o->current;
             bind::select().sync(o->back());
             bind::select().use_revision(o);
         }
         template<size_t arg> 
         static bool pin(functor* m){ 
             EXTRACT(o);
-            revision& r = *o->bind_allocator.before;
+            revision& r = *o->allocator_.before;
             if(r.generator != NULL){
                 (r.generator.load())->queue(m);
                 return true;
@@ -229,35 +229,35 @@ namespace bind {
     };
     template <typename T> struct write_iteratable_info : public iteratable_info<T> {
         template<size_t arg> static void modify_remote(T& obj){
-            auto o = obj.bind_allocator.desc;
+            auto o = obj.allocator_.desc;
             bind::select().touch(o, bind::rank());
             bind::select().collect(o->back());
             bind::select().add_revision<locality::remote>(o, NULL, bind::nodes::which_()); 
         }
         template<size_t arg> static void modify_local(T& obj, functor* m){
-            auto o = obj.bind_allocator.desc;
+            auto o = obj.allocator_.desc;
             bind::select().touch(o, bind::rank());
             T* var = (T*)memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy((void*)var, (void*)&obj, sizeof(T)); m->arguments[arg] = (void*)var;
 
             bind::select().use_revision(o);
             bind::select().collect(o->back());
 
-            var->bind_allocator.before = o->current;
+            var->allocator_.before = o->current;
             bind::select().add_revision<locality::local>(o, m, bind::rank()); 
             bind::select().use_revision(o);
-            var->bind_allocator.after = obj.bind_allocator.after = o->current;
+            var->allocator_.after = obj.allocator_.after = o->current;
         }
         template<size_t arg> static void modify(T& obj, functor* m){
-            auto o = obj.bind_allocator.desc;
+            auto o = obj.allocator_.desc;
             bind::select().touch(o, bind::rank());
             T* var = (T*)memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy((void*)var, (void*)&obj, sizeof(T)); m->arguments[arg] = (void*)var;
             bind::select().use_revision(o);
             bind::select().collect(o->back());
 
-            var->bind_allocator.before = o->current;
+            var->allocator_.before = o->current;
             bind::select().add_revision<locality::common>(o, m, bind::rank()); 
             bind::select().use_revision(o);
-            var->bind_allocator.after = obj.bind_allocator.after = o->current;
+            var->allocator_.after = obj.allocator_.after = o->current;
         }
         template<size_t arg> static bool pin(functor* m){ return false; }
         template<size_t arg> static bool ready (functor* m){ return true;  }
@@ -312,7 +312,7 @@ namespace bind {
     // }}}
 
     #define BIND_DELEGATE(...)       struct  bind_type_structure { __VA_ARGS__ }; \
-                                     mutable allocator_type bind_allocator;
+                                     mutable allocator_type allocator_;
 
     #define BIND_VAR_LENGTH 1
 }

@@ -47,7 +47,7 @@ namespace bind {
     // }}}
 
     template<class T, class Allocator>
-    array<T,Allocator>::array(size_t n, T value) : bind_allocator(n*sizeof(T)), size_(n) {
+    array<T,Allocator>::array(size_t n, T value) : allocator_(n*sizeof(T)), size_(n) {
         this->fill(value);
     }
 
@@ -75,7 +75,7 @@ namespace bind {
     template<class T, class Allocator>
     void array<T,Allocator>::swap(array<T,Allocator>& r){
         std::swap(this->size_, r.size_);
-        std::swap(this->bind_allocator.after->data, r.bind_allocator.after->data); // fixme
+        std::swap(this->allocator_.after->data, r.allocator_.after->data); // fixme
     }
 
     template<class T, class Allocator>

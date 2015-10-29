@@ -53,17 +53,17 @@ namespace bind {
 
     template<typename V>
     inline bool weak(const V& obj){
-        return obj.bind_allocator.desc->weak();
+        return obj.allocator_.desc->weak();
     }
 
     template<typename V>
     inline size_t extent(V& obj){ 
-        return obj.bind_allocator.desc->extent;
+        return obj.allocator_.desc->extent;
     }
 
     template<typename V>
     inline bool locked_once(const V& o){
-        return o.bind_allocator.before->locked_once();
+        return o.allocator_.before->locked_once();
     }
 
 }

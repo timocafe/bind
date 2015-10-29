@@ -46,7 +46,7 @@ namespace bind {
     public:
         typedef Allocator allocator_type;
         typedef T value_type;
-        block(size_t m, size_t n) : bind_allocator(sizeof(T)*m*n), rows(m), cols(n) {}
+        block(size_t m, size_t n) : allocator_(sizeof(T)*m*n), rows(m), cols(n) {}
         void init(T value){
             bind::cpu(detail::fill_value<T>, *this, value);
         }

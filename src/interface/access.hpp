@@ -33,28 +33,28 @@ namespace bind {
     using model::revision;
 
     template <typename T> static auto delegated(T& obj) -> typename T::bind_type_structure& {
-        return *(typename T::bind_type_structure*)(*obj.bind_allocator.after);
+        return *(typename T::bind_type_structure*)(*obj.allocator_.after);
     }
 
     template <typename T> static void revise(const T& obj){
-        revision& c = *obj.bind_allocator.before; if(c.valid()) return;
-        c.embed(obj.bind_allocator.calloc(c.spec));
+        revision& c = *obj.allocator_.before; if(c.valid()) return;
+        c.embed(obj.allocator_.calloc(c.spec));
     }
 
     template <typename T> static void revise(volatile T& obj){
-        revision& c = *obj.bind_allocator.after; if(c.valid()) return;
-        revision& p = *obj.bind_allocator.before;
+        revision& c = *obj.allocator_.after; if(c.valid()) return;
+        revision& p = *obj.allocator_.before;
         if(p.valid() && p.locked_once() && !p.referenced() && c.spec.conserves(p.spec)) c.reuse(p);
-        else c.embed(obj.bind_allocator.alloc(c.spec));
+        else c.embed(obj.allocator_.alloc(c.spec));
     }
 
     template <typename T> static void revise(T& obj){
-        revision& c = *obj.bind_allocator.after; if(c.valid()) return;
-        revision& p = *obj.bind_allocator.before;
-        if(!p.valid()) c.embed(obj.bind_allocator.calloc(c.spec));
+        revision& c = *obj.allocator_.after; if(c.valid()) return;
+        revision& p = *obj.allocator_.before;
+        if(!p.valid()) c.embed(obj.allocator_.calloc(c.spec));
         else if(p.locked_once() && !p.referenced() && c.spec.conserves(p.spec)) c.reuse(p);
         else{
-            c.embed(obj.bind_allocator.alloc(c.spec));
+            c.embed(obj.allocator_.alloc(c.spec));
             memcpy((T*)c, (T*)p, p.spec.extent);
         }
     }

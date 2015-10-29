@@ -40,7 +40,7 @@ namespace bind { namespace nodes {
     }
     template<typename V>
     inline rank_t which(const V& o){
-        return o.bind_allocator.desc->current->owner;
+        return o.allocator_.desc->current->owner;
     }
     inline rank_t which(){
         rank_t w = which_();
