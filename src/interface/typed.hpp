@@ -150,8 +150,8 @@ namespace bind {
         static constexpr bool ReferenceOnly = false;
     };
     // }}}
-    // {{{ compile-time type info: iteratable derived types
-    template <typename T> struct iteratable_info : public singular_info<T> {
+    // {{{ compile-time type info: versioned types
+    template <typename T> struct versioned_info : public singular_info<T> {
         template<size_t arg> 
         static void deallocate(functor* m){
             EXTRACT(o); deallocate_(o);
@@ -234,10 +234,9 @@ namespace bind {
         }
         static constexpr bool ReferenceOnly = true;
     };
-    // }}}
-    // {{{ compile-time type info: only read/write iteratable derived types
+    // {{{ compile-time type info: const/volatile cases of the versioned types
 
-    template <typename T> struct read_iteratable_info : public iteratable_info<T> {
+    template <typename T> struct const_versioned_info : public versioned_info<T> {
         template<size_t arg>
         static void deallocate(functor* m){
             EXTRACT(o); deallocate_(o);
@@ -282,7 +281,7 @@ namespace bind {
             return false;
         }
     };
-    template <typename T> struct write_iteratable_info : public iteratable_info<T> {
+    template <typename T> struct volatile_versioned_info : public versioned_info<T> {
         template<size_t arg> static void modify_remote(T& obj){
             auto o = obj.allocator_.desc;
             bind::select().touch(o, bind::rank());
@@ -320,52 +319,47 @@ namespace bind {
         static bool ready_(T&, functor*){ return true; }
     };
     // }}}
-
+    // }}}
     // {{{ compile-time type info: specialization for forwarded types
+
+    namespace detail {
+        template <typename T> struct has_versioning {
+            template <typename T1> static typename T1::allocator_type::bind_type test(int);
+            template <typename> static void test(...);
+            enum { value = !std::is_void<decltype(test<T>(0))>::value };
+        };
+        template <bool Versioned, typename T> struct get_info { typedef singular_info< T > type; };
+        template<typename T> struct get_info<true, T> { typedef versioned_info< T > type; };
+
+        template <bool Versioned, typename T> struct const_get_info { typedef singular_info< const T > type; };
+        template<typename T> struct const_get_info<true, T> { typedef const_versioned_info< const T > type; };
+
+        template <bool Versioned, typename T> struct volatile_get_info { typedef singular_info< volatile T > type; };
+        template<typename T> struct volatile_get_info<true, T> { typedef volatile_versioned_info< volatile T > type; };
+    }
 
     template<typename T> class ptr;
     template<typename T> class iterator;
 
-    template <typename T> struct has_versioning {
-        template <typename T1> static typename T1::allocator_type::bind_type test(int);
-        template <typename>    static void test(...);
-        enum { value = !std::is_void<decltype(test<T>(0))>::value };
+    template <typename T> struct info {
+        typedef typename detail::get_info<detail::has_versioning<T>::value,T>::type typed;
     };
-
-    template <bool V, typename T> struct versioned_info { };
-    template<typename T> struct versioned_info<true, T> { typedef iteratable_info< T > type; };
-    template<typename T> struct versioned_info<false, T> { typedef singular_info< T > type; };
-
-    template <bool V, typename T> struct const_versioned_info { };
-    template<typename T> struct const_versioned_info<true, T> { typedef read_iteratable_info< const T > type; };
-    template<typename T> struct const_versioned_info<false, T> { typedef singular_info< const T > type; };
-
-    template <typename T>
-    struct info {
-        typedef typename versioned_info<has_versioning<T>::value,T>::type typed;
+    template <typename T> struct info <const T> {
+        typedef typename detail::const_get_info<detail::has_versioning<T>::value,T>::type typed;
     };
-    template <typename T>
-    struct info <const T> {
-        typedef typename const_versioned_info<has_versioning<T>::value,T>::type typed;
+    template <typename T> struct info <volatile T> {
+        typedef typename detail::volatile_get_info<detail::has_versioning<T>::value,T>::type typed;
     };
-    template <typename T>
-    struct info <volatile T> {
-        typedef write_iteratable_info<volatile T> typed;
-    };
-    template <typename S>
-    struct info < ptr<S> > {
+    template <typename S> struct info < ptr<S> > {
         typedef ptr_info<ptr<S> > typed; 
     };
-    template <typename S>
-    struct info < const ptr<S> > { 
+    template <typename S> struct info < const ptr<S> > {
         typedef read_ptr_info<const ptr<S> > typed; 
     };
-    template <typename S>
-    struct info < iterator<S> > {
+    template <typename S> struct info < iterator<S> > {
         typedef iterator_info<iterator<S> > typed;
     };
-    template <>
-    struct info < size_t > {
+    template <> struct info < size_t > {
         typedef singular_inplace_info<size_t> typed; 
     };
 
