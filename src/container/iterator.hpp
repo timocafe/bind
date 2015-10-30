@@ -34,25 +34,37 @@ namespace bind {
     class iterator {
     public:
         typedef Container container_type;
-        typedef typename Container::value_type value_type;
+        typedef typename std::iterator_traits<bind::iterator<Container> >::value_type value_type;
 
         iterator() : container(NULL), position(0) {}
         iterator(container_type& owner, size_t p) : container(&owner), position(p) {}
-        void operator++ (){
-            position++;
-        }
         iterator& operator += (size_t offset){
             position += offset;
             return *this;
+        }
+        iterator& operator++ (){
+            position++;
+            return *this;
+        }
+        iterator operator++ (int){
+            iterator tmp(*this);
+            operator++();
+            return tmp;
         }
         iterator& operator -= (size_t offset){
             position -= offset;
             return *this;
         }
-        value_type& operator* (){
-            return (*container)[position];
+        iterator& operator-- (){
+            position--;
+            return *this;
         }
-        const value_type& operator* () const {
+        iterator operator-- (int){
+            iterator tmp(*this);
+            operator--();
+            return tmp;
+        }
+        value_type& operator* () const {
             return (*container)[position];
         }
         container_type& get_container(){
@@ -62,7 +74,7 @@ namespace bind {
             return *container;
         }
         size_t position;
-    private:
+    public:
         template<typename T>
         friend bool operator == (const iterator<T>& lhs, const iterator<T>& rhs);
         template<typename T>
@@ -72,12 +84,12 @@ namespace bind {
 
     template <class Container> 
     bool operator == (const iterator<Container>& lhs, const iterator<Container>& rhs){
-        return (lhs.position == rhs.position && lhs.container == rhs.container);
+        return (lhs.position == rhs.position && lhs.container->allocator_.desc == rhs.container->allocator_.desc);
     }
 
     template <class Container> 
     bool operator != (const iterator<Container>& lhs, const iterator<Container>& rhs){
-        return (lhs.position != rhs.position || lhs.container != rhs.container);
+        return (lhs.position != rhs.position || lhs.container->allocator_.desc != rhs.container->allocator_.desc);
     }
 
     template <class Container, class OtherContainer> 
@@ -112,9 +124,18 @@ namespace std {
     template<class Container>
     class iterator_traits<bind::iterator<Container> > {
     public:
+        typedef std::random_access_iterator_tag iterator_category;
         typedef typename Container::value_type value_type;
+        typedef size_t difference_type;
     };
 
+    template<class Container>
+    class iterator_traits<bind::iterator<const Container> > {
+    public:
+        typedef std::random_access_iterator_tag iterator_category;
+        typedef const typename Container::value_type value_type;
+        typedef size_t difference_type;
+    };
 }
 
 #endif

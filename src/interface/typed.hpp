@@ -31,11 +31,12 @@
 #define EXTRACT(var) T& var = *(T*)m->arguments[arg];
 
 namespace bind {
-    template<typename T> class ptr;
     using model::functor;
     using model::revision;
 
-    // {{{ compile-time type info: singular types + inplace and ptr specializations
+    template <typename T> struct info;
+
+    // {{{ compile-time type info: singular types
     template <typename T> struct singular_info {
         template<size_t arg> static void deallocate   (functor* ){ }
         template<size_t arg> static bool pin          (functor* ){ return false; }
@@ -50,12 +51,17 @@ namespace bind {
         }
         static constexpr bool ReferenceOnly = false;
     };
+    // }}}
+    // {{{ compile-time type info: inplace types
     template <typename T> struct singular_inplace_info : public singular_info<T> {
         template<size_t arg> static T& revised(functor* m){ return *(T*)&m->arguments[arg]; }
         template<size_t arg> static void modify_remote(T&){ }
         template<size_t arg> static void modify_local(T& o, functor* m){ *(T*)&m->arguments[arg] = o; }
         template<size_t arg> static void modify(T& o, functor* m){ *(T*)&m->arguments[arg] = o; }
     };
+    // }}}
+    // {{{ compile-time type info: ptr types
+
     template <typename T> struct ptr_info : public singular_info<T> {
         template<size_t arg> static void deallocate(functor* m){
             EXTRACT(o); o.impl->complete();
@@ -104,11 +110,66 @@ namespace bind {
         }
     };
     // }}}
+    // {{{ compile-time type info: iterator types
+    template <typename T> struct iterator_info : public singular_info<T> {
+        typedef typename info<typename T::container_type>::typed typed;
+        typedef typename T::container_type container_type;
+
+        template<size_t arg> 
+        static void deallocate(functor* m){
+            EXTRACT(o); typed::deallocate_(*o.container);
+        }
+        template<size_t arg>
+        static void modify_remote(T& o){
+            typed::modify_remote<arg>(*o.container);
+        }
+        template<size_t arg>
+        static void modify_local(T& o, functor* m){
+            typed::modify_local<arg>(*o.container, m);
+            T* var = (T*)memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy((void*)var, &o, sizeof(T));
+            var->container = (container_type*)m->arguments[arg]; m->arguments[arg] = (void*)var;
+        }
+        template<size_t arg>
+        static void modify(T& o, functor* m){
+            typed::modify<arg>(*o.container, m);
+            T* var = (T*)memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy((void*)var, &o, sizeof(T));
+            var->container = (container_type*)m->arguments[arg]; m->arguments[arg] = (void*)var;
+        }
+        template<size_t arg>
+        static T& revised(functor* m){
+            EXTRACT(o); revise(*o.container); return o;
+        }
+        template<size_t arg> 
+        static bool pin(functor* m){ 
+            EXTRACT(o); return typed::pin_(*o.container, m);
+        }
+        template<size_t arg> 
+        static bool ready(functor* m){
+            EXTRACT(o); return typed::ready_(*o.container, m);
+        }
+        static constexpr bool ReferenceOnly = false;
+    };
+    // }}}
     // {{{ compile-time type info: iteratable derived types
     template <typename T> struct iteratable_info : public singular_info<T> {
         template<size_t arg> 
         static void deallocate(functor* m){
-            EXTRACT(o);
+            EXTRACT(o); deallocate_(o);
+        }
+        template<size_t arg> 
+        static bool pin(functor* m){
+            EXTRACT(o); return pin_(o,m);
+        }
+        template<size_t arg> 
+        static bool ready(functor* m){
+            EXTRACT(o); return ready_(o, m);
+        }
+        template<size_t arg>
+        static T& revised(functor* m){ 
+            EXTRACT(o); revise(o);
+            return o;
+        }
+        static void deallocate_(T& o){
             revision& parent  = *o.allocator_.before;
             revision& current = *o.allocator_.after;
             current.complete();
@@ -158,14 +219,7 @@ namespace bind {
             bind::select().use_revision(o);
             var->allocator_.after = obj.allocator_.after = o->current;
         }
-        template<size_t arg>
-        static T& revised(functor* m){ 
-            EXTRACT(o); revise(o);
-            return o;
-        }
-        template<size_t arg> 
-        static bool pin(functor* m){ 
-            EXTRACT(o);
+        static bool pin_(T& o, functor* m){
             revision& r = *o.allocator_.before;
             if(r.generator != NULL && r.generator != m){
                 (r.generator.load())->queue(m);
@@ -173,9 +227,7 @@ namespace bind {
             }
             return false;
         }
-        template<size_t arg> 
-        static bool ready(functor* m){
-            EXTRACT(o);
+        static bool ready_(T& o, functor* m){
             revision& r = *o.allocator_.before;
             if(r.generator == NULL || r.generator == m) return true;
             return false;
@@ -186,8 +238,15 @@ namespace bind {
     // {{{ compile-time type info: only read/write iteratable derived types
 
     template <typename T> struct read_iteratable_info : public iteratable_info<T> {
-        template<size_t arg> static void deallocate(functor* m){
-            EXTRACT(o);
+        template<size_t arg>
+        static void deallocate(functor* m){
+            EXTRACT(o); deallocate_(o);
+        }
+        template<size_t arg> 
+        static bool pin(functor* m){ 
+            EXTRACT(o); return pin_(o,m);
+        }
+        static void deallocate_(T& o){
             revision& r = *o.allocator_.before;
             bind::select().squeeze(&r);
             r.release();
@@ -214,9 +273,7 @@ namespace bind {
             bind::select().sync(o->back());
             bind::select().use_revision(o);
         }
-        template<size_t arg> 
-        static bool pin(functor* m){ 
-            EXTRACT(o);
+        static bool pin_(T& o, functor* m){
             revision& r = *o.allocator_.before;
             if(r.generator != NULL){
                 (r.generator.load())->queue(m);
@@ -258,11 +315,16 @@ namespace bind {
             var->allocator_.after = obj.allocator_.after = o->current;
         }
         template<size_t arg> static bool pin(functor* m){ return false; }
-        template<size_t arg> static bool ready (functor* m){ return true;  }
+        template<size_t arg> static bool ready(functor* m){ return true;  }
+        static bool pin_(T&, functor*){ return false; }
+        static bool ready_(T&, functor*){ return true; }
     };
     // }}}
 
     // {{{ compile-time type info: specialization for forwarded types
+
+    template<typename T> class ptr;
+    template<typename T> class iterator;
 
     template <typename T> struct has_versioning {
         template <typename T1> static typename T1::allocator_type::bind_type test(int);
@@ -286,22 +348,22 @@ namespace bind {
     struct info <const T> {
         typedef typename const_versioned_info<has_versioning<T>::value,T>::type typed;
     };
-
     template <typename T>
     struct info <volatile T> {
         typedef write_iteratable_info<volatile T> typed;
     };
-
     template <typename S>
     struct info < ptr<S> > {
         typedef ptr_info<ptr<S> > typed; 
     };
-
     template <typename S>
     struct info < const ptr<S> > { 
         typedef read_ptr_info<const ptr<S> > typed; 
     };
-
+    template <typename S>
+    struct info < iterator<S> > {
+        typedef iterator_info<iterator<S> > typed;
+    };
     template <>
     struct info < size_t > {
         typedef singular_inplace_info<size_t> typed; 

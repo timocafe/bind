@@ -52,7 +52,7 @@ namespace bind {
             inliner::latch(new kernel(), args...);
         }
         template<typename... Args>
-        static inline void spawn(Args&... args){
+        static inline void spawn(Args&& ... args){
             expand_spawn(std::make_index_sequence<sizeof...(Args)>(), args...);
         }
         #undef inliner
