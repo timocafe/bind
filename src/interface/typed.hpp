@@ -37,43 +37,43 @@ namespace bind {
 
     // {{{ compile-time type info: singular types + inplace and ptr specializations
     template <typename T> struct singular_info {
-        template<size_t arg> static void deallocate     (functor* m){                       }
-        template<size_t arg> static bool pin            (functor* m){ return false;         }
-        template<size_t arg> static bool ready          (functor* m){ return true;          }
-        template<size_t arg> static T&   revised        (functor* m){ EXTRACT(o); return o; }
-        template<size_t arg> static void modify (T& obj, functor* m){
-            m->arguments[arg] = (void*)new(memory::cpu::instr_bulk::malloc<sizeof(T)>()) T(obj); 
+        template<size_t arg> static void deallocate   (functor* ){ }
+        template<size_t arg> static bool pin          (functor* ){ return false; }
+        template<size_t arg> static bool ready        (functor* ){ return true; }
+        template<size_t arg> static T&   revised      (functor* m){ EXTRACT(o); return o; }
+        template<size_t arg> static void modify (T& o, functor* m){
+            m->arguments[arg] = (void*)new(memory::cpu::instr_bulk::malloc<sizeof(T)>()) T(o); 
         }
-        template<size_t arg> static void modify_remote(T& obj)      {                        }
-        template<size_t arg> static void modify_local(T& obj, functor* m){
-            m->arguments[arg] = (void*)new(memory::cpu::instr_bulk::malloc<sizeof(T)>()) T(obj);
+        template<size_t arg> static void modify_remote(T&){ }
+        template<size_t arg> static void modify_local(T& o, functor* m){
+            m->arguments[arg] = (void*)new(memory::cpu::instr_bulk::malloc<sizeof(T)>()) T(o);
         }
         static constexpr bool ReferenceOnly = false;
     };
     template <typename T> struct singular_inplace_info : public singular_info<T> {
         template<size_t arg> static T& revised(functor* m){ return *(T*)&m->arguments[arg]; }
-        template<size_t arg> static void modify_remote(T& obj){ }
-        template<size_t arg> static void modify_local(T& obj, functor* m){ *(T*)&m->arguments[arg] = obj; }
-        template<size_t arg> static void modify(T& obj, functor* m){ *(T*)&m->arguments[arg] = obj; }
+        template<size_t arg> static void modify_remote(T&){ }
+        template<size_t arg> static void modify_local(T& o, functor* m){ *(T*)&m->arguments[arg] = o; }
+        template<size_t arg> static void modify(T& o, functor* m){ *(T*)&m->arguments[arg] = o; }
     };
     template <typename T> struct ptr_info : public singular_info<T> {
         template<size_t arg> static void deallocate(functor* m){
             EXTRACT(o); o.impl->complete();
         }
-        template<size_t arg> static void modify_remote(T& obj){
-            obj.resit();
-            bind::select().rsync(obj.impl);
+        template<size_t arg> static void modify_remote(T& o){
+            o.resit();
+            bind::select().rsync(o.impl);
         }
-        template<size_t arg> static void modify_local(const T& obj, functor* m){
-            obj.resit();
-            obj.impl->generator = m;
-            bind::select().lsync(obj.impl);
-            m->arguments[arg] = memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy(m->arguments[arg], &obj, sizeof(T)); 
+        template<size_t arg> static void modify_local(const T& o, functor* m){
+            o.resit();
+            o.impl->generator = m;
+            bind::select().lsync(o.impl);
+            m->arguments[arg] = memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy(m->arguments[arg], &o, sizeof(T)); 
         }
-        template<size_t arg> static void modify(const T& obj, functor* m){
-            obj.resit();
-            obj.impl->generator = m;
-            m->arguments[arg] = memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy(m->arguments[arg], &obj, sizeof(T)); 
+        template<size_t arg> static void modify(const T& o, functor* m){
+            o.resit();
+            o.impl->generator = m;
+            m->arguments[arg] = memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy(m->arguments[arg], &o, sizeof(T)); 
         }
         template<size_t arg> static bool ready(functor* m){
             EXTRACT(o);
@@ -91,15 +91,13 @@ namespace bind {
         static constexpr bool ReferenceOnly = true;
     };
     template <typename T> struct read_ptr_info : public ptr_info<T> {
-        template<size_t arg> static void deallocate(functor* m){ 
+        template<size_t arg> static void deallocate(functor*){ }
+        template<size_t arg> static void modify_remote(T&){ }
+        template<size_t arg> static void modify_local(const T& o, functor* m){
+            m->arguments[arg] = memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy(m->arguments[arg], &o, sizeof(T)); 
         }
-        template<size_t arg> static void modify_remote(T& obj){
-        }
-        template<size_t arg> static void modify_local(const T& obj, functor* m){
-            m->arguments[arg] = memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy(m->arguments[arg], &obj, sizeof(T)); 
-        }
-        template<size_t arg> static void modify(const T& obj, functor* m){
-            m->arguments[arg] = memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy(m->arguments[arg], &obj, sizeof(T)); 
+        template<size_t arg> static void modify(const T& o, functor* m){
+            m->arguments[arg] = memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy(m->arguments[arg], &o, sizeof(T)); 
         }
         template<size_t arg> static T& revised(functor* m){
             EXTRACT(o); return o;
