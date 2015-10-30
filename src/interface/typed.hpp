@@ -28,7 +28,7 @@
 #ifndef BIND_INTERFACE_TYPED
 #define BIND_INTERFACE_TYPED
 
-#define EXTRACT(var) T* var = (T*)m->arguments[arg];
+#define EXTRACT(var) T& var = *(T*)m->arguments[arg];
 
 namespace bind {
     template<typename T> class ptr;
@@ -37,10 +37,10 @@ namespace bind {
 
     // {{{ compile-time type info: singular types + inplace and ptr specializations
     template <typename T> struct singular_info {
-        template<size_t arg> static void deallocate     (functor* m){                        }
-        template<size_t arg> static bool pin            (functor* m){ return false;          }
-        template<size_t arg> static bool ready          (functor* m){ return true;           }
-        template<size_t arg> static T&   revised        (functor* m){ EXTRACT(o); return *o; }
+        template<size_t arg> static void deallocate     (functor* m){                       }
+        template<size_t arg> static bool pin            (functor* m){ return false;         }
+        template<size_t arg> static bool ready          (functor* m){ return true;          }
+        template<size_t arg> static T&   revised        (functor* m){ EXTRACT(o); return o; }
         template<size_t arg> static void modify (T& obj, functor* m){
             m->arguments[arg] = (void*)new(memory::cpu::instr_bulk::malloc<sizeof(T)>()) T(obj); 
         }
@@ -58,7 +58,7 @@ namespace bind {
     };
     template <typename T> struct ptr_info : public singular_info<T> {
         template<size_t arg> static void deallocate(functor* m){
-            EXTRACT(o); o->impl->complete();
+            EXTRACT(o); o.impl->complete();
         }
         template<size_t arg> static void modify_remote(T& obj){
             obj.resit();
@@ -77,16 +77,16 @@ namespace bind {
         }
         template<size_t arg> static bool ready(functor* m){
             EXTRACT(o);
-            if(o->impl->origin && o->impl->origin->generator != NULL) return false;
-            return (o->impl->generator == m || o->impl->generator == NULL);
+            if(o.impl->origin && o.impl->origin->generator != NULL) return false;
+            return (o.impl->generator == m || o.impl->generator == NULL);
         }
         template<size_t arg> static T& revised(functor* m){
             EXTRACT(o);
-            if(o->impl->origin){
-                *o->impl = (typename T::element_type&)*o->impl->origin;
-                o->impl->origin = NULL;
+            if(o.impl->origin){
+                *o.impl = (typename T::element_type&)*o.impl->origin;
+                o.impl->origin = NULL;
             }
-            return *o;
+            return o;
         }
         static constexpr bool ReferenceOnly = true;
     };
@@ -102,7 +102,7 @@ namespace bind {
             m->arguments[arg] = memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy(m->arguments[arg], &obj, sizeof(T)); 
         }
         template<size_t arg> static T& revised(functor* m){
-            EXTRACT(o); return *o;
+            EXTRACT(o); return o;
         }
     };
     // }}}
@@ -111,8 +111,8 @@ namespace bind {
         template<size_t arg> 
         static void deallocate(functor* m){
             EXTRACT(o);
-            revision& parent  = *o->allocator_.before;
-            revision& current = *o->allocator_.after;
+            revision& parent  = *o.allocator_.before;
+            revision& current = *o.allocator_.after;
             current.complete();
             current.release();
             bind::select().squeeze(&parent);
@@ -162,13 +162,13 @@ namespace bind {
         }
         template<size_t arg>
         static T& revised(functor* m){ 
-            EXTRACT(o); revise(*o);
-            return *o;
+            EXTRACT(o); revise(o);
+            return o;
         }
         template<size_t arg> 
         static bool pin(functor* m){ 
             EXTRACT(o);
-            revision& r = *o->allocator_.before;
+            revision& r = *o.allocator_.before;
             if(r.generator != NULL && r.generator != m){
                 (r.generator.load())->queue(m);
                 return true;
@@ -178,7 +178,7 @@ namespace bind {
         template<size_t arg> 
         static bool ready(functor* m){
             EXTRACT(o);
-            revision& r = *o->allocator_.before;
+            revision& r = *o.allocator_.before;
             if(r.generator == NULL || r.generator == m) return true;
             return false;
         }
@@ -190,7 +190,7 @@ namespace bind {
     template <typename T> struct read_iteratable_info : public iteratable_info<T> {
         template<size_t arg> static void deallocate(functor* m){
             EXTRACT(o);
-            revision& r = *o->allocator_.before;
+            revision& r = *o.allocator_.before;
             bind::select().squeeze(&r);
             r.release();
         }
@@ -219,7 +219,7 @@ namespace bind {
         template<size_t arg> 
         static bool pin(functor* m){ 
             EXTRACT(o);
-            revision& r = *o->allocator_.before;
+            revision& r = *o.allocator_.before;
             if(r.generator != NULL){
                 (r.generator.load())->queue(m);
                 return true;
