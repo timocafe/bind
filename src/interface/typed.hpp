@@ -35,6 +35,8 @@ namespace bind {
     using model::revision;
 
     template <typename T> struct info;
+    template <typename T> class iterator;
+    template <typename T> class ptr;
 
     // {{{ compile-time type info: singular types
     template <typename T> struct singular_info {
@@ -337,9 +339,6 @@ namespace bind {
         template <bool Versioned, typename T> struct volatile_get_info { typedef singular_info< volatile T > type; };
         template<typename T> struct volatile_get_info<true, T> { typedef volatile_versioned_info< volatile T > type; };
     }
-
-    template<typename T> class ptr;
-    template<typename T> class iterator;
 
     template <typename T> struct info {
         typedef typename detail::get_info<detail::has_versioning<T>::value,T>::type typed;
