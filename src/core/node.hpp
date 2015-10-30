@@ -62,7 +62,7 @@ namespace bind {
 
     inline node_each::node_each(typename node::controller_type* c){
         this->controller = c;
-        this->rank = controller->get_shared_rank();
+        this->rank = controller->get_num_procs();
         this->state = locality::common;
     }
 

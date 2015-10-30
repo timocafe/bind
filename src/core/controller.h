@@ -62,7 +62,6 @@ namespace bind { namespace core {
         bool verbose() const;
         bool is_serial() const;
         rank_t get_rank() const;
-        rank_t get_shared_rank() const;
         int get_num_procs() const;
         channel_type& get_channel();
 

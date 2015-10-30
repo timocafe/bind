@@ -44,7 +44,7 @@ namespace bind { namespace nodes {
     }
     inline rank_t which(){
         rank_t w = which_();
-        return (w == select().get_shared_rank() ? select().get_rank() : w);
+        return (w == select().get_num_procs() ? select().get_rank() : w);
     }
 } }
 
@@ -175,10 +175,6 @@ namespace bind { namespace core {
 
     inline rank_t controller::get_rank() const {
         return channel.rank;
-    }
-
-    inline rank_t controller::get_shared_rank() const {
-        return get_num_procs();
     }
 
     inline bool controller::is_serial() const {

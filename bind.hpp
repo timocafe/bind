@@ -1577,7 +1577,6 @@ namespace bind { namespace core {
         bool verbose() const;
         bool is_serial() const;
         rank_t get_rank() const;
-        rank_t get_shared_rank() const;
         int get_num_procs() const;
         channel_type& get_channel();
 
@@ -1712,7 +1711,7 @@ namespace bind { namespace nodes {
     }
     inline rank_t which(){
         rank_t w = which_();
-        return (w == select().get_shared_rank() ? select().get_rank() : w);
+        return (w == select().get_num_procs() ? select().get_rank() : w);
     }
 } }
 
@@ -1843,10 +1842,6 @@ namespace bind { namespace core {
 
     inline rank_t controller::get_rank() const {
         return channel.rank;
-    }
-
-    inline rank_t controller::get_shared_rank() const {
-        return get_num_procs();
     }
 
     inline bool controller::is_serial() const {
@@ -2001,7 +1996,7 @@ namespace bind {
 
     inline node_each::node_each(typename node::controller_type* c){
         this->controller = c;
-        this->rank = controller->get_shared_rank();
+        this->rank = controller->get_num_procs();
         this->state = locality::common;
     }
 
