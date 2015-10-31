@@ -74,7 +74,7 @@ namespace bind { namespace memory {
     }
 
     inline void collector::delete_ptr::operator()( any* e ) const {
-        memory::cpu::fixed::free(e);
+        memory::cpu::standard::free(e);
     } 
 
     inline void collector::clear(){

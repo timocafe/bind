@@ -82,7 +82,6 @@
     #include "memory/cpu/comm_bulk.hpp"
     #include "memory/cpu/instr_bulk.hpp"
     #include "memory/cpu/standard.hpp"
-    #include "memory/cpu/fixed.hpp"
     #include "memory/cpu/new.hpp"
     // }}}
     // {{{ memory::gpu package

@@ -55,10 +55,10 @@ namespace bind {
             return *impl;
         }
         ptr(element_type val){
-            impl = new (memory::cpu::fixed::calloc<sizeof_any<T>()>()) any(val);
+            impl = new (memory::cpu::standard::calloc<sizeof_any<T>()>()) any(val);
         }
         ptr(const ptr& f){
-            impl = new (memory::cpu::fixed::calloc<sizeof_any<T>()>()) any((element_type&)*f);
+            impl = new (memory::cpu::standard::calloc<sizeof_any<T>()>()) any((element_type&)*f);
             impl->origin = f.impl;
         }
         ptr& operator= (const ptr& f){

@@ -661,25 +661,15 @@ namespace bind { namespace memory { namespace cpu {
 namespace bind { namespace memory { namespace cpu {
 
     struct standard {
-        static void* malloc(size_t sz){ return std::malloc(sz); }
-        static void free(void* ptr){ std::free(ptr);  }
         static constexpr int signature = serial_id<cpu::standard>();
-    };
 
-} } }
-
-#endif
-
-#ifndef BIND_MEMORY_CPU_FIXED_HPP
-#define BIND_MEMORY_CPU_FIXED_HPP
-
-namespace bind { namespace memory { namespace cpu {
-
-    struct fixed {
-        // boost::singleton_pool<fixed,S> can be used instead (implicit mutex)
         template<size_t S> static void* malloc(){ return std::malloc(S);   }
         template<size_t S> static void* calloc(){ return std::calloc(1,S); }
-        static void free(void* ptr){ std::free(ptr);    }
+
+        static void* malloc(size_t sz){ return std::malloc(sz); }
+        static void* calloc(size_t sz){ return std::calloc(1,sz); }
+
+        static void free(void* ptr){ std::free(ptr);  }
     };
 
 } } }
@@ -694,8 +684,8 @@ namespace bind { namespace memory { namespace cpu {
     template<class T>
     class use_fixed_new {
     public:
-        void* operator new (size_t sz){ assert(sz == sizeof(T)); return memory::cpu::fixed::malloc<sizeof(T)>(); }
-        void operator delete (void* ptr){ memory::cpu::fixed::free(ptr); }
+        void* operator new (size_t sz){ assert(sz == sizeof(T)); return memory::cpu::standard::malloc<sizeof(T)>(); }
+        void operator delete (void* ptr){ memory::cpu::standard::free(ptr); }
     };
 
     template<class T>
@@ -1490,7 +1480,7 @@ namespace bind { namespace memory {
     }
 
     inline void collector::delete_ptr::operator()( any* e ) const {
-        memory::cpu::fixed::free(e);
+        memory::cpu::standard::free(e);
     } 
 
     inline void collector::clear(){
@@ -2689,10 +2679,10 @@ namespace bind {
             return *impl;
         }
         ptr(element_type val){
-            impl = new (memory::cpu::fixed::calloc<sizeof_any<T>()>()) any(val);
+            impl = new (memory::cpu::standard::calloc<sizeof_any<T>()>()) any(val);
         }
         ptr(const ptr& f){
-            impl = new (memory::cpu::fixed::calloc<sizeof_any<T>()>()) any((element_type&)*f);
+            impl = new (memory::cpu::standard::calloc<sizeof_any<T>()>()) any((element_type&)*f);
             impl->origin = f.impl;
         }
         ptr& operator= (const ptr& f){
@@ -2843,8 +2833,8 @@ namespace bind {
     public:
         void* operator new (size_t size, void* ptr){ return ptr; }
         void  operator delete (void*, void*){ /* doesn't throw */ }
-        void* operator new (size_t sz){ return memory::cpu::fixed::malloc<sizeof(array)>(); }
-        void operator delete (void* ptr){ memory::cpu::fixed::free(ptr); }
+        void* operator new (size_t sz){ return memory::cpu::standard::malloc<sizeof(array)>(); }
+        void operator delete (void* ptr){ memory::cpu::standard::free(ptr); }
     public:
         using allocator_type = Allocator;
         using value_type = T;

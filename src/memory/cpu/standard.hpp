@@ -31,9 +31,15 @@
 namespace bind { namespace memory { namespace cpu {
 
     struct standard {
-        static void* malloc(size_t sz){ return std::malloc(sz); }
-        static void free(void* ptr){ std::free(ptr);  }
         static constexpr int signature = serial_id<cpu::standard>();
+
+        template<size_t S> static void* malloc(){ return std::malloc(S);   }
+        template<size_t S> static void* calloc(){ return std::calloc(1,S); }
+
+        static void* malloc(size_t sz){ return std::malloc(sz); }
+        static void* calloc(size_t sz){ return std::calloc(1,sz); }
+
+        static void free(void* ptr){ std::free(ptr);  }
     };
 
 } } }

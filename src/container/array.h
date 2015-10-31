@@ -35,8 +35,8 @@ namespace bind {
     public:
         void* operator new (size_t size, void* ptr){ return ptr; }
         void  operator delete (void*, void*){ /* doesn't throw */ }
-        void* operator new (size_t sz){ return memory::cpu::fixed::malloc<sizeof(array)>(); }
-        void operator delete (void* ptr){ memory::cpu::fixed::free(ptr); }
+        void* operator new (size_t sz){ return memory::cpu::standard::malloc<sizeof(array)>(); }
+        void operator delete (void* ptr){ memory::cpu::standard::free(ptr); }
     public:
         using allocator_type = Allocator;
         using value_type = T;
