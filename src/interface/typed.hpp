@@ -63,7 +63,6 @@ namespace bind {
     };
     // }}}
     // {{{ compile-time type info: ptr types
-
     template <typename T> struct ptr_info : public singular_info<T> {
         template<size_t arg> static void deallocate(functor* m){
             EXTRACT(o); o.impl->complete();
@@ -236,7 +235,6 @@ namespace bind {
         static constexpr bool ReferenceOnly = true;
     };
     // {{{ compile-time type info: const/volatile cases of the versioned types
-
     template <typename T> struct const_versioned_info : public versioned_info<T> {
         template<size_t arg>
         static void deallocate(functor* m){
@@ -322,7 +320,6 @@ namespace bind {
     // }}}
     // }}}
     // {{{ compile-time type info: specialization for forwarded types
-
     namespace detail {
         template<typename T>
         constexpr bool compact(){ return sizeof(T) <= sizeof(void*); }
@@ -360,7 +357,6 @@ namespace bind {
     template <typename S> struct info < iterator<S> > {
         typedef iterator_info<iterator<S> > typed;
     };
-
     // }}}
 }
 

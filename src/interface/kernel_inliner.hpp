@@ -30,10 +30,6 @@
 
 namespace bind {
 
-    template <typename T>
-    using remove_reference = typename std::remove_reference<T>::type;
-    using model::functor;
-
     template<typename T>
     struct check_if_not_reference {
         template<bool C, typename F>  struct fail_if_true { typedef F type; };
@@ -45,6 +41,10 @@ namespace bind {
     struct check_if_not_reference<T&> {
         typedef T type;
     };
+
+    template <typename T>
+    using remove_reference = typename std::remove_reference< typename check_if_not_reference< T >::type >::type;
+    using model::functor;
 
     template<int N> void expand_modify_remote(){}
     template<int N> void expand_modify_local(functor* o){}
@@ -89,10 +89,6 @@ namespace bind {
 
     template< typename... TF , void(*fp)( TF... )>
     struct kernel_inliner<void(*)( TF... ), fp> {
-        template <int N>
-        using get_type = remove_reference< typename check_if_not_reference< 
-                             typename std::tuple_element<N, std::tuple<TF...> >::type 
-                         >::type >;
         static const int arity = sizeof...(TF);
 
         static inline void latch(functor* o, TF&... args){
