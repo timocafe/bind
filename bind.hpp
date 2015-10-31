@@ -2104,14 +2104,18 @@ namespace bind {
             bind::select().rsync(o.impl);
         }
         template<size_t arg> static void modify_local(const T& o, functor* m){
-            o.resit();
-            o.impl->generator = m;
+            if(o.impl->generator != m){
+                o.resit();
+                o.impl->generator = m;
+            }
             bind::select().lsync(o.impl);
             m->arguments[arg] = memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy(m->arguments[arg], &o, sizeof(T)); 
         }
         template<size_t arg> static void modify(const T& o, functor* m){
-            o.resit();
-            o.impl->generator = m;
+            if(o.impl->generator != m){
+                o.resit();
+                o.impl->generator = m;
+            }
             m->arguments[arg] = memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy(m->arguments[arg], &o, sizeof(T)); 
         }
         template<size_t arg> static T& revised(functor* m){
