@@ -2066,27 +2066,27 @@ namespace bind {
     template <typename T> class ptr;
 
     // {{{ compile-time type info: singular types
-    template <typename T> struct singular_info {
+    template <typename T, bool Compact = false> struct singular_info {
         template<size_t arg> static void deallocate   (functor* ){ }
         template<size_t arg> static bool pin          (functor* ){ return false; }
         template<size_t arg> static bool ready        (functor* ){ return true; }
         template<size_t arg> static T&   revised      (functor* m){ EXTRACT(o); return o; }
-        template<size_t arg> static void modify (T& o, functor* m){
-            m->arguments[arg] = (void*)new(memory::cpu::instr_bulk::malloc<sizeof(T)>()) T(o); 
-        }
         template<size_t arg> static void modify_remote(T&){ }
         template<size_t arg> static void modify_local(T& o, functor* m){
             m->arguments[arg] = (void*)new(memory::cpu::instr_bulk::malloc<sizeof(T)>()) T(o);
         }
+        template<size_t arg> static void modify (T& o, functor* m){
+            m->arguments[arg] = (void*)new(memory::cpu::instr_bulk::malloc<sizeof(T)>()) T(o); 
+        }
         static constexpr bool ReferenceOnly = false;
     };
-    // }}}
-    // {{{ compile-time type info: inplace types
-    template <typename T> struct singular_inplace_info : public singular_info<T> {
+
+    template <typename T> struct singular_info<T, true> : public singular_info<T> {
         template<size_t arg> static T& revised(functor* m){ return *(T*)&m->arguments[arg]; }
-        template<size_t arg> static void modify_remote(T&){ }
         template<size_t arg> static void modify_local(T& o, functor* m){ *(T*)&m->arguments[arg] = o; }
-        template<size_t arg> static void modify(T& o, functor* m){ *(T*)&m->arguments[arg] = o; }
+        template<size_t arg> static void modify(T& o, functor* m){
+            *(T*)&m->arguments[arg] = o;
+        }
     };
     // }}}
     // {{{ compile-time type info: ptr types
@@ -2176,7 +2176,6 @@ namespace bind {
         static bool ready(functor* m){
             EXTRACT(o); return typed::ready_(*o.container, m);
         }
-        static constexpr bool ReferenceOnly = false;
     };
     // }}}
     // {{{ compile-time type info: versioned types
@@ -2352,18 +2351,21 @@ namespace bind {
     // {{{ compile-time type info: specialization for forwarded types
 
     namespace detail {
+        template<typename T>
+        constexpr bool compact(){ return sizeof(T) <= sizeof(void*); }
+
         template <typename T> struct has_versioning {
             template <typename T1> static typename T1::allocator_type::bind_type test(int);
             template <typename> static void test(...);
             enum { value = !std::is_void<decltype(test<T>(0))>::value };
         };
-        template <bool Versioned, typename T> struct get_info { typedef singular_info< T > type; };
+        template <bool Versioned, typename T> struct get_info { typedef singular_info< T, compact<T>() > type; };
         template<typename T> struct get_info<true, T> { typedef versioned_info< T > type; };
 
-        template <bool Versioned, typename T> struct const_get_info { typedef singular_info< const T > type; };
+        template <bool Versioned, typename T> struct const_get_info { typedef singular_info< const T, compact<T>() > type; };
         template<typename T> struct const_get_info<true, T> { typedef const_versioned_info< const T > type; };
 
-        template <bool Versioned, typename T> struct volatile_get_info { typedef singular_info< volatile T > type; };
+        template <bool Versioned, typename T> struct volatile_get_info { typedef singular_info< volatile T, compact<T>() > type; };
         template<typename T> struct volatile_get_info<true, T> { typedef volatile_versioned_info< volatile T > type; };
     }
 
@@ -2384,9 +2386,6 @@ namespace bind {
     };
     template <typename S> struct info < iterator<S> > {
         typedef iterator_info<iterator<S> > typed;
-    };
-    template <> struct info < size_t > {
-        typedef singular_inplace_info<size_t> typed; 
     };
 
     // }}}
