@@ -30,7 +30,7 @@ namespace bind { namespace core {
     // {{{ any
 
     inline void set<any>::spawn(any& t){
-        t.generator->queue(new set(t));
+        (t.generator.load())->queue(new set(t));
     }
     inline set<any>::set(any& t) : t(t) {
         handle = bind::select().get_channel().bcast(t, bind::nodes::which_());

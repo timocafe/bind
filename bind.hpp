@@ -938,7 +938,7 @@ namespace bind { namespace model {
         template<typename T> operator T& (){ return *(T*)&value;  }
         void complete(){ generator = NULL; }
 
-        functor* generator;
+        std::atomic<functor*> generator;
         any* origin;
         size_t size;
         int value;
@@ -1910,7 +1910,7 @@ namespace bind { namespace core {
     // {{{ any
 
     inline void set<any>::spawn(any& t){
-        t.generator->queue(new set(t));
+        (t.generator.load())->queue(new set(t));
     }
     inline set<any>::set(any& t) : t(t) {
         handle = bind::select().get_channel().bcast(t, bind::nodes::which_());
@@ -2058,10 +2058,10 @@ namespace bind {
         template<size_t arg> static T&   revised      (functor* m){ EXTRACT(o); return o; }
         template<size_t arg> static void modify_remote(T&){ }
         template<size_t arg> static void modify_local(T& o, functor* m){
-            m->arguments[arg] = (void*)new(memory::cpu::instr_bulk::malloc<sizeof(T)>()) T(o);
+            m->arguments[arg] = memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy(m->arguments[arg], &o, sizeof(T));
         }
         template<size_t arg> static void modify (T& o, functor* m){
-            m->arguments[arg] = (void*)new(memory::cpu::instr_bulk::malloc<sizeof(T)>()) T(o); 
+            m->arguments[arg] = memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy(m->arguments[arg], &o, sizeof(T));
         }
         static constexpr bool ReferenceOnly = false;
     };
@@ -2075,9 +2075,29 @@ namespace bind {
     };
     // }}}
     // {{{ compile-time type info: ptr types
-    template <typename T> struct ptr_info : public singular_info<T> {
+    template <typename T> struct const_ptr_info : public singular_info<T> {
+        template<size_t arg> static bool ready(functor* m){
+            EXTRACT(o);
+            if(o.impl->origin && o.impl->origin->generator != NULL) return false;
+            return (o.impl->generator == m || o.impl->generator == NULL);
+        }
+        template<size_t arg> static bool pin(functor* m){
+            EXTRACT(o);
+            if(o.impl->generator == NULL) return false;
+            (o.impl->generator.load())->queue(m);
+            return true;
+        }
+        static constexpr bool ReferenceOnly = true;
+    };
+    template <typename T> struct ptr_info : public const_ptr_info<T> {
         template<size_t arg> static void deallocate(functor* m){
             EXTRACT(o); o.impl->complete();
+        }
+        template<size_t arg> static bool pin(functor* m){
+            EXTRACT(o);
+            if(!o.impl->origin || o.impl->origin->generator == NULL) return false;
+            (o.impl->origin->generator.load())->queue(m);
+            return true;
         }
         template<size_t arg> static void modify_remote(T& o){
             o.resit();
@@ -2094,11 +2114,6 @@ namespace bind {
             o.impl->generator = m;
             m->arguments[arg] = memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy(m->arguments[arg], &o, sizeof(T)); 
         }
-        template<size_t arg> static bool ready(functor* m){
-            EXTRACT(o);
-            if(o.impl->origin && o.impl->origin->generator != NULL) return false;
-            return (o.impl->generator == m || o.impl->generator == NULL);
-        }
         template<size_t arg> static T& revised(functor* m){
             EXTRACT(o);
             if(o.impl->origin){
@@ -2106,20 +2121,6 @@ namespace bind {
                 o.impl->origin = NULL;
             }
             return o;
-        }
-        static constexpr bool ReferenceOnly = true;
-    };
-    template <typename T> struct read_ptr_info : public ptr_info<T> {
-        template<size_t arg> static void deallocate(functor*){ }
-        template<size_t arg> static void modify_remote(T&){ }
-        template<size_t arg> static void modify_local(const T& o, functor* m){
-            m->arguments[arg] = memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy(m->arguments[arg], &o, sizeof(T)); 
-        }
-        template<size_t arg> static void modify(const T& o, functor* m){
-            m->arguments[arg] = memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy(m->arguments[arg], &o, sizeof(T)); 
-        }
-        template<size_t arg> static T& revised(functor* m){
-            EXTRACT(o); return o;
         }
     };
     // }}}
@@ -2364,7 +2365,7 @@ namespace bind {
         typedef ptr_info<ptr<S> > typed; 
     };
     template <typename S> struct info < const ptr<S> > {
-        typedef read_ptr_info<const ptr<S> > typed; 
+        typedef const_ptr_info<const ptr<S> > typed; 
     };
     template <typename S> struct info < iterator<S> > {
         typedef iterator_info<iterator<S> > typed;

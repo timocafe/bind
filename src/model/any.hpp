@@ -47,7 +47,7 @@ namespace bind { namespace model {
         template<typename T> operator T& (){ return *(T*)&value;  }
         void complete(){ generator = NULL; }
 
-        functor* generator;
+        std::atomic<functor*> generator;
         any* origin;
         size_t size;
         int value;
