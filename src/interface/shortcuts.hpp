@@ -61,11 +61,6 @@ namespace bind {
         return obj.allocator_.desc->extent;
     }
 
-    template<typename V>
-    inline bool locked_once(const V& o){
-        return o.allocator_.before->locked_once();
-    }
-
 }
 
 #endif
