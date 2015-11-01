@@ -350,7 +350,6 @@ namespace bind { namespace memory {
         static constexpr id_type id(){
             return detail::checked_get< detail::find_type<T,list>() >::value;
         }
-
         struct cpu {
             static constexpr id_type bulk = id<memory::cpu::bulk>();
             static constexpr id_type standard = id<memory::cpu::standard>();
@@ -2304,8 +2303,10 @@ namespace bind {
             bind::select().collect(o->back());
 
             var->allocator_.before = o->current;
-            bind::select().add_revision<locality::local>(o, m, bind::rank()); 
-            bind::select().use_revision(o);
+            if(o->current->generator != m){
+                bind::select().add_revision<locality::local>(o, m, bind::rank()); 
+                bind::select().use_revision(o);
+            }
             var->allocator_.after = obj.allocator_.after = o->current;
         }
         template<size_t arg> static void modify(T& obj, functor* m){
@@ -2316,8 +2317,10 @@ namespace bind {
             bind::select().collect(o->back());
 
             var->allocator_.before = o->current;
-            bind::select().add_revision<locality::common>(o, m, bind::rank()); 
-            bind::select().use_revision(o);
+            if(o->current->generator != m){
+                bind::select().add_revision<locality::common>(o, m, bind::rank()); 
+                bind::select().use_revision(o);
+            }
             var->allocator_.after = obj.allocator_.after = o->current;
         }
         template<size_t arg> static bool pin(functor* m){ return false; }
@@ -2830,6 +2833,7 @@ namespace bind {
         using allocator_type = Allocator;
         using value_type = T;
         using size_type = size_t;
+        using volatile_iterator = iterator<volatile array>;
         using const_iterator = iterator<const array>;
         using iterator = iterator<array>;
         explicit array(){}
@@ -2842,24 +2846,27 @@ namespace bind {
 
         void fill(T value);
         void swap(array<T,Allocator>& r);
-        size_t size() const;
-        bool empty() const;
+        size_t size() const volatile;
+        bool empty() const volatile;
 
-        value_type* data();
-        value_type& operator[](size_t i);
-        value_type& at(size_type i);
-        value_type& front();
-        value_type& back();
-        iterator begin();
-        iterator end();
+        value_type* data() volatile;
+        value_type& operator[](size_t i) volatile;
+        value_type& at(size_type i) volatile;
+        value_type& front() volatile;
+        value_type& back() volatile;
+        iterator begin() volatile;
+        iterator end() volatile;
 
-        const value_type* data() const;
-        const value_type& operator[](size_t i) const;
-        const value_type& at(size_type i) const;
-        const value_type& front() const;
-        const value_type& back() const;
-        const_iterator cbegin() const;
-        const_iterator cend() const;
+        const value_type* data() const volatile;
+        const value_type& operator[](size_t i) const volatile;
+        const value_type& at(size_type i) const volatile;
+        const value_type& front() const volatile;
+        const value_type& back() const volatile;
+        const_iterator cbegin() const volatile;
+        const_iterator cend() const volatile;
+
+        volatile_iterator vbegin() volatile;
+        volatile_iterator vend() volatile;
     private:
         mutable size_t size_;
     public:
@@ -2880,13 +2887,11 @@ namespace bind {
     namespace detail {
         template<class T, class Allocator>
         void fill_array(volatile bind::array<T,Allocator>& a, T& value){
-            bind::array<T,Allocator>& a_ = const_cast<bind::array<T,Allocator>&>(a);
-            for(size_t i = 0; i < a_.size(); ++i) a_[i] = value;
+            for(size_t i = 0; i < a.size(); ++i) a[i] = value;
         }
         template<class T, class Allocator, class OtherAllocator = Allocator>
         void copy_array(volatile bind::array<T,Allocator>& dst, const bind::array<T,OtherAllocator>& src, const size_t& n){
-            bind::array<T,Allocator>& dst_ = const_cast<bind::array<T,Allocator>&>(dst);
-            for(size_t i = 0; i < n; ++i) dst_[i] = src[i];
+            for(size_t i = 0; i < n; ++i) dst[i] = src[i];
         }
     }
     // }}}
@@ -2923,85 +2928,95 @@ namespace bind {
     }
 
     template<class T, class Allocator>
-    size_t array<T,Allocator>::size() const {
+    size_t array<T,Allocator>::size() const volatile {
         return size_;
     }
 
     template<class T, class Allocator>
-    bool array<T,Allocator>::empty() const {
+    bool array<T,Allocator>::empty() const volatile {
         return ((size() == 0) || bind::weak(*this));
     }
 
     template<class T, class Allocator>
-    typename array<T,Allocator>::value_type* array<T,Allocator>::data(){
+    typename array<T,Allocator>::value_type* array<T,Allocator>::data() volatile {
         return (value_type*)allocator_.data();
     }
 
     template<class T, class Allocator>
-    typename array<T,Allocator>::value_type& array<T,Allocator>::operator[](size_t i){
+    typename array<T,Allocator>::value_type& array<T,Allocator>::operator[](size_t i) volatile {
         return data()[ i ];
     }
 
     template<typename T, class Allocator>
-    typename array<T,Allocator>::value_type& array<T,Allocator>::at(size_type i){
+    typename array<T,Allocator>::value_type& array<T,Allocator>::at(size_type i) volatile {
         if(i >= size()) throw std::out_of_range("array::out_of_range");
         return (*this)[i];
     }
 
     template<typename T, class Allocator>
-    typename array<T,Allocator>::value_type& array<T,Allocator>::front(){
+    typename array<T,Allocator>::value_type& array<T,Allocator>::front() volatile {
         return (*this)[0];
     }
 
     template<typename T, class Allocator>
-    typename array<T,Allocator>::value_type& array<T,Allocator>::back(){
+    typename array<T,Allocator>::value_type& array<T,Allocator>::back() volatile {
         return (*this)[size()-1];
     }
 
     template<typename T, class Allocator>
-    typename array<T,Allocator>::iterator array<T,Allocator>::begin(){
-        return iterator(*this, 0);
+    typename array<T,Allocator>::iterator array<T,Allocator>::begin() volatile {
+        return iterator(const_cast<array&>(*this), 0);
     }
 
     template<typename T, class Allocator>
-    typename array<T,Allocator>::iterator array<T,Allocator>::end(){
-        return iterator(*this, size());
+    typename array<T,Allocator>::iterator array<T,Allocator>::end() volatile {
+        return iterator(const_cast<array&>(*this), size());
     }
 
     template<class T, class Allocator>
-    const typename array<T,Allocator>::value_type* array<T,Allocator>::data() const {
+    const typename array<T,Allocator>::value_type* array<T,Allocator>::data() const volatile {
         return (value_type*)allocator_.data();
     }
 
     template<class T, class Allocator>
-    const typename array<T,Allocator>::value_type& array<T,Allocator>::operator[](size_t i) const {
+    const typename array<T,Allocator>::value_type& array<T,Allocator>::operator[](size_t i) const volatile {
         return data()[ i ];
     }
 
     template<typename T, class Allocator>
-    const typename array<T,Allocator>::value_type& array<T,Allocator>::at(size_type i) const {
+    const typename array<T,Allocator>::value_type& array<T,Allocator>::at(size_type i) const volatile {
         if(i >= size()) throw std::out_of_range("array::out_of_range");
         return (*this)[i];
     }
 
     template<typename T, class Allocator>
-    const typename array<T,Allocator>::value_type& array<T,Allocator>::front() const {
+    const typename array<T,Allocator>::value_type& array<T,Allocator>::front() const volatile {
         return (*this)[0];
     }
 
     template<typename T, class Allocator>
-    const typename array<T,Allocator>::value_type& array<T,Allocator>::back() const {
+    const typename array<T,Allocator>::value_type& array<T,Allocator>::back() const volatile {
         return (*this)[size()-1];
     }
 
     template<typename T, class Allocator>
-    typename array<T,Allocator>::const_iterator array<T,Allocator>::cbegin() const {
-        return const_iterator(*this, 0);
+    typename array<T,Allocator>::const_iterator array<T,Allocator>::cbegin() const volatile {
+        return const_iterator(const_cast<const array&>(*this), 0);
     }
 
     template<typename T, class Allocator>
-    typename array<T,Allocator>::const_iterator array<T,Allocator>::cend() const {
-        return const_iterator(*this, size());
+    typename array<T,Allocator>::const_iterator array<T,Allocator>::cend() const volatile {
+        return const_iterator(const_cast<const array&>(*this), size());
+    }
+
+    template<typename T, class Allocator>
+    typename array<T,Allocator>::volatile_iterator array<T,Allocator>::vbegin() volatile {
+        return volatile_iterator(*this, 0);
+    }
+
+    template<typename T, class Allocator>
+    typename array<T,Allocator>::volatile_iterator array<T,Allocator>::vend() volatile {
+        return volatile_iterator(*this, size());
     }
 
 }
@@ -3017,9 +3032,8 @@ namespace bind {
     namespace detail { 
         template<typename T>
         void fill_value(volatile block<T>& a, T& value){
-            block<T>& a_ = const_cast<block<T>&>(a);
-            size_t size = a_.num_rows()*a_.num_cols();
-            T* ad = a_.data();
+            size_t size = a.num_rows()*a.num_cols();
+            T* ad = a.data();
             for(size_t i = 0; i < size; ++i) ad[i] = value;
         }
     }
@@ -3045,10 +3059,10 @@ namespace bind {
         const value_type* data() const volatile {
             return (value_type*)allocator_.data();
         }
-        size_t num_rows() const {
+        size_t num_rows() const volatile {
             return rows;
         }
-        size_t num_cols() const {
+        size_t num_cols() const volatile {
             return cols;
         }
         size_t rows;

@@ -301,8 +301,10 @@ namespace bind {
             bind::select().collect(o->back());
 
             var->allocator_.before = o->current;
-            bind::select().add_revision<locality::local>(o, m, bind::rank()); 
-            bind::select().use_revision(o);
+            if(o->current->generator != m){
+                bind::select().add_revision<locality::local>(o, m, bind::rank()); 
+                bind::select().use_revision(o);
+            }
             var->allocator_.after = obj.allocator_.after = o->current;
         }
         template<size_t arg> static void modify(T& obj, functor* m){
@@ -313,8 +315,10 @@ namespace bind {
             bind::select().collect(o->back());
 
             var->allocator_.before = o->current;
-            bind::select().add_revision<locality::common>(o, m, bind::rank()); 
-            bind::select().use_revision(o);
+            if(o->current->generator != m){
+                bind::select().add_revision<locality::common>(o, m, bind::rank()); 
+                bind::select().use_revision(o);
+            }
             var->allocator_.after = obj.allocator_.after = o->current;
         }
         template<size_t arg> static bool pin(functor* m){ return false; }

@@ -67,7 +67,6 @@ namespace bind { namespace memory {
         static constexpr id_type id(){
             return detail::checked_get< detail::find_type<T,list>() >::value;
         }
-
         struct cpu {
             static constexpr id_type bulk = id<memory::cpu::bulk>();
             static constexpr id_type standard = id<memory::cpu::standard>();

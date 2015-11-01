@@ -41,6 +41,7 @@ namespace bind {
         using allocator_type = Allocator;
         using value_type = T;
         using size_type = size_t;
+        using volatile_iterator = iterator<volatile array>;
         using const_iterator = iterator<const array>;
         using iterator = iterator<array>;
         explicit array(){}
@@ -53,24 +54,27 @@ namespace bind {
 
         void fill(T value);
         void swap(array<T,Allocator>& r);
-        size_t size() const;
-        bool empty() const;
+        size_t size() const volatile;
+        bool empty() const volatile;
 
-        value_type* data();
-        value_type& operator[](size_t i);
-        value_type& at(size_type i);
-        value_type& front();
-        value_type& back();
-        iterator begin();
-        iterator end();
+        value_type* data() volatile;
+        value_type& operator[](size_t i) volatile;
+        value_type& at(size_type i) volatile;
+        value_type& front() volatile;
+        value_type& back() volatile;
+        iterator begin() volatile;
+        iterator end() volatile;
 
-        const value_type* data() const;
-        const value_type& operator[](size_t i) const;
-        const value_type& at(size_type i) const;
-        const value_type& front() const;
-        const value_type& back() const;
-        const_iterator cbegin() const;
-        const_iterator cend() const;
+        const value_type* data() const volatile;
+        const value_type& operator[](size_t i) const volatile;
+        const value_type& at(size_type i) const volatile;
+        const value_type& front() const volatile;
+        const value_type& back() const volatile;
+        const_iterator cbegin() const volatile;
+        const_iterator cend() const volatile;
+
+        volatile_iterator vbegin() volatile;
+        volatile_iterator vend() volatile;
     private:
         mutable size_t size_;
     public:

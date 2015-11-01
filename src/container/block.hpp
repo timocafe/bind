@@ -34,9 +34,8 @@ namespace bind {
     namespace detail { 
         template<typename T>
         void fill_value(volatile block<T>& a, T& value){
-            block<T>& a_ = const_cast<block<T>&>(a);
-            size_t size = a_.num_rows()*a_.num_cols();
-            T* ad = a_.data();
+            size_t size = a.num_rows()*a.num_cols();
+            T* ad = a.data();
             for(size_t i = 0; i < size; ++i) ad[i] = value;
         }
     }
@@ -62,10 +61,10 @@ namespace bind {
         const value_type* data() const volatile {
             return (value_type*)allocator_.data();
         }
-        size_t num_rows() const {
+        size_t num_rows() const volatile {
             return rows;
         }
-        size_t num_cols() const {
+        size_t num_cols() const volatile {
             return cols;
         }
         size_t rows;
