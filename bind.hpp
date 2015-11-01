@@ -312,40 +312,50 @@ namespace bind {
 #define BIND_MEMORY_TYPES
 
 namespace bind { namespace memory {
+    // {{{ types lookup detail
+    namespace detail {
+        template<int N, int Limit>
+        constexpr int lower_bound(){
+            return (N > Limit ? N : Limit);
+        }
+
+        template<int Offset>
+        struct checked_get { static constexpr int value = Offset; };
+
+        template<>
+        struct checked_get< -1 > { /* type not found */ };
+
+        template<class T, class Tuple, int I = std::tuple_size<Tuple>::value>
+        constexpr int find_type(){
+            return I ? std::is_same< typename std::tuple_element<lower_bound<I-1,0>(),Tuple>::type, T >::value ? I-1 : find_type<T,Tuple,lower_bound<I-1,0>()>()
+                     : -1;
+        }
+    }
+    // }}}
 
     namespace cpu {
         class standard;
         class bulk;
     }
-    class delegated;
 
-    struct memory_tuple {
+    namespace gpu {
+    }
+
+    struct types {
         typedef std::tuple< memory::cpu::bulk,
                             memory::cpu::standard,
-                            memory::delegated > type;
+                            > list;
+        template<typename T>
+        static constexpr int id(){
+            return detail::checked_get< detail::find_type<T,list>() >::value;
+        }
+
+        struct cpu {
+            static constexpr int bulk = id<memory::cpu::bulk>();
+            static constexpr int standard = id<memory::cpu::standard>();
+        };
+        static constexpr int none = std::tuple_size<list>::value;
     };
-
-    template<int N, int Limit>
-    constexpr int lower_bound(){
-        return (N > Limit ? N : Limit);
-    }
-
-    template<class T, class Tuple, int I = std::tuple_size<Tuple>::value>
-    constexpr int find_type(){
-        return I ? std::is_same< typename std::tuple_element<lower_bound<I-1,0>(),Tuple>::type, T >::value ? I-1 : find_type<T,Tuple,lower_bound<I-1,0>()>()
-                 : -1;
-    }
-
-    template<int Offset>
-    struct checked_get { static constexpr int value = Offset; };
-
-    template<>
-    struct checked_get< -1 > { /* type not found */ };
-
-    template<typename T>
-    constexpr int serial_id(){
-        return checked_get< find_type<T,memory_tuple::type>() >::value;
-    }
 } }
 
 #endif
@@ -528,13 +538,12 @@ namespace bind { namespace memory {
 
 namespace bind { namespace memory { namespace cpu {
 
-    class bulk {
+    struct bulk {
+        static constexpr int type = types::cpu::bulk;
         bulk(const bulk&) = delete;
         bulk& operator=(const bulk&) = delete;
     protected:
         bulk() = default;
-    public:
-        static constexpr int signature = serial_id<cpu::bulk>();
     };
 
 } } }
@@ -661,7 +670,7 @@ namespace bind { namespace memory { namespace cpu {
 namespace bind { namespace memory { namespace cpu {
 
     struct standard {
-        static constexpr int signature = serial_id<cpu::standard>();
+        static constexpr int type = types::cpu::standard;
 
         template<size_t S> static void* malloc(){ return std::malloc(S);   }
         template<size_t S> static void* calloc(){ return std::calloc(1,S); }
@@ -702,20 +711,6 @@ namespace bind { namespace memory { namespace cpu {
     // {{{ memory::gpu package
     // }}}
 
-#ifndef BIND_MEMORY_DELEGATED_H
-#define BIND_MEMORY_DELEGATED_H
-
-namespace bind { namespace memory {
-
-    class delegated {
-    public:
-        static constexpr int signature = serial_id<delegated>();
-    };
-
-} }
-
-#endif
-
 #ifndef BIND_MEMORY_DESCRIPTOR
 #define BIND_MEMORY_DESCRIPTOR
 
@@ -724,42 +719,42 @@ namespace bind { namespace memory {
     struct descriptor {
         typedef int memory_id_type;
 
-        descriptor(size_t e, memory_id_type r = cpu::standard::signature) : extent(e), signature(r), persistency(1), crefs(1) {}
+        descriptor(size_t e, memory_id_type r = types::cpu::standard) : extent(e), signature(r), persistency(1), crefs(1) {}
 
         void protect(){
-            if(!(persistency++)) signature = cpu::standard::signature;
+            if(!(persistency++)) signature = types::cpu::standard;
         }
         void weaken(){
-            if(!(--persistency)) signature = cpu::bulk::signature;
+            if(!(--persistency)) signature = types::cpu::bulk;
         }
         void reuse(descriptor& d){
             signature = d.signature;
-            d.signature = delegated::signature;
+            d.signature = types::none;
         }
         bool conserves(descriptor& p){
-            assert(p.signature != delegated::signature && signature != delegated::signature);
+            assert(p.signature != types::none && signature != types::none);
             return (!p.bulked() || bulked());
         }
         bool bulked(){
-            return (signature == cpu::bulk::signature);
+            return (signature == types::cpu::bulk);
         }
         void* malloc(){
-            assert(signature != delegated::signature);
-            if(signature == cpu::bulk::signature){
+            assert(signature != types::none);
+            if(signature == types::cpu::bulk){
                 void* ptr = cpu::data_bulk::soft_malloc(extent);
                 if(ptr) return ptr;
-                signature = cpu::standard::signature;
+                signature = types::cpu::standard;
             }
             return cpu::standard::malloc(extent);
         }
         template<class Memory>
         void* hard_malloc(){
-            signature = Memory::signature;
+            signature = Memory::type;
             return Memory::malloc(extent);
         }
         void free(void* ptr){ 
-            if(ptr == NULL || signature == delegated::signature) return;
-            if(signature == cpu::standard::signature) cpu::standard::free(ptr);
+            if(ptr == NULL || signature == types::none) return;
+            if(signature == types::cpu::standard) cpu::standard::free(ptr);
         }
 
         size_t extent;
@@ -1448,15 +1443,15 @@ namespace bind { namespace memory {
 
     inline void collector::push_back(revision* r){
         if(!r->valid() && r->state != locality::remote){
-            assert(r->spec.signature != cpu::bulk::signature);
-            assert(r->spec.signature != delegated::signature);
+            assert(r->spec.signature != types::cpu::bulk);
+            assert(r->spec.signature != types::none);
             r->spec.weaken();
         }
         r->spec.crefs--;
         if(!r->referenced()){ // squeeze
-            if(r->valid() && !r->locked() && r->spec.signature == cpu::standard::signature){
+            if(r->valid() && !r->locked() && r->spec.signature == types::cpu::standard){
                 r->spec.free(r->data); // artifacts or last one
-                r->spec.signature = delegated::signature;
+                r->spec.signature = types::none;
             }
             this->rev.push_back(r);
         }
@@ -1468,9 +1463,9 @@ namespace bind { namespace memory {
     }
 
     inline void collector::delete_ptr::operator()( revision* r ) const {
-        if(r->valid() && r->spec.signature == cpu::standard::signature){
+        if(r->valid() && r->spec.signature == types::cpu::standard){
             r->spec.free(r->data); // artifacts
-            r->spec.signature = delegated::signature;
+            r->spec.signature = types::none;
         }
         delete r; 
     }
@@ -1809,9 +1804,9 @@ namespace bind { namespace core {
 
     inline void controller::squeeze(revision* r) const {
         if(r->valid() && !r->referenced() && r->locked_once()){
-            if(r->spec.signature == memory::cpu::standard::signature){
+            if(r->spec.signature == memory::types::cpu::standard){
                 r->spec.free(r->data);
-                r->spec.signature = memory::delegated::signature;
+                r->spec.signature = memory::types::none;
             }
         }
     }

@@ -42,15 +42,15 @@ namespace bind { namespace memory {
 
     inline void collector::push_back(revision* r){
         if(!r->valid() && r->state != locality::remote){
-            assert(r->spec.signature != cpu::bulk::signature);
-            assert(r->spec.signature != delegated::signature);
+            assert(r->spec.signature != types::cpu::bulk);
+            assert(r->spec.signature != types::none);
             r->spec.weaken();
         }
         r->spec.crefs--;
         if(!r->referenced()){ // squeeze
-            if(r->valid() && !r->locked() && r->spec.signature == cpu::standard::signature){
+            if(r->valid() && !r->locked() && r->spec.signature == types::cpu::standard){
                 r->spec.free(r->data); // artifacts or last one
-                r->spec.signature = delegated::signature;
+                r->spec.signature = types::none;
             }
             this->rev.push_back(r);
         }
@@ -62,9 +62,9 @@ namespace bind { namespace memory {
     }
 
     inline void collector::delete_ptr::operator()( revision* r ) const {
-        if(r->valid() && r->spec.signature == cpu::standard::signature){
+        if(r->valid() && r->spec.signature == types::cpu::standard){
             r->spec.free(r->data); // artifacts
-            r->spec.signature = delegated::signature;
+            r->spec.signature = types::none;
         }
         delete r; 
     }

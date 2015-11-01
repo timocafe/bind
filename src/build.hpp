@@ -74,8 +74,8 @@
 // }}}
 // {{{ memory package
 #include "memory/types.h"
-#include "memory/factory.hpp"
-#include "memory/region.hpp"
+#include "memory/detail/factory.hpp"
+#include "memory/detail/region.hpp"
     // {{{ memory::cpu package
     #include "memory/cpu/bulk.h"
     #include "memory/cpu/data_bulk.hpp"
@@ -86,7 +86,6 @@
     // }}}
     // {{{ memory::gpu package
     // }}}
-#include "memory/delegated.h"
 #include "memory/descriptor.hpp"
 // }}}
 // {{{ model package

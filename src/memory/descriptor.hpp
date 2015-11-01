@@ -33,42 +33,42 @@ namespace bind { namespace memory {
     struct descriptor {
         typedef int memory_id_type;
 
-        descriptor(size_t e, memory_id_type r = cpu::standard::signature) : extent(e), signature(r), persistency(1), crefs(1) {}
+        descriptor(size_t e, memory_id_type r = types::cpu::standard) : extent(e), signature(r), persistency(1), crefs(1) {}
 
         void protect(){
-            if(!(persistency++)) signature = cpu::standard::signature;
+            if(!(persistency++)) signature = types::cpu::standard;
         }
         void weaken(){
-            if(!(--persistency)) signature = cpu::bulk::signature;
+            if(!(--persistency)) signature = types::cpu::bulk;
         }
         void reuse(descriptor& d){
             signature = d.signature;
-            d.signature = delegated::signature;
+            d.signature = types::none;
         }
         bool conserves(descriptor& p){
-            assert(p.signature != delegated::signature && signature != delegated::signature);
+            assert(p.signature != types::none && signature != types::none);
             return (!p.bulked() || bulked());
         }
         bool bulked(){
-            return (signature == cpu::bulk::signature);
+            return (signature == types::cpu::bulk);
         }
         void* malloc(){
-            assert(signature != delegated::signature);
-            if(signature == cpu::bulk::signature){
+            assert(signature != types::none);
+            if(signature == types::cpu::bulk){
                 void* ptr = cpu::data_bulk::soft_malloc(extent);
                 if(ptr) return ptr;
-                signature = cpu::standard::signature;
+                signature = types::cpu::standard;
             }
             return cpu::standard::malloc(extent);
         }
         template<class Memory>
         void* hard_malloc(){
-            signature = Memory::signature;
+            signature = Memory::type;
             return Memory::malloc(extent);
         }
         void free(void* ptr){ 
-            if(ptr == NULL || signature == delegated::signature) return;
-            if(signature == cpu::standard::signature) cpu::standard::free(ptr);
+            if(ptr == NULL || signature == types::none) return;
+            if(signature == types::cpu::standard) cpu::standard::free(ptr);
         }
 
         size_t extent;

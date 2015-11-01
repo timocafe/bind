@@ -31,7 +31,7 @@
 namespace bind { namespace memory { namespace cpu {
 
     struct standard {
-        static constexpr int signature = serial_id<cpu::standard>();
+        static constexpr int type = types::cpu::standard;
 
         template<size_t S> static void* malloc(){ return std::malloc(S);   }
         template<size_t S> static void* calloc(){ return std::calloc(1,S); }

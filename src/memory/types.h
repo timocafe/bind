@@ -29,40 +29,50 @@
 #define BIND_MEMORY_TYPES
 
 namespace bind { namespace memory {
+    // {{{ types lookup detail
+    namespace detail {
+        template<int N, int Limit>
+        constexpr int lower_bound(){
+            return (N > Limit ? N : Limit);
+        }
+
+        template<int Offset>
+        struct checked_get { static constexpr int value = Offset; };
+
+        template<>
+        struct checked_get< -1 > { /* type not found */ };
+
+        template<class T, class Tuple, int I = std::tuple_size<Tuple>::value>
+        constexpr int find_type(){
+            return I ? std::is_same< typename std::tuple_element<lower_bound<I-1,0>(),Tuple>::type, T >::value ? I-1 : find_type<T,Tuple,lower_bound<I-1,0>()>()
+                     : -1;
+        }
+    }
+    // }}}
 
     namespace cpu {
         class standard;
         class bulk;
     }
-    class delegated;
 
-    struct memory_tuple {
+    namespace gpu {
+    }
+
+    struct types {
         typedef std::tuple< memory::cpu::bulk,
                             memory::cpu::standard,
-                            memory::delegated > type;
+                            > list;
+        template<typename T>
+        static constexpr int id(){
+            return detail::checked_get< detail::find_type<T,list>() >::value;
+        }
+
+        struct cpu {
+            static constexpr int bulk = id<memory::cpu::bulk>();
+            static constexpr int standard = id<memory::cpu::standard>();
+        };
+        static constexpr int none = std::tuple_size<list>::value;
     };
-
-    template<int N, int Limit>
-    constexpr int lower_bound(){
-        return (N > Limit ? N : Limit);
-    }
-
-    template<class T, class Tuple, int I = std::tuple_size<Tuple>::value>
-    constexpr int find_type(){
-        return I ? std::is_same< typename std::tuple_element<lower_bound<I-1,0>(),Tuple>::type, T >::value ? I-1 : find_type<T,Tuple,lower_bound<I-1,0>()>()
-                 : -1;
-    }
-
-    template<int Offset>
-    struct checked_get { static constexpr int value = Offset; };
-
-    template<>
-    struct checked_get< -1 > { /* type not found */ };
-
-    template<typename T>
-    constexpr int serial_id(){
-        return checked_get< find_type<T,memory_tuple::type>() >::value;
-    }
 } }
 
 #endif
