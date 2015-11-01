@@ -34,7 +34,7 @@ namespace bind {
     struct check_if_not_reference {
         template<bool C, typename F>  struct fail_if_true { typedef F type; };
         template<typename F> struct fail_if_true<true, F> { };
-        typedef typename fail_if_true<info<T>::typed::ReferenceOnly, T>::type type; // T can be passed only by reference
+        typedef typename fail_if_true<modifier<T>::type::ReferenceOnly, T>::type type; // T can be passed only by reference
     };
  
     template<typename T>
@@ -55,32 +55,32 @@ namespace bind {
 
     template<int N, typename T, typename... TF>
     void expand_modify_remote(T& arg, TF&... other){
-        info<T>::typed::template modify_remote<N>(arg);
+        modifier<T>::type::template apply_remote<N>(arg);
         expand_modify_remote<N+1>(other...);
     }
     template<int N, typename T, typename... TF>
     void expand_modify_local(functor* o, T& arg, TF&... other){
-        info<T>::typed::template modify_local<N>(arg, o);
+        modifier<T>::type::template apply_local<N>(arg, o);
         expand_modify_local<N+1>(o, other...);
     }
     template<int N, typename T, typename... TF>
     void expand_modify(functor* o, T& arg, TF&... other){
-        info<T>::typed::template modify<N>(arg, o);
+        modifier<T>::type::template apply<N>(arg, o);
         expand_modify<N+1>(o, other...);
     }
     template<int N, typename T, typename... TF>
     bool expand_pin(functor* o){
-        return info<remove_reference<T> >::typed::template pin<N>(o) ||
+        return modifier<remove_reference<T> >::type::template pin<N>(o) ||
                expand_pin<N+1,TF...>(o);
     }
     template<int N, typename T, typename... TF>
     void expand_deallocate(functor* o){
-        info<remove_reference<T> >::typed::template deallocate<N>(o);
+        modifier<remove_reference<T> >::type::template deallocate<N>(o);
         expand_deallocate<N+1,TF...>(o);
     }
     template<int N, typename T, typename... TF>
     bool expand_ready(functor* o){
-        return info<remove_reference<T> >::typed::template ready<N>(o) &&
+        return modifier<remove_reference<T> >::type::template ready<N>(o) &&
                expand_ready<N+1,TF...>(o);
     }
 
@@ -105,7 +105,7 @@ namespace bind {
         }
         template<size_t...I>
         static void expand_invoke(std::index_sequence<I...>, functor* o){
-            (*fp)(info<remove_reference<TF> >::typed::template revised<I>(o)...);
+            (*fp)(modifier<remove_reference<TF> >::type::template load<I>(o)...);
         }
         static inline void invoke(functor* o){
             expand_invoke(std::make_index_sequence<sizeof...(TF)>(), o);

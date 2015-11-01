@@ -25,8 +25,8 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef BIND_INTERFACE_TYPED
-#define BIND_INTERFACE_TYPED
+#ifndef BIND_INTERFACE_MODIFIERS
+#define BIND_INTERFACE_MODIFIERS
 
 #define EXTRACT(var) T& var = *(T*)m->arguments[arg];
 
@@ -34,36 +34,36 @@ namespace bind {
     using model::functor;
     using model::revision;
 
-    template <typename T> struct info;
+    template <typename T> struct modifier;
     template <typename T> class iterator;
     template <typename T> class ptr;
 
-    // {{{ compile-time type info: singular types
-    template <typename T, bool Compact = false> struct singular_info {
+    // {{{ compile-time type modifier: singular types
+    template <typename T, bool Compact = false> struct singular_modifier {
         template<size_t arg> static void deallocate   (functor* ){ }
         template<size_t arg> static bool pin          (functor* ){ return false; }
         template<size_t arg> static bool ready        (functor* ){ return true; }
-        template<size_t arg> static T&   revised      (functor* m){ EXTRACT(o); return o; }
-        template<size_t arg> static void modify_remote(T&){ }
-        template<size_t arg> static void modify_local(T& o, functor* m){
+        template<size_t arg> static T&   load         (functor* m){ EXTRACT(o); return o; }
+        template<size_t arg> static void apply_remote(T&){ }
+        template<size_t arg> static void apply_local(T& o, functor* m){
             m->arguments[arg] = memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy(m->arguments[arg], &o, sizeof(T));
         }
-        template<size_t arg> static void modify (T& o, functor* m){
+        template<size_t arg> static void apply (T& o, functor* m){
             m->arguments[arg] = memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy(m->arguments[arg], &o, sizeof(T));
         }
         static constexpr bool ReferenceOnly = false;
     };
 
-    template <typename T> struct singular_info<T, true> : public singular_info<T> {
-        template<size_t arg> static T& revised(functor* m){ return *(T*)&m->arguments[arg]; }
-        template<size_t arg> static void modify_local(T& o, functor* m){ *(T*)&m->arguments[arg] = o; }
-        template<size_t arg> static void modify(T& o, functor* m){
+    template <typename T> struct singular_modifier<T, true> : public singular_modifier<T> {
+        template<size_t arg> static T& load(functor* m){ return *(T*)&m->arguments[arg]; }
+        template<size_t arg> static void apply_local(T& o, functor* m){ *(T*)&m->arguments[arg] = o; }
+        template<size_t arg> static void apply(T& o, functor* m){
             *(T*)&m->arguments[arg] = o;
         }
     };
     // }}}
-    // {{{ compile-time type info: ptr types
-    template <typename T> struct const_ptr_info : public singular_info<T> {
+    // {{{ compile-time type modifier: ptr types
+    template <typename T> struct const_ptr_modifier : public singular_modifier<T> {
         template<size_t arg> static bool ready(functor* m){
             EXTRACT(o);
             if(o.impl->origin && o.impl->origin->generator != NULL) return false;
@@ -77,7 +77,7 @@ namespace bind {
         }
         static constexpr bool ReferenceOnly = true;
     };
-    template <typename T> struct ptr_info : public const_ptr_info<T> {
+    template <typename T> struct ptr_modifier : public const_ptr_modifier<T> {
         template<size_t arg> static void deallocate(functor* m){
             EXTRACT(o); o.impl->complete();
         }
@@ -87,11 +87,11 @@ namespace bind {
             (o.impl->origin->generator.load())->queue(m);
             return true;
         }
-        template<size_t arg> static void modify_remote(T& o){
+        template<size_t arg> static void apply_remote(T& o){
             o.resit();
             bind::select().rsync(o.impl);
         }
-        template<size_t arg> static void modify_local(const T& o, functor* m){
+        template<size_t arg> static void apply_local(const T& o, functor* m){
             if(o.impl->generator != m){
                 o.resit();
                 o.impl->generator = m;
@@ -99,14 +99,14 @@ namespace bind {
             bind::select().lsync(o.impl);
             m->arguments[arg] = memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy(m->arguments[arg], &o, sizeof(T)); 
         }
-        template<size_t arg> static void modify(const T& o, functor* m){
+        template<size_t arg> static void apply(const T& o, functor* m){
             if(o.impl->generator != m){
                 o.resit();
                 o.impl->generator = m;
             }
             m->arguments[arg] = memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy(m->arguments[arg], &o, sizeof(T)); 
         }
-        template<size_t arg> static T& revised(functor* m){
+        template<size_t arg> static T& load(functor* m){
             EXTRACT(o);
             if(o.impl->origin){
                 *o.impl = (typename T::element_type&)*o.impl->origin;
@@ -116,47 +116,47 @@ namespace bind {
         }
     };
     // }}}
-    // {{{ compile-time type info: iterator types
-    template <typename T> struct iterator_info : public singular_info<T> {
-        typedef typename info<typename T::container_type>::typed typed;
+    // {{{ compile-time type modifier: iterator types
+    template <typename T> struct iterator_modifier : public singular_modifier<T> {
+        typedef typename modifier<typename T::container_type>::type type;
         typedef typename T::container_type container_type;
 
         template<size_t arg> 
         static void deallocate(functor* m){
-            EXTRACT(o); typed::deallocate_(*o.container);
+            EXTRACT(o); type::deallocate_(*o.container);
         }
         template<size_t arg>
-        static void modify_remote(T& o){
-            typed::modify_remote<arg>(*o.container);
+        static void apply_remote(T& o){
+            type::apply_remote<arg>(*o.container);
         }
         template<size_t arg>
-        static void modify_local(T& o, functor* m){
-            typed::modify_local<arg>(*o.container, m);
+        static void apply_local(T& o, functor* m){
+            type::apply_local<arg>(*o.container, m);
             T* var = (T*)memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy((void*)var, &o, sizeof(T));
             var->container = (container_type*)m->arguments[arg]; m->arguments[arg] = (void*)var;
         }
         template<size_t arg>
-        static void modify(T& o, functor* m){
-            typed::modify<arg>(*o.container, m);
+        static void apply(T& o, functor* m){
+            type::apply<arg>(*o.container, m);
             T* var = (T*)memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy((void*)var, &o, sizeof(T));
             var->container = (container_type*)m->arguments[arg]; m->arguments[arg] = (void*)var;
         }
         template<size_t arg>
-        static T& revised(functor* m){
+        static T& load(functor* m){
             EXTRACT(o); revise(*o.container); return o;
         }
         template<size_t arg> 
         static bool pin(functor* m){ 
-            EXTRACT(o); return typed::pin_(*o.container, m);
+            EXTRACT(o); return type::pin_(*o.container, m);
         }
         template<size_t arg> 
         static bool ready(functor* m){
-            EXTRACT(o); return typed::ready_(*o.container, m);
+            EXTRACT(o); return type::ready_(*o.container, m);
         }
     };
     // }}}
-    // {{{ compile-time type info: versioned types
-    template <typename T> struct versioned_info : public singular_info<T> {
+    // {{{ compile-time type modifier: versioned types
+    template <typename T> struct versioned_modifier : public singular_modifier<T> {
         template<size_t arg> 
         static void deallocate(functor* m){
             EXTRACT(o); deallocate_(o);
@@ -170,7 +170,7 @@ namespace bind {
             EXTRACT(o); return ready_(o, m);
         }
         template<size_t arg>
-        static T& revised(functor* m){ 
+        static T& load(functor* m){ 
             EXTRACT(o); revise(o);
             return o;
         }
@@ -183,7 +183,7 @@ namespace bind {
             parent.release();
         }
         template<size_t arg>
-        static void modify_remote(T& obj){
+        static void apply_remote(T& obj){
             auto o = obj.allocator_.desc;
             bind::select().touch(o, bind::rank());
             if(o->back()->owner != bind::nodes::which_())
@@ -192,7 +192,7 @@ namespace bind {
             bind::select().add_revision<locality::remote>(o, NULL, bind::nodes::which_()); 
         }
         template<size_t arg>
-        static void modify_local(T& obj, functor* m){
+        static void apply_local(T& obj, functor* m){
             auto o = obj.allocator_.desc;
             bind::select().touch(o, bind::rank());
             T* var = (T*)memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy((void*)var, &obj, sizeof(T)); 
@@ -209,7 +209,7 @@ namespace bind {
             var->allocator_.after = obj.allocator_.after = o->current;
         }
         template<size_t arg>
-        static void modify(T& obj, functor* m){
+        static void apply(T& obj, functor* m){
             auto o = obj.allocator_.desc;
             bind::select().touch(o, bind::rank());
             T* var = (T*)memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy((void*)var, &obj, sizeof(T)); m->arguments[arg] = (void*)var;
@@ -239,8 +239,8 @@ namespace bind {
         }
         static constexpr bool ReferenceOnly = true;
     };
-    // {{{ compile-time type info: const/volatile cases of the versioned types
-    template <typename T> struct const_versioned_info : public versioned_info<T> {
+    // {{{ compile-time type modifier: const/volatile cases of the versioned types
+    template <typename T> struct const_versioned_modifier : public versioned_modifier<T> {
         template<size_t arg>
         static void deallocate(functor* m){
             EXTRACT(o); deallocate_(o);
@@ -254,13 +254,13 @@ namespace bind {
             bind::select().squeeze(&r);
             r.release();
         }
-        template<size_t arg> static void modify_remote(T& obj){
+        template<size_t arg> static void apply_remote(T& obj){
             auto o = obj.allocator_.desc;
             bind::select().touch(o, bind::rank());
             if(o->back()->owner != bind::nodes::which_())
                 bind::select().rsync(o->back());
         }
-        template<size_t arg> static void modify_local(T& obj, functor* m){
+        template<size_t arg> static void apply_local(T& obj, functor* m){
             auto o = obj.allocator_.desc;
             bind::select().touch(o, bind::rank());
             T* var = (T*)memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy((void*)var, &obj, sizeof(T)); m->arguments[arg] = (void*)var;
@@ -268,7 +268,7 @@ namespace bind {
             bind::select().lsync(o->back());
             bind::select().use_revision(o);
         }
-        template<size_t arg> static void modify(T& obj, functor* m){
+        template<size_t arg> static void apply(T& obj, functor* m){
             auto o = obj.allocator_.desc;
             bind::select().touch(o, bind::rank());
             T* var = (T*)memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy((void*)var, &obj, sizeof(T)); m->arguments[arg] = (void*)var;
@@ -285,14 +285,14 @@ namespace bind {
             return false;
         }
     };
-    template <typename T> struct volatile_versioned_info : public versioned_info<T> {
-        template<size_t arg> static void modify_remote(T& obj){
+    template <typename T> struct volatile_versioned_modifier : public versioned_modifier<T> {
+        template<size_t arg> static void apply_remote(T& obj){
             auto o = obj.allocator_.desc;
             bind::select().touch(o, bind::rank());
             bind::select().collect(o->back());
             bind::select().add_revision<locality::remote>(o, NULL, bind::nodes::which_()); 
         }
-        template<size_t arg> static void modify_local(T& obj, functor* m){
+        template<size_t arg> static void apply_local(T& obj, functor* m){
             auto o = obj.allocator_.desc;
             bind::select().touch(o, bind::rank());
             T* var = (T*)memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy((void*)var, (void*)&obj, sizeof(T)); m->arguments[arg] = (void*)var;
@@ -307,7 +307,7 @@ namespace bind {
             }
             var->allocator_.after = obj.allocator_.after = o->current;
         }
-        template<size_t arg> static void modify(T& obj, functor* m){
+        template<size_t arg> static void apply(T& obj, functor* m){
             auto o = obj.allocator_.desc;
             bind::select().touch(o, bind::rank());
             T* var = (T*)memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy((void*)var, (void*)&obj, sizeof(T)); m->arguments[arg] = (void*)var;
@@ -328,7 +328,7 @@ namespace bind {
     };
     // }}}
     // }}}
-    // {{{ compile-time type info: specialization for forwarded types
+    // {{{ compile-time type modifier: specialization for forwarded types
     namespace detail {
         template<typename T>
         constexpr bool compact(){ return sizeof(T) <= sizeof(void*); }
@@ -338,33 +338,33 @@ namespace bind {
             template <typename> static void test(...);
             enum { value = !std::is_void<decltype(test<T>(0))>::value };
         };
-        template <bool Versioned, typename T> struct get_info { typedef singular_info< T, compact<T>() > type; };
-        template<typename T> struct get_info<true, T> { typedef versioned_info< T > type; };
+        template <bool Versioned, typename T> struct get_modifier { typedef singular_modifier< T, compact<T>() > type; };
+        template<typename T> struct get_modifier<true, T> { typedef versioned_modifier< T > type; };
 
-        template <bool Versioned, typename T> struct const_get_info { typedef singular_info< const T, compact<T>() > type; };
-        template<typename T> struct const_get_info<true, T> { typedef const_versioned_info< const T > type; };
+        template <bool Versioned, typename T> struct const_get_modifier { typedef singular_modifier< const T, compact<T>() > type; };
+        template<typename T> struct const_get_modifier<true, T> { typedef const_versioned_modifier< const T > type; };
 
-        template <bool Versioned, typename T> struct volatile_get_info { typedef singular_info< volatile T, compact<T>() > type; };
-        template<typename T> struct volatile_get_info<true, T> { typedef volatile_versioned_info< volatile T > type; };
+        template <bool Versioned, typename T> struct volatile_get_modifier { typedef singular_modifier< volatile T, compact<T>() > type; };
+        template<typename T> struct volatile_get_modifier<true, T> { typedef volatile_versioned_modifier< volatile T > type; };
     }
 
-    template <typename T> struct info {
-        typedef typename detail::get_info<detail::has_versioning<T>::value,T>::type typed;
+    template <typename T> struct modifier {
+        typedef typename detail::get_modifier<detail::has_versioning<T>::value,T>::type type;
     };
-    template <typename T> struct info <const T> {
-        typedef typename detail::const_get_info<detail::has_versioning<T>::value,T>::type typed;
+    template <typename T> struct modifier <const T> {
+        typedef typename detail::const_get_modifier<detail::has_versioning<T>::value,T>::type type;
     };
-    template <typename T> struct info <volatile T> {
-        typedef typename detail::volatile_get_info<detail::has_versioning<T>::value,T>::type typed;
+    template <typename T> struct modifier <volatile T> {
+        typedef typename detail::volatile_get_modifier<detail::has_versioning<T>::value,T>::type type;
     };
-    template <typename S> struct info < ptr<S> > {
-        typedef ptr_info<ptr<S> > typed; 
+    template <typename S> struct modifier < ptr<S> > {
+        typedef ptr_modifier<ptr<S> > type; 
     };
-    template <typename S> struct info < const ptr<S> > {
-        typedef const_ptr_info<const ptr<S> > typed; 
+    template <typename S> struct modifier < const ptr<S> > {
+        typedef const_ptr_modifier<const ptr<S> > type; 
     };
-    template <typename S> struct info < iterator<S> > {
-        typedef iterator_info<iterator<S> > typed;
+    template <typename S> struct modifier < iterator<S> > {
+        typedef iterator_modifier<iterator<S> > type;
     };
     // }}}
 }

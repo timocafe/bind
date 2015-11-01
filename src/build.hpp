@@ -124,7 +124,7 @@
 // }}}
 // {{{ interface package (requires :model :transport :core)
 #include "interface/shortcuts.hpp"
-#include "interface/typed.hpp"
+#include "interface/modifiers.hpp"
 #include "interface/allocator.hpp"
 #include "interface/kernel_inliner.hpp"
 #include "interface/kernel.hpp"
