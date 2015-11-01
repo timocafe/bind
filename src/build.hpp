@@ -142,9 +142,6 @@
 #include "container/array.hpp"
 #include "container/block.hpp"
 // }}}
-// {{{ bonus utils package (requires :*)
-#include "utils/timer.hpp"
-// }}}
 #ifdef BIND_NO_DEBUG
 #undef NDEBUG
 #endif
