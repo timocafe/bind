@@ -2027,25 +2027,19 @@ namespace bind {
 
 #endif
 
-#ifndef BIND_INTERFACE_MODIFIERS
-#define BIND_INTERFACE_MODIFIERS
+#ifndef BIND_INTERFACE_MODIFIERS_SINGULAR
+#define BIND_INTERFACE_MODIFIERS_SINGULAR
 
 #define EXTRACT(var) T& var = *(T*)m->arguments[arg];
 
 namespace bind {
     using model::functor;
-    using model::revision;
 
-    template <typename T> struct modifier;
-    template <typename T> class iterator;
-    template <typename T> class ptr;
-
-    // {{{ compile-time type modifier: singular types
     template <typename T, bool Compact = false> struct singular_modifier {
-        template<size_t arg> static void deallocate   (functor* ){ }
-        template<size_t arg> static bool pin          (functor* ){ return false; }
-        template<size_t arg> static bool ready        (functor* ){ return true; }
-        template<size_t arg> static T&   load         (functor* m){ EXTRACT(o); return o; }
+        template<size_t arg> static void deallocate(functor* ){ }
+        template<size_t arg> static bool pin(functor* ){ return false; }
+        template<size_t arg> static bool ready(functor* ){ return true; }
+        template<size_t arg> static T&   load(functor* m){ EXTRACT(o); return o; }
         template<size_t arg> static void apply_remote(T&){ }
         template<size_t arg> static void apply_local(T& o, functor* m){
             m->arguments[arg] = memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy(m->arguments[arg], &o, sizeof(T));
@@ -2063,8 +2057,19 @@ namespace bind {
             *(T*)&m->arguments[arg] = o;
         }
     };
-    // }}}
-    // {{{ compile-time type modifier: ptr types
+}
+
+#undef EXTRACT
+#endif
+
+#ifndef BIND_INTERFACE_MODIFIERS_PTR
+#define BIND_INTERFACE_MODIFIERS_PTR
+
+#define EXTRACT(var) T& var = *(T*)m->arguments[arg];
+
+namespace bind {
+    using model::functor;
+
     template <typename T> struct const_ptr_modifier : public singular_modifier<T> {
         template<size_t arg> static bool ready(functor* m){
             EXTRACT(o);
@@ -2079,6 +2084,7 @@ namespace bind {
         }
         static constexpr bool ReferenceOnly = true;
     };
+
     template <typename T> struct ptr_modifier : public const_ptr_modifier<T> {
         template<size_t arg> static void deallocate(functor* m){
             EXTRACT(o); o.impl->complete();
@@ -2117,8 +2123,20 @@ namespace bind {
             return o;
         }
     };
-    // }}}
-    // {{{ compile-time type modifier: iterator types
+}
+
+#undef EXTRACT
+#endif
+
+#ifndef BIND_INTERFACE_MODIFIERS_ITERATOR
+#define BIND_INTERFACE_MODIFIERS_ITERATOR
+
+#define EXTRACT(var) T& var = *(T*)m->arguments[arg];
+
+namespace bind {
+    using model::functor;
+    template <typename T> struct modifier;
+
     template <typename T> struct iterator_modifier : public singular_modifier<T> {
         typedef typename modifier<typename T::container_type>::type type;
         typedef typename T::container_type container_type;
@@ -2156,8 +2174,20 @@ namespace bind {
             EXTRACT(o); return type::ready_(*o.container, m);
         }
     };
-    // }}}
-    // {{{ compile-time type modifier: versioned types
+}
+
+#undef EXTRACT
+#endif
+
+#ifndef BIND_INTERFACE_MODIFIERS_VERSIONED
+#define BIND_INTERFACE_MODIFIERS_VERSIONED
+
+#define EXTRACT(var) T& var = *(T*)m->arguments[arg];
+
+namespace bind {
+    using model::functor;
+    using model::revision;
+
     template <typename T> struct versioned_modifier : public singular_modifier<T> {
         template<size_t arg> 
         static void deallocate(functor* m){
@@ -2329,8 +2359,15 @@ namespace bind {
         static bool ready_(T&, functor*){ return true; }
     };
     // }}}
-    // }}}
-    // {{{ compile-time type modifier: specialization for forwarded types
+}
+
+#undef EXTRACT
+#endif
+
+#ifndef BIND_INTERFACE_MODIFIERS_DISPATCH
+#define BIND_INTERFACE_MODIFIERS_DISPATCH
+
+namespace bind {
     namespace detail {
         template<typename T>
         constexpr bool compact(){ return sizeof(T) <= sizeof(void*); }
@@ -2350,6 +2387,9 @@ namespace bind {
         template<typename T> struct volatile_get_modifier<true, T> { typedef volatile_versioned_modifier< volatile T > type; };
     }
 
+    template <typename T> class iterator;
+    template <typename T> class ptr;
+
     template <typename T> struct modifier {
         typedef typename detail::get_modifier<detail::has_versioning<T>::value,T>::type type;
     };
@@ -2368,10 +2408,8 @@ namespace bind {
     template <typename S> struct modifier < iterator<S> > {
         typedef iterator_modifier<iterator<S> > type;
     };
-    // }}}
 }
 
-#undef EXTRACT
 #endif
 
 #ifndef BIND_INTERFACE_ALLOCATOR
