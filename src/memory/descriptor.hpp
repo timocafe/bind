@@ -31,48 +31,43 @@
 namespace bind { namespace memory {
 
     struct descriptor {
-        typedef int memory_id_type;
-
-        descriptor(size_t e, memory_id_type r = types::cpu::standard) : extent(e), signature(r), persistency(1), crefs(1) {}
+        descriptor(size_t e, types::id_type t = types::cpu::standard) : extent(e), type(t), persistency(1), crefs(1) {}
 
         void protect(){
-            if(!(persistency++)) signature = types::cpu::standard;
+            if(!(persistency++)) type = types::cpu::standard;
         }
         void weaken(){
-            if(!(--persistency)) signature = types::cpu::bulk;
+            if(!(--persistency)) type = types::cpu::bulk;
         }
         void reuse(descriptor& d){
-            signature = d.signature;
-            d.signature = types::none;
+            type = d.type;
+            d.type = types::none;
         }
         bool conserves(descriptor& p){
-            assert(p.signature != types::none && signature != types::none);
-            return (!p.bulked() || bulked());
-        }
-        bool bulked(){
-            return (signature == types::cpu::bulk);
+            assert(p.type != types::none && type != types::none);
+            return (p.type != types::cpu::bulk || type == types::cpu::bulk);
         }
         void* malloc(){
-            assert(signature != types::none);
-            if(signature == types::cpu::bulk){
+            assert(type != types::none);
+            if(type == types::cpu::bulk){
                 void* ptr = cpu::data_bulk::soft_malloc(extent);
                 if(ptr) return ptr;
-                signature = types::cpu::standard;
+                type = types::cpu::standard;
             }
             return cpu::standard::malloc(extent);
         }
         template<class Memory>
         void* hard_malloc(){
-            signature = Memory::type;
+            type = Memory::type;
             return Memory::malloc(extent);
         }
         void free(void* ptr){ 
-            if(ptr == NULL || signature == types::none) return;
-            if(signature == types::cpu::standard) cpu::standard::free(ptr);
+            if(ptr == NULL || type == types::none) return;
+            if(type == types::cpu::standard) cpu::standard::free(ptr);
         }
 
         size_t extent;
-        memory_id_type signature;
+        types::id_type type;
         int persistency;
         int crefs;
     };

@@ -152,9 +152,9 @@ namespace bind { namespace core {
 
     inline void controller::squeeze(revision* r) const {
         if(r->valid() && !r->referenced() && r->locked_once()){
-            if(r->spec.signature == memory::types::cpu::standard){
+            if(r->spec.type == memory::types::cpu::standard){
                 r->spec.free(r->data);
-                r->spec.signature = memory::types::none;
+                r->spec.type = memory::types::none;
             }
         }
     }
