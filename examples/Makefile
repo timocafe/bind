@@ -2,7 +2,7 @@
 
 #FLAGS?= -std=c++11 -O3
 FLAGS?= -std=c++11 -O3 -DBIND_MPI=MPI_THREAD_FUNNELED -mt_mpi
-EXAMPLES = diffusion array reduce ptr
+EXAMPLES = array ptr reduce diffusion filter
 
 .DEFAULT: all
 .PHONY: all clean
