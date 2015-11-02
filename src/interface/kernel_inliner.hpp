@@ -92,9 +92,12 @@ namespace bind {
         static const int arity = sizeof...(TF);
 
         static inline void latch(functor* o, TF&... args){
+            #ifndef BIND_TRANSPORT_NOP
             if(bind::select().get_node().remote())   { expand_modify_remote<0>(args...); return; }
             else if(bind::select().get_node().local()) expand_modify_local<0>(o, args...);
-            else                                       expand_modify<0>(o, args...);
+            else
+            #endif
+            expand_modify<0>(o, args...);
             expand_pin<0,TF...>(o) || bind::select().queue(o);
         }
         static inline void cleanup(functor* o){
