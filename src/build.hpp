@@ -31,10 +31,13 @@
 #define NDEBUG
 #define BIND_NO_DEBUG
 #endif
-// {{{ system includes
-#ifdef BIND_MPI
+// {{{ required packages
+#if defined(BIND_REQUIRE_MPI) && !defined(MPI_VERSION)
+#pragma message("Warning: mpi.h is required but wasn't included.")
 #include <mpi.h>
 #endif
+// }}}
+// {{{ system includes
 #include <complex>
 #include <stdio.h>
 #include <stdlib.h>
@@ -96,7 +99,7 @@
 #include "model/any.hpp"
 // }}}
 // {{{ transport package (requires :model)
-#ifdef BIND_MPI
+#ifdef MPI_VERSION
 #define BIND_CHANNEL_NAME mpi
 #include "transport/mpi/group.hpp"
 #include "transport/mpi/tree.hpp"

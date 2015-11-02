@@ -31,10 +31,13 @@
 #define NDEBUG
 #define BIND_NO_DEBUG
 #endif
-// {{{ system includes
-#ifdef BIND_MPI
+// {{{ required packages
+#if defined(BIND_REQUIRE_MPI) && !defined(MPI_VERSION)
+#pragma message("Warning: mpi.h is required but wasn't included.")
 #include <mpi.h>
 #endif
+// }}}
+// {{{ system includes
 #include <complex>
 #include <stdio.h>
 #include <stdlib.h>
@@ -939,7 +942,7 @@ namespace bind { namespace model {
 #endif
 // }}}
 // {{{ transport package (requires :model)
-#ifdef BIND_MPI
+#ifdef MPI_VERSION
 #define BIND_CHANNEL_NAME mpi
 
 #ifndef BIND_TRANSPORT_MPI_GROUP
@@ -1213,8 +1216,8 @@ namespace bind { namespace transport { namespace mpi {
 
     inline channel::mount::mount(){
         int *ub, flag, level, zero = 0;
-        MPI_Init_thread(&zero, NULL, BIND_MPI, &level); 
-        if(level != BIND_MPI) throw std::runtime_error("Error: Wrong threading level");
+        MPI_Init_thread(&zero, NULL, MPI_THREAD_FUNNELED, &level); 
+        if(level != MPI_THREAD_FUNNELED) throw std::runtime_error("Error: Wrong threading level");
         MPI_Comm_size(MPI_COMM_WORLD, &np);
         MPI_Comm_rank(MPI_COMM_WORLD, &self);
         MPI_Attr_get(MPI_COMM_WORLD, MPI_TAG_UB, &ub, &flag);

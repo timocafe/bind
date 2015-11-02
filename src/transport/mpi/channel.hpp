@@ -39,8 +39,8 @@ namespace bind { namespace transport { namespace mpi {
 
     inline channel::mount::mount(){
         int *ub, flag, level, zero = 0;
-        MPI_Init_thread(&zero, NULL, BIND_MPI, &level); 
-        if(level != BIND_MPI) throw std::runtime_error("Error: Wrong threading level");
+        MPI_Init_thread(&zero, NULL, MPI_THREAD_FUNNELED, &level); 
+        if(level != MPI_THREAD_FUNNELED) throw std::runtime_error("Error: Wrong threading level");
         MPI_Comm_size(MPI_COMM_WORLD, &np);
         MPI_Comm_rank(MPI_COMM_WORLD, &self);
         MPI_Attr_get(MPI_COMM_WORLD, MPI_TAG_UB, &ub, &flag);

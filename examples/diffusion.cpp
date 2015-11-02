@@ -1,3 +1,4 @@
+#include <mpi.h>
 #include "utils/bind.hpp"
 #include "utils/timer.hpp"
 #define __a_ceil(x) (((double)x-(int)x) == 0 ? (int)x : (int)x+1)
