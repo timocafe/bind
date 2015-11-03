@@ -35,7 +35,9 @@ namespace bind {
     public:
         async_timer(std::string name): val(0.0), name(name), count(0){}
        ~async_timer(){
-            std::cout << "R" << bind::rank() << ": " << name << " " << val << ", count : " << count << "\n";
+            std::cout << name << " " << val;
+            if(count > 1) std::cout << ", count : " << count;
+            std::cout << "\n";
         }
         void begin(){
             this->t0 = std::chrono::system_clock::now();
@@ -64,6 +66,16 @@ namespace bind {
         void end(){
             bind::sync();
             async_timer::end();
+        }
+    };
+
+    class scope_timer : public timer {
+    public:
+        scope_timer(std::string name) : timer(name){
+            this->begin();
+        }
+       ~scope_timer(){
+            this->end();
         }
     };
 }
