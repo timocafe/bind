@@ -347,7 +347,7 @@ namespace bind { namespace memory {
     struct types {
         typedef int id_type;
         typedef std::tuple< memory::cpu::bulk,
-                            memory::cpu::standard,
+                            memory::cpu::standard
                             > list;
         template<typename T>
         static constexpr id_type id(){
