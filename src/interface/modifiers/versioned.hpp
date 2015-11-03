@@ -123,10 +123,6 @@ namespace bind {
         static void deallocate(functor* m){
             EXTRACT(o); deallocate_(o);
         }
-        template<size_t arg> 
-        static bool pin(functor* m){ 
-            EXTRACT(o); return pin_(o,m);
-        }
         static void deallocate_(T& o){
             revision& r = *o.allocator_.before;
             bind::select().squeeze(&r);
@@ -153,14 +149,6 @@ namespace bind {
             var->allocator_.before = var->allocator_.after = o->current;
             bind::select().sync(o->back());
             bind::select().use_revision(o);
-        }
-        static bool pin_(T& o, functor* m){
-            revision& r = *o.allocator_.before;
-            if(r.generator != NULL){
-                (r.generator.load())->queue(m);
-                return true;
-            }
-            return false;
         }
     };
     template <typename T> struct volatile_versioned_modifier : public versioned_modifier<T> {
