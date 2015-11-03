@@ -2335,13 +2335,13 @@ namespace bind {
             bind::select().touch(o, bind::rank());
             T* var = (T*)memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy((void*)var, (void*)&obj, sizeof(T)); m->arguments[arg] = (void*)var;
             bind::select().use_revision(o);
-            bind::select().collect(o->back());
 
             var->allocator_.before = o->current;
             if(o->current->generator != m){
+                bind::select().collect(o->back());
                 bind::select().add_revision<locality::common>(o, m, bind::rank()); 
-                bind::select().use_revision(o);
             }
+            bind::select().use_revision(o);
             var->allocator_.after = obj.allocator_.after = o->current;
         }
         template<size_t arg> static bool pin(functor* m){ return false; }
