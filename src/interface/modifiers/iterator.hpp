@@ -44,17 +44,17 @@ namespace bind {
         }
         template<size_t arg>
         static void apply_remote(T& o){
-            type::apply_remote<arg>(*o.container);
+            type::template apply_remote<arg>(*o.container);
         }
         template<size_t arg>
         static void apply_local(T& o, functor* m){
-            type::apply_local<arg>(*o.container, m);
+            type::template apply_local<arg>(*o.container, m);
             T* var = (T*)memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy((void*)var, &o, sizeof(T));
             var->container = (container_type*)m->arguments[arg]; m->arguments[arg] = (void*)var;
         }
         template<size_t arg>
         static void apply(T& o, functor* m){
-            type::apply<arg>(*o.container, m);
+            type::template apply<arg>(*o.container, m);
             T* var = (T*)memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy((void*)var, &o, sizeof(T));
             var->container = (container_type*)m->arguments[arg]; m->arguments[arg] = (void*)var;
         }
