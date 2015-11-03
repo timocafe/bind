@@ -63,13 +63,13 @@ namespace bind { namespace memory {
         typedef std::tuple< memory::cpu::bulk,
                             memory::cpu::standard
                             > list;
+
         template<typename T>
-        static constexpr id_type id(){
-            return detail::checked_get< detail::find_type<T,list>() >::value;
-        }
+        using id = detail::checked_get< detail::find_type<T,list>() >;
+
         struct cpu {
-            static constexpr id_type bulk = id<memory::cpu::bulk>();
-            static constexpr id_type standard = id<memory::cpu::standard>();
+            static constexpr id_type bulk = id<memory::cpu::bulk>::value;
+            static constexpr id_type standard = id<memory::cpu::standard>::value;
         };
         static constexpr id_type none = std::tuple_size<list>::value;
     };
