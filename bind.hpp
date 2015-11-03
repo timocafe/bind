@@ -349,13 +349,13 @@ namespace bind { namespace memory {
         typedef std::tuple< memory::cpu::bulk,
                             memory::cpu::standard
                             > list;
+
         template<typename T>
-        static constexpr id_type id(){
-            return detail::checked_get< detail::find_type<T,list>() >::value;
-        }
+        using id = detail::checked_get< detail::find_type<T,list>() >;
+
         struct cpu {
-            static constexpr id_type bulk = id<memory::cpu::bulk>();
-            static constexpr id_type standard = id<memory::cpu::standard>();
+            static constexpr id_type bulk = id<memory::cpu::bulk>::value;
+            static constexpr id_type standard = id<memory::cpu::standard>::value;
         };
         static constexpr id_type none = std::tuple_size<list>::value;
     };
@@ -2150,17 +2150,17 @@ namespace bind {
         }
         template<size_t arg>
         static void apply_remote(T& o){
-            type::apply_remote<arg>(*o.container);
+            type::template apply_remote<arg>(*o.container);
         }
         template<size_t arg>
         static void apply_local(T& o, functor* m){
-            type::apply_local<arg>(*o.container, m);
+            type::template apply_local<arg>(*o.container, m);
             T* var = (T*)memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy((void*)var, &o, sizeof(T));
             var->container = (container_type*)m->arguments[arg]; m->arguments[arg] = (void*)var;
         }
         template<size_t arg>
         static void apply(T& o, functor* m){
-            type::apply<arg>(*o.container, m);
+            type::template apply<arg>(*o.container, m);
             T* var = (T*)memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy((void*)var, &o, sizeof(T));
             var->container = (container_type*)m->arguments[arg]; m->arguments[arg] = (void*)var;
         }
