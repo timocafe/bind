@@ -48,12 +48,12 @@ namespace bind {
             inliner::cleanup(this);
         }
         template<size_t...I, typename... Args>
-        static void expand_spawn(std::index_sequence<I...>, Args&... args){
+        static void expand_spawn(index_sequence<I...>, Args&... args){
             inliner::latch(new kernel(), args...);
         }
         template<typename... Args>
         static inline void spawn(Args&& ... args){
-            expand_spawn(std::make_index_sequence<sizeof...(Args)>(), args...);
+            expand_spawn(make_index_sequence<sizeof...(Args)>(), args...);
         }
         #undef inliner
     };

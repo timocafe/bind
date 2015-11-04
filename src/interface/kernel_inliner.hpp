@@ -107,11 +107,11 @@ namespace bind {
             return expand_ready<0,TF...>(o);
         }
         template<size_t...I>
-        static void expand_invoke(std::index_sequence<I...>, functor* o){
+        static void expand_invoke(index_sequence<I...>, functor* o){
             (*fp)(modifier<remove_reference<TF> >::type::template load<I>(o)...);
         }
         static inline void invoke(functor* o){
-            expand_invoke(std::make_index_sequence<sizeof...(TF)>(), o);
+            expand_invoke(make_index_sequence<sizeof...(TF)>(), o);
         }
     };
 

@@ -1,7 +1,7 @@
-#ifndef STD_INDEX_SEQUENCE
-#define STD_INDEX_SEQUENCE
+#ifndef BIND_INDEX_SEQUENCE
+#define BIND_INDEX_SEQUENCE
 
-namespace std {
+namespace bind {
 
     template<size_t... Indices>
     struct index_sequence {

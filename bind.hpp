@@ -165,10 +165,10 @@ inline size_t getCurrentRSS( )
 }
 
 #endif
-#ifndef STD_INDEX_SEQUENCE
-#define STD_INDEX_SEQUENCE
+#ifndef BIND_INDEX_SEQUENCE
+#define BIND_INDEX_SEQUENCE
 
-namespace std {
+namespace bind {
 
     template<size_t... Indices>
     struct index_sequence {
@@ -2535,11 +2535,11 @@ namespace bind {
             return expand_ready<0,TF...>(o);
         }
         template<size_t...I>
-        static void expand_invoke(std::index_sequence<I...>, functor* o){
+        static void expand_invoke(index_sequence<I...>, functor* o){
             (*fp)(modifier<remove_reference<TF> >::type::template load<I>(o)...);
         }
         static inline void invoke(functor* o){
-            expand_invoke(std::make_index_sequence<sizeof...(TF)>(), o);
+            expand_invoke(make_index_sequence<sizeof...(TF)>(), o);
         }
     };
 
@@ -2571,12 +2571,12 @@ namespace bind {
             inliner::cleanup(this);
         }
         template<size_t...I, typename... Args>
-        static void expand_spawn(std::index_sequence<I...>, Args&... args){
+        static void expand_spawn(index_sequence<I...>, Args&... args){
             inliner::latch(new kernel(), args...);
         }
         template<typename... Args>
         static inline void spawn(Args&& ... args){
-            expand_spawn(std::make_index_sequence<sizeof...(Args)>(), args...);
+            expand_spawn(make_index_sequence<sizeof...(Args)>(), args...);
         }
         #undef inliner
     };
