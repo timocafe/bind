@@ -41,9 +41,9 @@ namespace bind {
         using allocator_type = Allocator;
         using value_type = T;
         using size_type = size_t;
-        using volatile_iterator = iterator<volatile array>;
-        using const_iterator = iterator<const array>;
-        using iterator = iterator<array>;
+        using volatile_iterator = proxy_iterator<volatile array>;
+        using const_iterator = proxy_iterator<const array>;
+        using iterator = proxy_iterator<array>;
         explicit array(){}
 
         explicit array(size_t n);

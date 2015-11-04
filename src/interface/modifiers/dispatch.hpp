@@ -48,7 +48,7 @@ namespace bind {
         template<typename T> struct volatile_get_modifier<true, T> { typedef volatile_versioned_modifier< volatile T > type; };
     }
 
-    template <typename T> class iterator;
+    template <typename T> class proxy_iterator;
     template <typename T> class ptr;
 
     template <typename T> struct modifier {
@@ -66,8 +66,8 @@ namespace bind {
     template <typename S> struct modifier < const ptr<S> > {
         typedef const_ptr_modifier<const ptr<S> > type; 
     };
-    template <typename S> struct modifier < iterator<S> > {
-        typedef iterator_modifier<iterator<S> > type;
+    template <typename S> struct modifier < proxy_iterator<S> > {
+        typedef iterator_modifier<proxy_iterator<S> > type;
     };
 }
 

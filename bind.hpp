@@ -2378,7 +2378,7 @@ namespace bind {
         template<typename T> struct volatile_get_modifier<true, T> { typedef volatile_versioned_modifier< volatile T > type; };
     }
 
-    template <typename T> class iterator;
+    template <typename T> class proxy_iterator;
     template <typename T> class ptr;
 
     template <typename T> struct modifier {
@@ -2396,8 +2396,8 @@ namespace bind {
     template <typename S> struct modifier < const ptr<S> > {
         typedef const_ptr_modifier<const ptr<S> > type; 
     };
-    template <typename S> struct modifier < iterator<S> > {
-        typedef iterator_modifier<iterator<S> > type;
+    template <typename S> struct modifier < proxy_iterator<S> > {
+        typedef iterator_modifier<proxy_iterator<S> > type;
     };
 }
 
@@ -2734,42 +2734,42 @@ namespace bind {
 
 #endif
 
-#ifndef BIND_ITERATOR
-#define BIND_ITERATOR
+#ifndef BIND_PROXY_ITERATOR
+#define BIND_PROXY_ITERATOR
 
 namespace bind {
 
     template<class Container>
-    class iterator {
+    class proxy_iterator {
     public:
         typedef Container container_type;
-        typedef typename std::iterator_traits<bind::iterator<Container> >::value_type value_type;
+        typedef typename std::iterator_traits<bind::proxy_iterator<Container> >::value_type value_type;
 
-        iterator() : container(NULL), position(0) {}
-        iterator(container_type& owner, size_t p) : container(&owner), position(p) {}
-        iterator& operator += (size_t offset){
+        proxy_iterator() : container(NULL), position(0) {}
+        proxy_iterator(container_type& owner, size_t p) : container(&owner), position(p) {}
+        proxy_iterator& operator += (size_t offset){
             position += offset;
             return *this;
         }
-        iterator& operator++ (){
+        proxy_iterator& operator++ (){
             position++;
             return *this;
         }
-        iterator operator++ (int){
-            iterator tmp(*this);
+        proxy_iterator operator++ (int){
+            proxy_iterator tmp(*this);
             operator++();
             return tmp;
         }
-        iterator& operator -= (size_t offset){
+        proxy_iterator& operator -= (size_t offset){
             position -= offset;
             return *this;
         }
-        iterator& operator-- (){
+        proxy_iterator& operator-- (){
             position--;
             return *this;
         }
-        iterator operator-- (int){
-            iterator tmp(*this);
+        proxy_iterator operator-- (int){
+            proxy_iterator tmp(*this);
             operator--();
             return tmp;
         }
@@ -2785,44 +2785,44 @@ namespace bind {
         size_t position;
     public:
         template<typename T>
-        friend bool operator == (const iterator<T>& lhs, const iterator<T>& rhs);
+        friend bool operator == (const proxy_iterator<T>& lhs, const proxy_iterator<T>& rhs);
         template<typename T>
-        friend bool operator != (const iterator<T>& lhs, const iterator<T>& rhs);
+        friend bool operator != (const proxy_iterator<T>& lhs, const proxy_iterator<T>& rhs);
         container_type* container;
     };
 
     template <class Container> 
-    bool operator == (const iterator<Container>& lhs, const iterator<Container>& rhs){
+    bool operator == (const proxy_iterator<Container>& lhs, const proxy_iterator<Container>& rhs){
         return (lhs.position == rhs.position && lhs.container->allocator_.desc == rhs.container->allocator_.desc);
     }
 
     template <class Container> 
-    bool operator != (const iterator<Container>& lhs, const iterator<Container>& rhs){
+    bool operator != (const proxy_iterator<Container>& lhs, const proxy_iterator<Container>& rhs){
         return (lhs.position != rhs.position || lhs.container->allocator_.desc != rhs.container->allocator_.desc);
     }
 
     template <class Container, class OtherContainer> 
-    size_t operator - (const iterator<Container>& lhs, const iterator<OtherContainer>& rhs){ 
+    size_t operator - (const proxy_iterator<Container>& lhs, const proxy_iterator<OtherContainer>& rhs){ 
         return lhs.position - rhs.position;
     }
 
     template <class Container> 
-    iterator<Container> operator + (iterator<Container> lhs, size_t offset){ 
+    proxy_iterator<Container> operator + (proxy_iterator<Container> lhs, size_t offset){ 
         return (lhs += offset);
     }
 
     template <class Container> 
-    iterator<Container> operator - (iterator<Container> lhs, size_t offset){ 
+    proxy_iterator<Container> operator - (proxy_iterator<Container> lhs, size_t offset){ 
         return (lhs -= offset);
     }
 
     template <class Container> 
-    bool operator < (const iterator<Container>& lhs, const iterator<Container>& rhs){
+    bool operator < (const proxy_iterator<Container>& lhs, const proxy_iterator<Container>& rhs){
         return (lhs.position < rhs.position);
     }
 
     template <class Container> 
-    bool operator > (const iterator<Container>& lhs, const iterator<Container>& rhs){
+    bool operator > (const proxy_iterator<Container>& lhs, const proxy_iterator<Container>& rhs){
         return (lhs.position > rhs.position);
     }
 
@@ -2831,7 +2831,7 @@ namespace bind {
 namespace std {
 
     template<class Container>
-    class iterator_traits<bind::iterator<Container> > {
+    class iterator_traits<bind::proxy_iterator<Container> > {
     public:
         typedef std::random_access_iterator_tag iterator_category;
         typedef typename Container::value_type value_type;
@@ -2839,7 +2839,7 @@ namespace std {
     };
 
     template<class Container>
-    class iterator_traits<bind::iterator<const Container> > {
+    class iterator_traits<bind::proxy_iterator<const Container> > {
     public:
         typedef std::random_access_iterator_tag iterator_category;
         typedef const typename Container::value_type value_type;
@@ -2865,9 +2865,9 @@ namespace bind {
         using allocator_type = Allocator;
         using value_type = T;
         using size_type = size_t;
-        using volatile_iterator = iterator<volatile array>;
-        using const_iterator = iterator<const array>;
-        using iterator = iterator<array>;
+        using volatile_iterator = proxy_iterator<volatile array>;
+        using const_iterator = proxy_iterator<const array>;
+        using iterator = proxy_iterator<array>;
         explicit array(){}
 
         explicit array(size_t n);
