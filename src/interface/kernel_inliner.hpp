@@ -50,6 +50,7 @@ namespace bind {
     template<int N> void expand_modify_local(functor* o){}
     template<int N> void expand_modify(functor* o){}
     template<int N> bool expand_pin(functor* o){ return false; }
+    template<int N> void expand_load(functor* o){ }
     template<int N> void expand_deallocate(functor* o){ }
     template<int N> bool expand_ready(functor* o){ return true; }
 
@@ -72,6 +73,11 @@ namespace bind {
     bool expand_pin(functor* o){
         return modifier<remove_reference<T> >::type::template pin<N>(o) ||
                expand_pin<N+1,TF...>(o);
+    }
+    template<int N, typename T, typename... TF>
+    void expand_load(functor* o){
+        modifier<remove_reference<T> >::type::template load<N>(o);
+        expand_load<N+1,TF...>(o);
     }
     template<int N, typename T, typename... TF>
     void expand_deallocate(functor* o){
@@ -108,9 +114,10 @@ namespace bind {
         }
         template<size_t...I>
         static void expand_invoke(index_sequence<I...>, functor* o){
-            (*fp)(modifier<remove_reference<TF> >::type::template load<I>(o)...);
+            (*fp)(modifier<remove_reference<TF> >::type::template forward<I>(o)...);
         }
         static inline void invoke(functor* o){
+            expand_load<0,TF...>(o);
             expand_invoke(make_index_sequence<sizeof...(TF)>(), o);
         }
     };

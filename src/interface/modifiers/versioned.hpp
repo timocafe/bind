@@ -48,9 +48,8 @@ namespace bind {
             EXTRACT(o); return ready_(o, m);
         }
         template<size_t arg>
-        static T& load(functor* m){ 
+        static void load(functor* m){ 
             EXTRACT(o); revise(o);
-            return o;
         }
         static void deallocate_(T& o){
             revision& parent  = *o.allocator_.before;

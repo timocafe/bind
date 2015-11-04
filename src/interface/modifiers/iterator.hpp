@@ -59,8 +59,8 @@ namespace bind {
             var->container = (container_type*)m->arguments[arg]; m->arguments[arg] = (void*)var;
         }
         template<size_t arg>
-        static T& load(functor* m){
-            EXTRACT(o); revise(*o.container); return o;
+        static void load(functor* m){
+            EXTRACT(o); revise(*o.container);
         }
         template<size_t arg> 
         static bool pin(functor* m){ 

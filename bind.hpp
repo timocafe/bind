@@ -2042,7 +2042,8 @@ namespace bind {
         template<size_t arg> static void deallocate(functor* ){ }
         template<size_t arg> static bool pin(functor* ){ return false; }
         template<size_t arg> static bool ready(functor* ){ return true; }
-        template<size_t arg> static T&   load(functor* m){ EXTRACT(o); return o; }
+        template<size_t arg> static void load(functor* m){ }
+        template<size_t arg> static T&   forward(functor* m){ EXTRACT(o); return o; }
         template<size_t arg> static void apply_remote(T&){ }
         template<size_t arg> static void apply_local(T& o, functor* m){
             m->arguments[arg] = memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy(m->arguments[arg], &o, sizeof(T));
@@ -2054,7 +2055,7 @@ namespace bind {
     };
 
     template <typename T> struct singular_modifier<T, true> : public singular_modifier<T> {
-        template<size_t arg> static T& load(functor* m){ return *(T*)&m->arguments[arg]; }
+        template<size_t arg> static T& forward(functor* m){ return *(T*)&m->arguments[arg]; }
         template<size_t arg> static void apply_local(T& o, functor* m){ *(T*)&m->arguments[arg] = o; }
         template<size_t arg> static void apply(T& o, functor* m){
             *(T*)&m->arguments[arg] = o;
@@ -2117,13 +2118,12 @@ namespace bind {
             }
             m->arguments[arg] = memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy(m->arguments[arg], &o, sizeof(T)); 
         }
-        template<size_t arg> static T& load(functor* m){
+        template<size_t arg> static void load(functor* m){
             EXTRACT(o);
             if(o.impl->origin){
                 *o.impl = (typename T::element_type&)*o.impl->origin;
                 o.impl->origin = NULL;
             }
-            return o;
         }
     };
 }
@@ -2165,8 +2165,8 @@ namespace bind {
             var->container = (container_type*)m->arguments[arg]; m->arguments[arg] = (void*)var;
         }
         template<size_t arg>
-        static T& load(functor* m){
-            EXTRACT(o); revise(*o.container); return o;
+        static void load(functor* m){
+            EXTRACT(o); revise(*o.container);
         }
         template<size_t arg> 
         static bool pin(functor* m){ 
@@ -2205,9 +2205,8 @@ namespace bind {
             EXTRACT(o); return ready_(o, m);
         }
         template<size_t arg>
-        static T& load(functor* m){ 
+        static void load(functor* m){ 
             EXTRACT(o); revise(o);
-            return o;
         }
         static void deallocate_(T& o){
             revision& parent  = *o.allocator_.before;
@@ -2477,6 +2476,7 @@ namespace bind {
     template<int N> void expand_modify_local(functor* o){}
     template<int N> void expand_modify(functor* o){}
     template<int N> bool expand_pin(functor* o){ return false; }
+    template<int N> void expand_load(functor* o){ }
     template<int N> void expand_deallocate(functor* o){ }
     template<int N> bool expand_ready(functor* o){ return true; }
 
@@ -2499,6 +2499,11 @@ namespace bind {
     bool expand_pin(functor* o){
         return modifier<remove_reference<T> >::type::template pin<N>(o) ||
                expand_pin<N+1,TF...>(o);
+    }
+    template<int N, typename T, typename... TF>
+    void expand_load(functor* o){
+        modifier<remove_reference<T> >::type::template load<N>(o);
+        expand_load<N+1,TF...>(o);
     }
     template<int N, typename T, typename... TF>
     void expand_deallocate(functor* o){
@@ -2535,9 +2540,10 @@ namespace bind {
         }
         template<size_t...I>
         static void expand_invoke(index_sequence<I...>, functor* o){
-            (*fp)(modifier<remove_reference<TF> >::type::template load<I>(o)...);
+            (*fp)(modifier<remove_reference<TF> >::type::template forward<I>(o)...);
         }
         static inline void invoke(functor* o){
+            expand_load<0,TF...>(o);
             expand_invoke(make_index_sequence<sizeof...(TF)>(), o);
         }
     };

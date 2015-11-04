@@ -77,13 +77,12 @@ namespace bind {
             }
             m->arguments[arg] = memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy(m->arguments[arg], &o, sizeof(T)); 
         }
-        template<size_t arg> static T& load(functor* m){
+        template<size_t arg> static void load(functor* m){
             EXTRACT(o);
             if(o.impl->origin){
                 *o.impl = (typename T::element_type&)*o.impl->origin;
                 o.impl->origin = NULL;
             }
-            return o;
         }
     };
 }
