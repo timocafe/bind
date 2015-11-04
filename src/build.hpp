@@ -36,6 +36,10 @@
 #pragma message("Warning: mpi.h is required but wasn't included.")
 #include <mpi.h>
 #endif
+#if defined(BIND_REQUIRE_CUDA) && !defined(CUDART_VERSION)
+#pragma message("Warning: cuda_runtime.h is required but wasn't included.")
+#include <cuda_runtime.h>
+#endif
 // }}}
 // {{{ system includes
 #include <complex>
