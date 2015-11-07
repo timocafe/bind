@@ -2684,8 +2684,8 @@ namespace bind {
 // }}}
 // {{{ bonus container package (requires :*)
 
-#ifndef BIND_CONTAINER_PTR_HPP
-#define BIND_CONTAINER_PTR_HPP
+#ifndef BIND_CONTAINER_SMART_PTR_HPP
+#define BIND_CONTAINER_SMART_PTR_HPP
 
 namespace bind {
 
@@ -2693,49 +2693,63 @@ namespace bind {
     using model::sizeof_any;
 
     template <typename T>
-    class shared_ptr {
-    private:
-        template <typename F> friend class shared_ptr;
-        template<typename S> 
-        shared_ptr& operator= (const S& val) = delete;
-    public:
-        mutable any* impl;
+    class smart_ptr {
+    protected:
         typedef T element_type;
-
-        void resit() const {
-            shared_ptr clone(*this);
-            std::swap(this->impl, clone.impl);
-            this->impl->origin = clone.impl;
-        }
-       ~shared_ptr(){
+       ~smart_ptr(){
            if(impl) bind::destroy(impl); 
         }
-        T& operator* () const {
-            return *impl;
-        }
-        shared_ptr(element_type val){
+        smart_ptr(element_type val){
             impl = new (memory::cpu::standard::calloc<sizeof_any<T>()>()) any(val);
         }
-        shared_ptr(const shared_ptr& f){
+        smart_ptr(const smart_ptr& f){
             impl = new (memory::cpu::standard::calloc<sizeof_any<T>()>()) any((element_type&)*f);
             impl->origin = f.impl;
         }
-        shared_ptr& operator= (const shared_ptr& f){
+        smart_ptr(smart_ptr&& f){
+            impl = f.impl; f.impl = NULL; 
+        }
+        smart_ptr& operator= (const smart_ptr& f){
             *impl = (element_type&)*f;
             impl->origin = f.impl;
             return *this;
         }
-        shared_ptr(shared_ptr&& f){
-            impl = f.impl; f.impl = NULL; 
-        }
-        shared_ptr& operator= (shared_ptr&& f){ 
+        smart_ptr& operator= (smart_ptr&& f){ 
             std::swap(impl, f.impl);
             return *this;
         }
+        template<typename S>
+        smart_ptr& operator= (const S& val) = delete;
+    public:
+        T& operator* () const {
+            return *impl;
+        }
+        void resit() const {
+            smart_ptr clone(*this);
+            std::swap(this->impl, clone.impl);
+            this->impl->origin = clone.impl;
+        }
+        mutable any* impl;
+    };
+
+    template<typename T>
+    class shared_ptr : public smart_ptr<T> {
+    public:
+        typedef typename smart_ptr<T>::element_type element_type;
+        template <typename U>
+        shared_ptr(U&& arg) : smart_ptr<T>(std::forward<U>(arg)) {}
+    };
+
+    template<typename T>
+    class private_ptr : public smart_ptr<T> {
+    public:
+        typedef typename smart_ptr<T>::element_type element_type;
+        template <typename U>
+        private_ptr(U&& arg) : smart_ptr<T>(std::forward<U>(arg)) {}
     };
 
     template<class T>
-    std::ostream& operator << (std::ostream& os, const shared_ptr<T>& obj){
+    std::ostream& operator << (std::ostream& os, const smart_ptr<T>& obj){
         os << *obj;
         return os;
     }
