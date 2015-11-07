@@ -71,9 +71,9 @@ namespace bind {
         lambda(l)(std::forward<Args>(args)...);
     }
 
-    template <class... L, class... Args>
-    void cpu(void(*l)(L...), Args&& ... args){
-        bind::cpu(std::function<void(L...)>(l), std::forward<Args>(args)...);
+    template <class... L, class R, class... Args>
+    void cpu(R(*l)(L...), Args&& ... args){
+        bind::cpu(std::function<R(L...)>(l), std::forward<Args>(args)...);
     }
 
 }
