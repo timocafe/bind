@@ -64,7 +64,7 @@ namespace bind {
             o.resit();
             bind::select().rsync(o.impl);
         }
-        template<size_t arg> static void apply_local(const T& o, functor* m){
+        template<size_t arg> static void apply_local(T& o, functor* m){
             if(o.impl->generator != m){
                 o.resit();
                 o.impl->generator = m;
@@ -72,7 +72,7 @@ namespace bind {
             bind::select().lsync(o.impl);
             m->arguments[arg] = memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy(m->arguments[arg], &o, sizeof(T)); 
         }
-        template<size_t arg> static void apply(const T& o, functor* m){
+        template<size_t arg> static void apply(T& o, functor* m){
             if(o.impl->generator != m){
                 o.resit();
                 o.impl->generator = m;
@@ -85,6 +85,17 @@ namespace bind {
                 *o.impl = (typename T::element_type&)*o.impl->origin;
                 o.impl->origin = NULL;
             }
+        }
+    };
+
+    template <typename T>
+    struct volatile_shared_ptr_modifier : public shared_ptr_modifier<T> {
+        template<size_t arg> static void apply_remote(T& o){ }
+        template<size_t arg> static void apply_local(T& o, functor* m){
+            apply<arg>(o, m);
+        }
+        template<size_t arg> static void apply(T& o, functor* m){
+            shared_ptr_modifier<typename std::remove_volatile<T>::type>::apply<arg>(const_cast<typename std::remove_volatile<T>::type&>(o), m);
         }
     };
 }

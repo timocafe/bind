@@ -62,7 +62,7 @@ namespace bind {
         template<typename S>
         smart_ptr& operator= (const S& val) = delete;
     public:
-        T& operator* () const {
+        T& operator* () const volatile {
             return *impl;
         }
         void resit() const {

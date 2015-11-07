@@ -2144,7 +2144,7 @@ namespace bind {
             o.resit();
             bind::select().rsync(o.impl);
         }
-        template<size_t arg> static void apply_local(const T& o, functor* m){
+        template<size_t arg> static void apply_local(T& o, functor* m){
             if(o.impl->generator != m){
                 o.resit();
                 o.impl->generator = m;
@@ -2152,7 +2152,7 @@ namespace bind {
             bind::select().lsync(o.impl);
             m->arguments[arg] = memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy(m->arguments[arg], &o, sizeof(T)); 
         }
-        template<size_t arg> static void apply(const T& o, functor* m){
+        template<size_t arg> static void apply(T& o, functor* m){
             if(o.impl->generator != m){
                 o.resit();
                 o.impl->generator = m;
@@ -2165,6 +2165,17 @@ namespace bind {
                 *o.impl = (typename T::element_type&)*o.impl->origin;
                 o.impl->origin = NULL;
             }
+        }
+    };
+
+    template <typename T>
+    struct volatile_shared_ptr_modifier : public shared_ptr_modifier<T> {
+        template<size_t arg> static void apply_remote(T& o){ }
+        template<size_t arg> static void apply_local(T& o, functor* m){
+            apply<arg>(o, m);
+        }
+        template<size_t arg> static void apply(T& o, functor* m){
+            shared_ptr_modifier<typename std::remove_volatile<T>::type>::apply<arg>(const_cast<typename std::remove_volatile<T>::type&>(o), m);
         }
     };
 }
@@ -2434,10 +2445,13 @@ namespace bind {
         typedef typename detail::volatile_get_modifier<detail::has_versioning<T>::value,T>::type type;
     };
     template <typename S> struct modifier < shared_ptr<S> > {
-        typedef shared_ptr_modifier<shared_ptr<S> > type; 
+        typedef shared_ptr_modifier< shared_ptr<S> > type; 
     };
     template <typename S> struct modifier < const shared_ptr<S> > {
-        typedef const_shared_ptr_modifier<const shared_ptr<S> > type; 
+        typedef const_shared_ptr_modifier< const shared_ptr<S> > type; 
+    };
+    template <typename S> struct modifier < volatile shared_ptr<S> > {
+        typedef volatile_shared_ptr_modifier< volatile shared_ptr<S> > type; 
     };
     template <typename S> struct modifier < proxy_iterator<S> > {
         typedef iterator_modifier<proxy_iterator<S> > type;
@@ -2762,7 +2776,7 @@ namespace bind {
         template<typename S>
         smart_ptr& operator= (const S& val) = delete;
     public:
-        T& operator* () const {
+        T& operator* () const volatile {
             return *impl;
         }
         void resit() const {
