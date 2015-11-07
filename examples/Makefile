@@ -2,7 +2,7 @@
 
 #FLAGS?= -std=c++11 -O3
 FLAGS?= -std=c++11 -O3 -mt_mpi
-EXAMPLES = array ptr reduce diffusion
+EXAMPLES = array shared_ptr reduce diffusion
 
 .DEFAULT: all
 .PHONY: all clean

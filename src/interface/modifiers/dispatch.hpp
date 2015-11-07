@@ -49,7 +49,7 @@ namespace bind {
     }
 
     template <typename T> class proxy_iterator;
-    template <typename T> class ptr;
+    template <typename T> class shared_ptr;
 
     template <typename T> struct modifier {
         typedef typename detail::get_modifier<detail::has_versioning<T>::value,T>::type type;
@@ -60,11 +60,11 @@ namespace bind {
     template <typename T> struct modifier <volatile T> {
         typedef typename detail::volatile_get_modifier<detail::has_versioning<T>::value,T>::type type;
     };
-    template <typename S> struct modifier < ptr<S> > {
-        typedef ptr_modifier<ptr<S> > type; 
+    template <typename S> struct modifier < shared_ptr<S> > {
+        typedef shared_ptr_modifier<shared_ptr<S> > type; 
     };
-    template <typename S> struct modifier < const ptr<S> > {
-        typedef const_ptr_modifier<const ptr<S> > type; 
+    template <typename S> struct modifier < const shared_ptr<S> > {
+        typedef const_shared_ptr_modifier<const shared_ptr<S> > type; 
     };
     template <typename S> struct modifier < proxy_iterator<S> > {
         typedef iterator_modifier<proxy_iterator<S> > type;

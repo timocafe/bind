@@ -132,7 +132,7 @@
 // {{{ interface package (requires :model :transport :core)
 #include "interface/shortcuts.hpp"
 #include "interface/modifiers/singular.hpp"
-#include "interface/modifiers/ptr.hpp"
+#include "interface/modifiers/shared_ptr.hpp"
 #include "interface/modifiers/iterator.hpp"
 #include "interface/modifiers/versioned.hpp"
 #include "interface/modifiers/dispatch.hpp"
@@ -143,7 +143,7 @@
 #include "interface/lambda.hpp"
 // }}}
 // {{{ bonus container package (requires :*)
-#include "container/ptr.hpp"
+#include "container/shared_ptr.hpp"
 #include "container/proxy_iterator.hpp"
 #include "container/array.h"
 #include "container/array.hpp"

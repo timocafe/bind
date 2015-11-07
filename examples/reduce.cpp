@@ -3,10 +3,10 @@
 
 int main(){
     const int N = 100;
-    std::vector<bind::ptr<int> > a = {1, 2, 3, 4, 6, 7, 8, 9};
+    std::vector<bind::shared_ptr<int> > a = {1, 2, 3, 4, 6, 7, 8, 9};
 
-    bind::reduce(a, [](bind::ptr<int>& a, const bind::ptr<int>& b){
-        bind::cpu([](bind::ptr<int>& dst, const bind::ptr<int>& src){
+    bind::reduce(a, [](bind::shared_ptr<int>& a, const bind::shared_ptr<int>& b){
+        bind::cpu([](bind::shared_ptr<int>& dst, const bind::shared_ptr<int>& src){
             *dst += *src;
         }, a, b);
     });

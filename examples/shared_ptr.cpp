@@ -1,13 +1,13 @@
 #include "utils/bind.hpp"
 #define N 9
 
-void norm(bind::ptr<double>& norm, bind::array<double>& vec){
+void norm(bind::shared_ptr<double>& norm, bind::array<double>& vec){
     for(int i = 0; i < vec.size(); i++) *norm += vec[i]*vec[i];
     *norm = std::sqrt(*norm);
 }
 
 int main(){
-    bind::ptr<double> n(0);
+    bind::shared_ptr<double> n(0);
     bind::array<double> vec(N);
     vec.fill(1);
 
