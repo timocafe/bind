@@ -1,7 +1,6 @@
-# Makefile example (icc)
+# Makefile (icc)
 
-#FLAGS?= -std=c++11 -O3
-FLAGS?= -std=c++11 -O3 -mt_mpi
+FLAGS?= -std=c++11 -O3
 EXAMPLES = array shared_ptr reduce diffusion
 
 .DEFAULT: all
