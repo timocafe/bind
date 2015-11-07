@@ -34,7 +34,8 @@ namespace bind {
     using model::functor;
     using model::revision;
 
-    template <typename T> struct versioned_modifier : public singular_modifier<T> {
+    template <typename T>
+    struct versioned_modifier : public singular_modifier<T> {
         template<size_t arg> 
         static void deallocate(functor* m){
             EXTRACT(o); deallocate_(o);
@@ -117,7 +118,8 @@ namespace bind {
         static constexpr bool ReferenceOnly = true;
     };
     // {{{ compile-time type modifier: const/volatile cases of the versioned types
-    template <typename T> struct const_versioned_modifier : public versioned_modifier<T> {
+    template <typename T>
+    struct const_versioned_modifier : public versioned_modifier<T> {
         template<size_t arg>
         static void deallocate(functor* m){
             EXTRACT(o); deallocate_(o);
@@ -150,7 +152,8 @@ namespace bind {
             bind::select().use_revision(o);
         }
     };
-    template <typename T> struct volatile_versioned_modifier : public versioned_modifier<T> {
+    template <typename T>
+    struct volatile_versioned_modifier : public versioned_modifier<T> {
         template<size_t arg> static void apply_remote(T& obj){
             auto o = obj.allocator_.desc;
             bind::select().touch(o, bind::rank());

@@ -66,6 +66,9 @@ namespace bind {
     template <typename S> struct modifier < const shared_ptr<S> > {
         typedef const_shared_ptr_modifier<const shared_ptr<S> > type; 
     };
+    template <typename S> struct modifier < volatile shared_ptr<S> > {
+        typedef volatile_shared_ptr_modifier< shared_ptr<S> > type; 
+    };
     template <typename S> struct modifier < proxy_iterator<S> > {
         typedef iterator_modifier<proxy_iterator<S> > type;
     };

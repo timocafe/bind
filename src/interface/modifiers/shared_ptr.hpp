@@ -33,7 +33,8 @@
 namespace bind {
     using model::functor;
 
-    template <typename T> struct const_shared_ptr_modifier : public singular_modifier<T> {
+    template <typename T>
+    struct const_shared_ptr_modifier : public singular_modifier<T> {
         template<size_t arg> static bool ready(functor* m){
             EXTRACT(o);
             if(o.impl->origin && o.impl->origin->generator != NULL) return false;
@@ -48,7 +49,8 @@ namespace bind {
         static constexpr bool ReferenceOnly = true;
     };
 
-    template <typename T> struct shared_ptr_modifier : public const_shared_ptr_modifier<T> {
+    template <typename T>
+    struct shared_ptr_modifier : public const_shared_ptr_modifier<T> {
         template<size_t arg> static void deallocate(functor* m){
             EXTRACT(o); o.impl->complete();
         }

@@ -34,7 +34,8 @@ namespace bind {
     using model::functor;
     template <typename T> struct modifier;
 
-    template <typename T> struct iterator_modifier : public singular_modifier<T> {
+    template <typename T>
+    struct iterator_modifier : public singular_modifier<T> {
         typedef typename modifier<typename T::container_type>::type type;
         typedef typename T::container_type container_type;
 

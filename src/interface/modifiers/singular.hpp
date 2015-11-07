@@ -33,7 +33,8 @@
 namespace bind {
     using model::functor;
 
-    template <typename T, bool Compact = false> struct singular_modifier {
+    template <typename T, bool Compact = false>
+    struct singular_modifier {
         template<size_t arg> static void deallocate(functor* ){ }
         template<size_t arg> static bool pin(functor* ){ return false; }
         template<size_t arg> static bool ready(functor* ){ return true; }
@@ -49,7 +50,8 @@ namespace bind {
         static constexpr bool ReferenceOnly = false;
     };
 
-    template <typename T> struct singular_modifier<T, true> : public singular_modifier<T> {
+    template <typename T>
+    struct singular_modifier<T, true> : public singular_modifier<T> {
         template<size_t arg> static T& forward(functor* m){ return *(T*)&m->arguments[arg]; }
         template<size_t arg> static void apply_local(T& o, functor* m){ *(T*)&m->arguments[arg] = o; }
         template<size_t arg> static void apply(T& o, functor* m){
