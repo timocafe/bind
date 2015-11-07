@@ -2075,7 +2075,8 @@ namespace bind {
 namespace bind {
     using model::functor;
 
-    template <typename T, bool Compact = false> struct singular_modifier {
+    template <typename T, bool Compact = false>
+    struct singular_modifier {
         template<size_t arg> static void deallocate(functor* ){ }
         template<size_t arg> static bool pin(functor* ){ return false; }
         template<size_t arg> static bool ready(functor* ){ return true; }
@@ -2091,7 +2092,8 @@ namespace bind {
         static constexpr bool ReferenceOnly = false;
     };
 
-    template <typename T> struct singular_modifier<T, true> : public singular_modifier<T> {
+    template <typename T>
+    struct singular_modifier<T, true> : public singular_modifier<T> {
         template<size_t arg> static T& forward(functor* m){ return *(T*)&m->arguments[arg]; }
         template<size_t arg> static void apply_local(T& o, functor* m){ *(T*)&m->arguments[arg] = o; }
         template<size_t arg> static void apply(T& o, functor* m){
@@ -2111,7 +2113,8 @@ namespace bind {
 namespace bind {
     using model::functor;
 
-    template <typename T> struct const_shared_ptr_modifier : public singular_modifier<T> {
+    template <typename T>
+    struct const_shared_ptr_modifier : public singular_modifier<T> {
         template<size_t arg> static bool ready(functor* m){
             EXTRACT(o);
             if(o.impl->origin && o.impl->origin->generator != NULL) return false;
@@ -2126,7 +2129,8 @@ namespace bind {
         static constexpr bool ReferenceOnly = true;
     };
 
-    template <typename T> struct shared_ptr_modifier : public const_shared_ptr_modifier<T> {
+    template <typename T>
+    struct shared_ptr_modifier : public const_shared_ptr_modifier<T> {
         template<size_t arg> static void deallocate(functor* m){
             EXTRACT(o); o.impl->complete();
         }
@@ -2177,7 +2181,8 @@ namespace bind {
     using model::functor;
     template <typename T> struct modifier;
 
-    template <typename T> struct iterator_modifier : public singular_modifier<T> {
+    template <typename T>
+    struct iterator_modifier : public singular_modifier<T> {
         typedef typename modifier<typename T::container_type>::type type;
         typedef typename T::container_type container_type;
 
@@ -2228,7 +2233,8 @@ namespace bind {
     using model::functor;
     using model::revision;
 
-    template <typename T> struct versioned_modifier : public singular_modifier<T> {
+    template <typename T>
+    struct versioned_modifier : public singular_modifier<T> {
         template<size_t arg> 
         static void deallocate(functor* m){
             EXTRACT(o); deallocate_(o);
@@ -2311,7 +2317,8 @@ namespace bind {
         static constexpr bool ReferenceOnly = true;
     };
     // {{{ compile-time type modifier: const/volatile cases of the versioned types
-    template <typename T> struct const_versioned_modifier : public versioned_modifier<T> {
+    template <typename T>
+    struct const_versioned_modifier : public versioned_modifier<T> {
         template<size_t arg>
         static void deallocate(functor* m){
             EXTRACT(o); deallocate_(o);
@@ -2344,7 +2351,8 @@ namespace bind {
             bind::select().use_revision(o);
         }
     };
-    template <typename T> struct volatile_versioned_modifier : public versioned_modifier<T> {
+    template <typename T>
+    struct volatile_versioned_modifier : public versioned_modifier<T> {
         template<size_t arg> static void apply_remote(T& obj){
             auto o = obj.allocator_.desc;
             bind::select().touch(o, bind::rank());
