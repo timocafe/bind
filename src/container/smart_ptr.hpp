@@ -81,14 +81,6 @@ namespace bind {
         shared_ptr(U&& arg) : smart_ptr<T>(std::forward<U>(arg)) {}
     };
 
-    template<typename T>
-    class private_ptr : public smart_ptr<T> {
-    public:
-        typedef typename smart_ptr<T>::element_type element_type;
-        template <typename U>
-        private_ptr(U&& arg) : smart_ptr<T>(std::forward<U>(arg)) {}
-    };
-
     template<class T>
     std::ostream& operator << (std::ostream& os, const smart_ptr<T>& obj){
         os << *obj;

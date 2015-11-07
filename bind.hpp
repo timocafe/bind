@@ -2682,7 +2682,7 @@ namespace bind {
 #endif
 
 // }}}
-// {{{ bonus container package (requires :*)
+// {{{ container package (requires :*)
 
 #ifndef BIND_CONTAINER_SMART_PTR_HPP
 #define BIND_CONTAINER_SMART_PTR_HPP
@@ -2738,14 +2738,6 @@ namespace bind {
         typedef typename smart_ptr<T>::element_type element_type;
         template <typename U>
         shared_ptr(U&& arg) : smart_ptr<T>(std::forward<U>(arg)) {}
-    };
-
-    template<typename T>
-    class private_ptr : public smart_ptr<T> {
-    public:
-        typedef typename smart_ptr<T>::element_type element_type;
-        template <typename U>
-        private_ptr(U&& arg) : smart_ptr<T>(std::forward<U>(arg)) {}
     };
 
     template<class T>
@@ -2877,6 +2869,20 @@ namespace std {
 
 namespace bind {
 
+    // {{{ array helper functions
+    template<class T, class Allocator> class array;
+    namespace detail {
+        template<class T, class Allocator>
+        void fill_array(volatile bind::array<T,Allocator>& a, T& value){
+            for(size_t i = 0; i < a.size(); ++i) a[i] = value;
+        }
+        template<class T, class Allocator, class OtherAllocator = Allocator>
+        void copy_array(volatile bind::array<T,Allocator>& dst, const bind::array<T,OtherAllocator>& src, const size_t& n){
+            for(size_t i = 0; i < n; ++i) dst[i] = src[i];
+        }
+    }
+    // }}}
+
     template <class T, class Allocator = bind::allocator>
     class array {
     public:
@@ -2892,187 +2898,89 @@ namespace bind {
         using const_iterator = proxy_iterator<const array>;
         using iterator = proxy_iterator<array>;
         explicit array(){}
-
-        explicit array(size_t n);
         array(const array& a) = default;
-        array& operator = (const array& rhs);
+        explicit array(size_t n) : allocator_(n*sizeof(T)), size_(n) {}
+
+        array& operator = (const array& rhs){
+            array c(rhs);
+            this->swap(c);
+            return *this;
+        }
         template<class OtherAllocator>
-        array& operator = (const array<T,OtherAllocator>& rhs);
-
-        void fill(T value);
-        void swap(array<T,Allocator>& r);
-        size_t size() const volatile;
-        bool empty() const volatile;
-
-        value_type* data() volatile;
-        value_type& operator[](size_t i) volatile;
-        value_type& at(size_type i) volatile;
-        value_type& front() volatile;
-        value_type& back() volatile;
-        iterator begin() volatile;
-        iterator end() volatile;
-
-        const value_type* data() const volatile;
-        const value_type& operator[](size_t i) const volatile;
-        const value_type& at(size_type i) const volatile;
-        const value_type& front() const volatile;
-        const value_type& back() const volatile;
-        const_iterator cbegin() const volatile;
-        const_iterator cend() const volatile;
-
-        volatile_iterator vbegin() volatile;
-        volatile_iterator vend() volatile;
+        array& operator = (const array<T,OtherAllocator>& rhs){
+            array resized(rhs.size());
+            this->swap(resized);
+            if(!bind::weak(rhs)) bind::cpu(detail::copy_array<T,Allocator,OtherAllocator>, *this, rhs, this->size_);
+            return *this;
+        }
+        void fill(T value){
+            bind::cpu(detail::fill_array<T,Allocator>, *this, value);
+        }
+        void swap(array<T,Allocator>& r){
+            std::swap(this->size_, r.size_);
+            std::swap(this->allocator_.after->data, r.allocator_.after->data); // fixme
+        }
+        size_t size() const volatile {
+            return size_;
+        }
+        bool empty() const volatile {
+            return ((size() == 0) || bind::weak(*this));
+        }
+        value_type* data() volatile {
+            return (value_type*)allocator_.data();
+        }
+        const value_type* data() const volatile {
+            return (value_type*)allocator_.data();
+        }
+        value_type& operator[](size_t i) volatile {
+            return data()[ i ];
+        }
+        const value_type& operator[](size_t i) const volatile {
+            return data()[ i ];
+        }
+        value_type& at(size_type i) volatile {
+            if(i >= size()) throw std::out_of_range("array::out_of_range");
+            return (*this)[i];
+        }
+        const value_type& at(size_type i) const volatile {
+            if(i >= size()) throw std::out_of_range("array::out_of_range");
+            return (*this)[i];
+        }
+        value_type& front() volatile {
+            return (*this)[0];
+        }
+        const value_type& front() const volatile {
+            return (*this)[0];
+        }
+        value_type& back() volatile {
+            return (*this)[size()-1];
+        }
+        const value_type& back() const volatile {
+            return (*this)[size()-1];
+        }
+        iterator begin() volatile {
+            return iterator(const_cast<array&>(*this), 0);
+        }
+        iterator end() volatile {
+            return iterator(const_cast<array&>(*this), size());
+        }
+        const_iterator cbegin() const volatile {
+            return const_iterator(const_cast<const array&>(*this), 0);
+        }
+        const_iterator cend() const volatile {
+            return const_iterator(const_cast<const array&>(*this), size());
+        }
+        volatile_iterator vbegin() volatile {
+            return volatile_iterator(*this, 0);
+        }
+        volatile_iterator vend() volatile {
+            return volatile_iterator(*this, size());
+        }
     private:
         mutable size_t size_;
     public:
         mutable allocator_type allocator_;
     };
-
-}
-
-#endif
-
-#ifndef BIND_CONTAINER_ARRAY_HPP
-#define BIND_CONTAINER_ARRAY_HPP
-
-namespace bind {
-
-    // {{{ array helper functions
-    template<class T, class Allocator> class array;
-    namespace detail {
-        template<class T, class Allocator>
-        void fill_array(volatile bind::array<T,Allocator>& a, T& value){
-            for(size_t i = 0; i < a.size(); ++i) a[i] = value;
-        }
-        template<class T, class Allocator, class OtherAllocator = Allocator>
-        void copy_array(volatile bind::array<T,Allocator>& dst, const bind::array<T,OtherAllocator>& src, const size_t& n){
-            for(size_t i = 0; i < n; ++i) dst[i] = src[i];
-        }
-    }
-    // }}}
-
-    template<class T, class Allocator>
-    array<T,Allocator>::array(size_t n) : allocator_(n*sizeof(T)), size_(n) {
-    }
-
-    template <typename T, class Allocator>
-    array<T,Allocator>& array<T,Allocator>::operator = (const array& rhs){
-        array c(rhs);
-        this->swap(c);
-        return *this;
-    }
-
-    template <typename T, class Allocator>
-    template <class OtherAllocator>
-    array<T,Allocator>& array<T,Allocator>::operator = (const array<T,OtherAllocator>& rhs){
-        array resized(rhs.size());
-        this->swap(resized);
-        if(!bind::weak(rhs)) bind::cpu(detail::copy_array<T,Allocator,OtherAllocator>, *this, rhs, this->size_);
-        return *this;
-    }
-
-    template<class T, class Allocator>
-    void array<T,Allocator>::fill(T value){
-        bind::cpu(detail::fill_array<T,Allocator>, *this, value);
-    }
-
-    template<class T, class Allocator>
-    void array<T,Allocator>::swap(array<T,Allocator>& r){
-        std::swap(this->size_, r.size_);
-        std::swap(this->allocator_.after->data, r.allocator_.after->data); // fixme
-    }
-
-    template<class T, class Allocator>
-    size_t array<T,Allocator>::size() const volatile {
-        return size_;
-    }
-
-    template<class T, class Allocator>
-    bool array<T,Allocator>::empty() const volatile {
-        return ((size() == 0) || bind::weak(*this));
-    }
-
-    template<class T, class Allocator>
-    typename array<T,Allocator>::value_type* array<T,Allocator>::data() volatile {
-        return (value_type*)allocator_.data();
-    }
-
-    template<class T, class Allocator>
-    typename array<T,Allocator>::value_type& array<T,Allocator>::operator[](size_t i) volatile {
-        return data()[ i ];
-    }
-
-    template<typename T, class Allocator>
-    typename array<T,Allocator>::value_type& array<T,Allocator>::at(size_type i) volatile {
-        if(i >= size()) throw std::out_of_range("array::out_of_range");
-        return (*this)[i];
-    }
-
-    template<typename T, class Allocator>
-    typename array<T,Allocator>::value_type& array<T,Allocator>::front() volatile {
-        return (*this)[0];
-    }
-
-    template<typename T, class Allocator>
-    typename array<T,Allocator>::value_type& array<T,Allocator>::back() volatile {
-        return (*this)[size()-1];
-    }
-
-    template<typename T, class Allocator>
-    typename array<T,Allocator>::iterator array<T,Allocator>::begin() volatile {
-        return iterator(const_cast<array&>(*this), 0);
-    }
-
-    template<typename T, class Allocator>
-    typename array<T,Allocator>::iterator array<T,Allocator>::end() volatile {
-        return iterator(const_cast<array&>(*this), size());
-    }
-
-    template<class T, class Allocator>
-    const typename array<T,Allocator>::value_type* array<T,Allocator>::data() const volatile {
-        return (value_type*)allocator_.data();
-    }
-
-    template<class T, class Allocator>
-    const typename array<T,Allocator>::value_type& array<T,Allocator>::operator[](size_t i) const volatile {
-        return data()[ i ];
-    }
-
-    template<typename T, class Allocator>
-    const typename array<T,Allocator>::value_type& array<T,Allocator>::at(size_type i) const volatile {
-        if(i >= size()) throw std::out_of_range("array::out_of_range");
-        return (*this)[i];
-    }
-
-    template<typename T, class Allocator>
-    const typename array<T,Allocator>::value_type& array<T,Allocator>::front() const volatile {
-        return (*this)[0];
-    }
-
-    template<typename T, class Allocator>
-    const typename array<T,Allocator>::value_type& array<T,Allocator>::back() const volatile {
-        return (*this)[size()-1];
-    }
-
-    template<typename T, class Allocator>
-    typename array<T,Allocator>::const_iterator array<T,Allocator>::cbegin() const volatile {
-        return const_iterator(const_cast<const array&>(*this), 0);
-    }
-
-    template<typename T, class Allocator>
-    typename array<T,Allocator>::const_iterator array<T,Allocator>::cend() const volatile {
-        return const_iterator(const_cast<const array&>(*this), size());
-    }
-
-    template<typename T, class Allocator>
-    typename array<T,Allocator>::volatile_iterator array<T,Allocator>::vbegin() volatile {
-        return volatile_iterator(*this, 0);
-    }
-
-    template<typename T, class Allocator>
-    typename array<T,Allocator>::volatile_iterator array<T,Allocator>::vend() volatile {
-        return volatile_iterator(*this, size());
-    }
 
 }
 

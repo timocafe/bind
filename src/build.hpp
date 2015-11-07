@@ -142,10 +142,9 @@
 #include "interface/access.hpp"
 #include "interface/lambda.hpp"
 // }}}
-// {{{ bonus container package (requires :*)
+// {{{ container package (requires :*)
 #include "container/smart_ptr.hpp"
 #include "container/proxy_iterator.hpp"
-#include "container/array.h"
 #include "container/array.hpp"
 #include "container/block.hpp"
 // }}}
