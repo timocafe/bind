@@ -25,8 +25,8 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef BIND_MEMORY_CPU_STANDARD_HPP
-#define BIND_MEMORY_CPU_STANDARD_HPP
+#ifndef BIND_MEMORY_CPU_STANDARD
+#define BIND_MEMORY_CPU_STANDARD
 
 namespace bind { namespace memory { namespace cpu {
 

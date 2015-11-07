@@ -25,8 +25,8 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef BIND_CORE_COLLECTOR
-#define BIND_CORE_COLLECTOR
+#ifndef BIND_CORE_COLLECTOR_H
+#define BIND_CORE_COLLECTOR_H
 
 namespace bind{ namespace memory {
 

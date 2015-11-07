@@ -25,8 +25,8 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef BIND_IO
-#define BIND_IO
+#ifndef BIND_UTILS_IO
+#define BIND_UTILS_IO
 
 namespace bind { namespace utils {
 

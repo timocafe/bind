@@ -25,8 +25,8 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef BIND_MEMORY_CPU_INSTR_BULK_H
-#define BIND_MEMORY_CPU_INSTR_BULK_H
+#ifndef BIND_MEMORY_CPU_INSTR_BULK
+#define BIND_MEMORY_CPU_INSTR_BULK
 
 namespace bind { namespace memory { namespace cpu {
 

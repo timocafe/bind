@@ -25,8 +25,8 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef BIND_TRANSPORT_MPI_REQUEST
-#define BIND_TRANSPORT_MPI_REQUEST
+#ifndef BIND_TRANSPORT_MPI_REQUEST_H
+#define BIND_TRANSPORT_MPI_REQUEST_H
 
 namespace bind { namespace transport { namespace mpi {
 

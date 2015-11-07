@@ -1,5 +1,5 @@
-#ifndef UTILS_GET_RSS_HPP
-#define UTILS_GET_RSS_HPP
+#ifndef BIND_UTILS_RSS
+#define BIND_UTILS_RSS
 
 /* author:  David Robert Nadeau
  * Site:    http://NadeauSoftware.com/

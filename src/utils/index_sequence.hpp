@@ -1,5 +1,5 @@
-#ifndef BIND_INDEX_SEQUENCE
-#define BIND_INDEX_SEQUENCE
+#ifndef BIND_UTILS_INDEX_SEQUENCE
+#define BIND_UTILS_INDEX_SEQUENCE
 
 namespace bind {
 

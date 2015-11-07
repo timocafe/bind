@@ -25,8 +25,8 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef BIND_UTILS_RANK_TYPE
-#define BIND_UTILS_RANK_TYPE
+#ifndef BIND_UTILS_RANK_T
+#define BIND_UTILS_RANK_T
 
 namespace bind {
     #if 0

@@ -25,8 +25,8 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef BIND_CORE_CONTROLLER
-#define BIND_CORE_CONTROLLER
+#ifndef BIND_CORE_CONTROLLER_H
+#define BIND_CORE_CONTROLLER_H
 
 namespace bind { namespace core {
 

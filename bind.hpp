@@ -73,8 +73,8 @@
 #include <cilk/cilk_api.h>
 // }}}
 // {{{ utils package
-#ifndef UTILS_GET_RSS_HPP
-#define UTILS_GET_RSS_HPP
+#ifndef BIND_UTILS_RSS
+#define BIND_UTILS_RSS
 
 
 #if defined(__unix__) || defined(__unix) || defined(unix) || (defined(__APPLE__) && defined(__MACH__))
@@ -169,8 +169,8 @@ inline size_t getCurrentRSS( )
 }
 
 #endif
-#ifndef BIND_INDEX_SEQUENCE
-#define BIND_INDEX_SEQUENCE
+#ifndef BIND_UTILS_INDEX_SEQUENCE
+#define BIND_UTILS_INDEX_SEQUENCE
 
 namespace bind {
 
@@ -197,8 +197,8 @@ namespace bind {
 
 #endif
 
-#ifndef BIND_IO
-#define BIND_IO
+#ifndef BIND_UTILS_IO
+#define BIND_UTILS_IO
 
 namespace bind { namespace utils {
 
@@ -290,8 +290,8 @@ namespace bind {
 
 #endif
 
-#ifndef BIND_UTILS_RANK_TYPE
-#define BIND_UTILS_RANK_TYPE
+#ifndef BIND_UTILS_RANK_T
+#define BIND_UTILS_RANK_T
 
 namespace bind {
     #if 0
@@ -530,8 +530,8 @@ namespace bind { namespace memory {
 #endif
     // {{{ memory::cpu package
 
-#ifndef BIND_MEMORY_CPU_BULK_H
-#define BIND_MEMORY_CPU_BULK_H
+#ifndef BIND_MEMORY_CPU_BULK
+#define BIND_MEMORY_CPU_BULK
 
 #ifndef BIND_INSTR_BULK_CHUNK
 #define BIND_INSTR_BULK_CHUNK     16777216 // 16 MB
@@ -626,8 +626,8 @@ namespace bind { namespace memory { namespace cpu {
 #undef COMM_BULK_LIMIT
 #endif
 
-#ifndef BIND_MEMORY_CPU_INSTR_BULK_H
-#define BIND_MEMORY_CPU_INSTR_BULK_H
+#ifndef BIND_MEMORY_CPU_INSTR_BULK
+#define BIND_MEMORY_CPU_INSTR_BULK
 
 namespace bind { namespace memory { namespace cpu {
 
@@ -671,8 +671,8 @@ namespace bind { namespace memory { namespace cpu {
 #endif
 
 
-#ifndef BIND_MEMORY_CPU_STANDARD_HPP
-#define BIND_MEMORY_CPU_STANDARD_HPP
+#ifndef BIND_MEMORY_CPU_STANDARD
+#define BIND_MEMORY_CPU_STANDARD
 
 namespace bind { namespace memory { namespace cpu {
 
@@ -1026,8 +1026,8 @@ namespace bind {
 #undef BOUNDARY_OVERFLOW
 #endif
 
-#ifndef BIND_TRANSPORT_MPI_CHANNEL
-#define BIND_TRANSPORT_MPI_CHANNEL
+#ifndef BIND_TRANSPORT_MPI_CHANNEL_H
+#define BIND_TRANSPORT_MPI_CHANNEL_H
 
 namespace bind { namespace transport { namespace mpi {
 
@@ -1072,8 +1072,8 @@ namespace bind { namespace transport { namespace mpi {
 
 #endif
 
-#ifndef BIND_TRANSPORT_MPI_REQUEST
-#define BIND_TRANSPORT_MPI_REQUEST
+#ifndef BIND_TRANSPORT_MPI_REQUEST_H
+#define BIND_TRANSPORT_MPI_REQUEST_H
 
 namespace bind { namespace transport { namespace mpi {
 
@@ -1106,8 +1106,8 @@ namespace bind { namespace transport { namespace mpi {
 
 #endif
 
-#ifndef BIND_TRANSPORT_MPI_COLLECTIVE
-#define BIND_TRANSPORT_MPI_COLLECTIVE
+#ifndef BIND_TRANSPORT_MPI_COLLECTIVE_H
+#define BIND_TRANSPORT_MPI_COLLECTIVE_H
 
 namespace bind { namespace transport { namespace mpi {
 
@@ -1394,8 +1394,8 @@ namespace bind { namespace transport { namespace nop {
 // }}}
 // {{{ core package (requires :model :transport)
 
-#ifndef BIND_CORE_COLLECTOR
-#define BIND_CORE_COLLECTOR
+#ifndef BIND_CORE_COLLECTOR_H
+#define BIND_CORE_COLLECTOR_H
 
 namespace bind{ namespace memory {
 
@@ -1491,8 +1491,8 @@ namespace bind { namespace memory {
 
 } }
 
-#ifndef BIND_CORE_NODE
-#define BIND_CORE_NODE
+#ifndef BIND_CORE_NODE_H
+#define BIND_CORE_NODE_H
 
 namespace bind {
 
@@ -1527,8 +1527,8 @@ namespace bind {
 
 #endif
 
-#ifndef BIND_CORE_CONTROLLER
-#define BIND_CORE_CONTROLLER
+#ifndef BIND_CORE_CONTROLLER_H
+#define BIND_CORE_CONTROLLER_H
 
 namespace bind { namespace core {
 
@@ -1600,8 +1600,8 @@ namespace bind {
 
 #endif
 
-#ifndef BIND_CORE_GET
-#define BIND_CORE_GET
+#ifndef BIND_CORE_GET_H
+#define BIND_CORE_GET_H
 
 namespace bind { namespace core {
     
@@ -1640,8 +1640,8 @@ namespace bind { namespace core {
 #endif
 
 
-#ifndef BIND_CORE_SET
-#define BIND_CORE_SET
+#ifndef BIND_CORE_SET_H
+#define BIND_CORE_SET_H
 
 namespace bind { namespace core {
 
@@ -2070,8 +2070,8 @@ namespace bind {
 #undef EXTRACT
 #endif
 
-#ifndef BIND_INTERFACE_MODIFIERS_PTR
-#define BIND_INTERFACE_MODIFIERS_PTR
+#ifndef BIND_INTERFACE_MODIFIERS_SHARED_PTR
+#define BIND_INTERFACE_MODIFIERS_SHARED_PTR
 
 #define EXTRACT(var) T& var = *(T*)m->arguments[arg];
 
@@ -2684,8 +2684,8 @@ namespace bind {
 // }}}
 // {{{ container package (requires :*)
 
-#ifndef BIND_CONTAINER_SMART_PTR_HPP
-#define BIND_CONTAINER_SMART_PTR_HPP
+#ifndef BIND_CONTAINER_SMART_PTR
+#define BIND_CONTAINER_SMART_PTR
 
 namespace bind {
 
@@ -2749,8 +2749,8 @@ namespace bind {
 
 #endif
 
-#ifndef BIND_PROXY_ITERATOR
-#define BIND_PROXY_ITERATOR
+#ifndef BIND_CONTAINER_PROXY_ITERATOR
+#define BIND_CONTAINER_PROXY_ITERATOR
 
 namespace bind {
 
@@ -2864,8 +2864,8 @@ namespace std {
 
 #endif
 
-#ifndef BIND_CONTAINER_ARRAY_H
-#define BIND_CONTAINER_ARRAY_H
+#ifndef BIND_CONTAINER_ARRAY
+#define BIND_CONTAINER_ARRAY
 
 namespace bind {
 

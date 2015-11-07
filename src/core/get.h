@@ -25,8 +25,8 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef BIND_CORE_GET
-#define BIND_CORE_GET
+#ifndef BIND_CORE_GET_H
+#define BIND_CORE_GET_H
 
 namespace bind { namespace core {
     
