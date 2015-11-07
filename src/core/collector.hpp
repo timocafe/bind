@@ -25,6 +25,9 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
+#ifndef BIND_CORE_COLLECTOR_HPP
+#define BIND_CORE_COLLECTOR_HPP
+
 namespace bind { namespace memory {
 
     using model::history;
@@ -87,3 +90,5 @@ namespace bind { namespace memory {
     }
 
 } }
+
+#endif

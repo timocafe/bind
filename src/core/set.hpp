@@ -25,6 +25,9 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
+#ifndef BIND_CORE_SET_HPP
+#define BIND_CORE_SET_HPP
+
 namespace bind { namespace core {
 
     // {{{ any
@@ -68,3 +71,5 @@ namespace bind { namespace core {
     // }}}
 
 } }
+
+#endif

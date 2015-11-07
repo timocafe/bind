@@ -25,6 +25,9 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
+#ifndef BIND_TRANSPORT_MPI_REQUEST_HPP
+#define BIND_TRANSPORT_MPI_REQUEST_HPP
+
 namespace bind { namespace transport { namespace mpi {
 
     // type information required //
@@ -73,3 +76,4 @@ namespace bind { namespace transport { namespace mpi {
 
 } } }
 
+#endif

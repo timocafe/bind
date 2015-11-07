@@ -25,6 +25,9 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
+#ifndef BIND_CORE_CONTROLLER_HPP
+#define BIND_CORE_CONTROLLER_HPP
+
 namespace bind { namespace nodes {
     inline size_t size(){
         return select().nodes.size();
@@ -195,3 +198,4 @@ namespace bind { namespace core {
 
 } }
 
+#endif

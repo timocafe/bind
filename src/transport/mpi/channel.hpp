@@ -25,6 +25,9 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
+#ifndef BIND_TRANSPORT_MPI_CHANNEL_HPP
+#define BIND_TRANSPORT_MPI_CHANNEL_HPP
+
 namespace bind { namespace transport { namespace mpi {
 
     inline void recv_impl(request_impl* r){
@@ -87,3 +90,5 @@ namespace bind { namespace transport { namespace mpi {
     }
 
 } } }
+
+#endif

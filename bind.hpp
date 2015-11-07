@@ -1157,6 +1157,9 @@ namespace bind { namespace transport { namespace mpi {
 
 #endif
 
+#ifndef BIND_TRANSPORT_MPI_REQUEST_HPP
+#define BIND_TRANSPORT_MPI_REQUEST_HPP
+
 namespace bind { namespace transport { namespace mpi {
 
     // type information required //
@@ -1205,6 +1208,10 @@ namespace bind { namespace transport { namespace mpi {
 
 } } }
 
+#endif
+
+#ifndef BIND_TRANSPORT_MPI_CHANNEL_HPP
+#define BIND_TRANSPORT_MPI_CHANNEL_HPP
 
 namespace bind { namespace transport { namespace mpi {
 
@@ -1268,6 +1275,11 @@ namespace bind { namespace transport { namespace mpi {
     }
 
 } } }
+
+#endif
+
+#ifndef BIND_TRANSPORT_MPI_COLLECTIVE_HPP
+#define BIND_TRANSPORT_MPI_COLLECTIVE_HPP
 
 #define BOUNDARY_OVERFLOW -1
 
@@ -1358,6 +1370,8 @@ namespace bind { namespace transport { namespace mpi {
     }
 
 } } }
+
+#endif
 #else
 
 #ifndef BIND_TRANSPORT_NOP
@@ -1428,6 +1442,9 @@ namespace bind{ namespace memory {
 #endif
 
 
+#ifndef BIND_CORE_COLLECTOR_HPP
+#define BIND_CORE_COLLECTOR_HPP
+
 namespace bind { namespace memory {
 
     using model::history;
@@ -1490,6 +1507,8 @@ namespace bind { namespace memory {
     }
 
 } }
+
+#endif
 
 #ifndef BIND_CORE_NODE_H
 #define BIND_CORE_NODE_H
@@ -1679,6 +1698,9 @@ namespace bind { namespace core {
 
 #endif
 
+#ifndef BIND_CORE_CONTROLLER_HPP
+#define BIND_CORE_CONTROLLER_HPP
+
 namespace bind { namespace nodes {
     inline size_t size(){
         return select().nodes.size();
@@ -1849,6 +1871,10 @@ namespace bind { namespace core {
 
 } }
 
+#endif
+
+#ifndef BIND_CORE_GET_HPP
+#define BIND_CORE_GET_HPP
 
 namespace bind { namespace core {
 
@@ -1902,6 +1928,11 @@ namespace bind { namespace core {
 
 } }
 
+#endif
+
+#ifndef BIND_CORE_SET_HPP
+#define BIND_CORE_SET_HPP
+
 namespace bind { namespace core {
 
     // {{{ any
@@ -1945,6 +1976,8 @@ namespace bind { namespace core {
     // }}}
 
 } }
+
+#endif
 
 #ifndef BIND_CORE_NODE_HPP
 #define BIND_CORE_NODE_HPP

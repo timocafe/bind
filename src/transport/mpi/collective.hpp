@@ -25,6 +25,9 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
+#ifndef BIND_TRANSPORT_MPI_COLLECTIVE_HPP
+#define BIND_TRANSPORT_MPI_COLLECTIVE_HPP
+
 #define BOUNDARY_OVERFLOW -1
 
 namespace bind { namespace transport { namespace mpi {
@@ -114,3 +117,5 @@ namespace bind { namespace transport { namespace mpi {
     }
 
 } } }
+
+#endif
