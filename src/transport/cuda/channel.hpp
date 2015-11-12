@@ -25,38 +25,40 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef BIND_INTERFACE_KERNEL
-#define BIND_INTERFACE_KERNEL
+#ifndef BIND_TRANSPORT_CUDA_CHANNEL_HPP
+#define BIND_TRANSPORT_CUDA_CHANNEL_HPP
 
-namespace bind {
+#define NSTREAMS 16
 
-    using model::functor;
+namespace bind { namespace transport { namespace cuda {
 
-    template<typename Device, class K>
-    class kernel : public functor {
+    inline cudaError_t checkCuda(cudaError_t result){
+        if(result != cudaSuccess) throw std::runtime_error("Error: CUDA transport failure");
+        return result;
+    }
+
+    class channel {
     public:
-        #define inliner kernel_inliner<Device, typename K::ftype, K::c>
-        inline void operator delete (void* ptr){ }
-        inline void* operator new (size_t size){
-            return memory::cpu::instr_bulk::malloc<sizeof(K)+sizeof(void*)*inliner::arity>();
+        struct mount {
+            mount(){
+                for(int k = 0; k < NSTREAMS; k++) checkCuda( cudaStreamCreate(&streams[k]) );
+            }
+           ~mount(){
+                for(int k = 0; k < NSTREAMS; k++) checkCuda( cudaStreamDestroy(streams[k]) );
+                cudaDeviceReset();
+            }
+            cudaStream_t streams[NSTREAMS];
+        };
+        static mount& setup(){ 
+            static mount m; 
+            return m; 
         }
-        virtual bool ready() override { 
-            return inliner::ready(this);
+        channel(){
+	    channel::setup(); // making sure CUDA is initialised
         }
-        virtual void invoke() override {
-            inliner::invoke(this);
-            inliner::cleanup(this);
-        }
-        template<size_t...I, typename... Args>
-        static void expand_spawn(index_sequence<I...>, Args&... args){
-            inliner::latch(new kernel(), args...);
-        }
-        template<typename... Args>
-        static inline void spawn(Args&& ... args){
-            expand_spawn(make_index_sequence<sizeof...(Args)>(), args...);
-        }
-        #undef inliner
     };
-}
 
+} } }
+
+#undef NSTREAMS
 #endif

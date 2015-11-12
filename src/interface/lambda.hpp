@@ -30,8 +30,8 @@
 
 namespace bind {
 
-    template<typename F, typename... T>
-    struct lambda_kernel : public kernel< lambda_kernel<F, T...> > {
+    template<class Device, typename F, typename... T>
+    struct lambda_kernel : public kernel<Device, lambda_kernel<Device, F, T...> > {
         typedef void(*ftype)(T..., F&);
         static void fw(T... args, F& func){ func(args...); }
         static constexpr ftype c = &fw;
@@ -44,31 +44,32 @@ namespace bind {
     struct function_traits<ReturnType(ClassType::*)(Args...) const> {
         typedef ReturnType (*pointer)(Args...);
         typedef const std::function<ReturnType(Args...)> function;
-        typedef lambda_kernel<const std::function<ReturnType(Args...)>, Args... > kernel_type;
+        template<class Device>
+        using kernel_type = lambda_kernel<Device, const std::function<ReturnType(Args...)>, Args... >;
     };
 
     template <typename Function>
-    typename function_traits<Function>::function to_function (Function& lambda) {
+    typename function_traits<Function>::function to_function(Function& lambda){
         return static_cast<typename function_traits<Function>::function>(lambda);
     }
 
-    template <class L>
+    template <class Device, class L>
     struct overload_lambda : L {
         overload_lambda(L l) : L(l) {}
         template <typename... T>
         void operator()(T&& ... values){
-            function_traits<L>::kernel_type::spawn(std::forward<T>(values)... , to_function(*(L*)this));
+            function_traits<L>::template kernel_type<Device>::spawn(std::forward<T>(values)... , to_function(*(L*)this));
         }
     };
 
-    template <class L>
-    overload_lambda<L> lambda(L l){
-        return overload_lambda<L>(l);
+    template <class Device, class L>
+    overload_lambda<Device, L> lambda(L l){
+        return overload_lambda<Device, L>(l);
     }
 
     template <class L, class... Args>
     void cpu(L l, Args&& ... args){
-        lambda(l)(std::forward<Args>(args)...);
+        lambda<devices::cpu>(l)(std::forward<Args>(args)...);
     }
 
     template <class... L, class R, class... Args>
@@ -76,6 +77,15 @@ namespace bind {
         bind::cpu(std::function<R(L...)>(l), std::forward<Args>(args)...);
     }
 
+    template <class L, class... Args>
+    void gpu(L l, Args&& ... args){
+        lambda<devices::gpu>(l)(std::forward<Args>(args)...);
+    }
+
+    template <class... L, class R, class... Args>
+    void gpu(R(*l)(L...), Args&& ... args){
+        bind::gpu(std::function<R(L...)>(l), std::forward<Args>(args)...);
+    }
 }
 
 #endif

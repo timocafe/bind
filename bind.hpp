@@ -1405,6 +1405,46 @@ namespace bind { namespace transport { namespace nop {
 
 #endif
 #endif
+#ifdef CUDART_VERSION
+
+#ifndef BIND_TRANSPORT_CUDA_CHANNEL_HPP
+#define BIND_TRANSPORT_CUDA_CHANNEL_HPP
+
+#define NSTREAMS 16
+
+namespace bind { namespace transport { namespace cuda {
+
+    inline cudaError_t checkCuda(cudaError_t result){
+        if(result != cudaSuccess) throw std::runtime_error("Error: CUDA transport failure");
+        return result;
+    }
+
+    class channel {
+    public:
+        struct mount {
+            mount(){
+                for(int k = 0; k < NSTREAMS; k++) checkCuda( cudaStreamCreate(&streams[k]) );
+            }
+           ~mount(){
+                for(int k = 0; k < NSTREAMS; k++) checkCuda( cudaStreamDestroy(streams[k]) );
+                cudaDeviceReset();
+            }
+            cudaStream_t streams[NSTREAMS];
+        };
+        static mount& setup(){ 
+            static mount m; 
+            return m; 
+        }
+        channel(){
+	    channel::setup(); // making sure CUDA is initialised
+        }
+    };
+
+} } }
+
+#undef NSTREAMS
+#endif
+#endif
 // }}}
 // {{{ core package (requires :model :transport)
 
@@ -2027,6 +2067,19 @@ namespace bind {
 // }}}
 // {{{ interface package (requires :model :transport :core)
 
+#ifndef BIND_INTERFACE_DEVICES
+#define BIND_INTERFACE_DEVICES
+
+namespace bind { namespace devices {
+
+    class cpu;
+    class gpu;
+
+} }
+
+#endif
+
+
 #ifndef BIND_INTERFACE_SHORTCUTS
 #define BIND_INTERFACE_SHORTCUTS
 
@@ -2190,11 +2243,11 @@ namespace bind {
 
 namespace bind {
     using model::functor;
-    template <typename T> struct modifier;
+    template <class Device, typename T> struct modifier;
 
-    template <typename T>
+    template <class Device, typename T>
     struct iterator_modifier : public singular_modifier<T> {
-        typedef typename modifier<typename T::container_type>::type type;
+        typedef typename modifier<Device, typename T::container_type>::type type;
         typedef typename T::container_type container_type;
 
         template<size_t arg> 
@@ -2435,26 +2488,26 @@ namespace bind {
     template <typename T> class proxy_iterator;
     template <typename T> class shared_ptr;
 
-    template <typename T> struct modifier {
+    template <class Device, typename T> struct modifier {
         typedef typename detail::get_modifier<detail::has_versioning<T>::value,T>::type type;
     };
-    template <typename T> struct modifier <const T> {
+    template <class Device, typename T> struct modifier<Device, const T> {
         typedef typename detail::const_get_modifier<detail::has_versioning<T>::value,T>::type type;
     };
-    template <typename T> struct modifier <volatile T> {
+    template <class Device, typename T> struct modifier<Device, volatile T> {
         typedef typename detail::volatile_get_modifier<detail::has_versioning<T>::value,T>::type type;
     };
-    template <typename S> struct modifier < shared_ptr<S> > {
+    template <class Device, typename S> struct modifier<Device, shared_ptr<S> > {
         typedef shared_ptr_modifier< shared_ptr<S> > type; 
     };
-    template <typename S> struct modifier < const shared_ptr<S> > {
+    template <class Device, typename S> struct modifier<Device, const shared_ptr<S> > {
         typedef const_shared_ptr_modifier< const shared_ptr<S> > type; 
     };
-    template <typename S> struct modifier < volatile shared_ptr<S> > {
+    template <class Device, typename S> struct modifier<Device, volatile shared_ptr<S> > {
         typedef volatile_shared_ptr_modifier< volatile shared_ptr<S> > type; 
     };
-    template <typename S> struct modifier < proxy_iterator<S> > {
-        typedef iterator_modifier<proxy_iterator<S> > type;
+    template <class Device, typename S> struct modifier<Device, proxy_iterator<S> > {
+        typedef iterator_modifier<Device, proxy_iterator<S> > type;
     };
 }
 
@@ -2514,95 +2567,97 @@ namespace bind {
 #define BIND_INTERFACE_KERNEL_INLINER
 
 namespace bind {
+    using model::functor;
 
-    template<typename T>
+    template<class Device, typename T>
     struct check_if_not_reference {
         template<bool C, typename F>  struct fail_if_true { typedef F type; };
         template<typename F> struct fail_if_true<true, F> { };
-        typedef typename fail_if_true<modifier<T>::type::ReferenceOnly, T>::type type; // T can be passed only by reference
+        typedef typename fail_if_true<modifier<Device, T>::type::ReferenceOnly, T>::type type; // T can be passed only by reference
     };
  
-    template<typename T>
-    struct check_if_not_reference<T&> {
+    template<class Device, typename T>
+    struct check_if_not_reference<Device, T&> {
         typedef T type;
     };
 
-    template <typename T>
-    using remove_reference = typename std::remove_reference< typename check_if_not_reference< T >::type >::type;
-    using model::functor;
+    template <class Device, typename T>
+    using checked_remove_reference = typename std::remove_reference<
+                                         typename check_if_not_reference< Device, T >::type 
+                                     >::type;
 
-    template<int N> void expand_modify_remote(){}
-    template<int N> void expand_modify_local(functor* o){}
-    template<int N> void expand_modify(functor* o){}
-    template<int N> bool expand_pin(functor* o){ return false; }
-    template<int N> void expand_load(functor* o){ }
-    template<int N> void expand_deallocate(functor* o){ }
-    template<int N> bool expand_ready(functor* o){ return true; }
+    template<class Device, int N> void expand_modify_remote(){}
+    template<class Device, int N> void expand_modify_local(functor* o){}
+    template<class Device, int N> void expand_modify(functor* o){}
+    template<class Device, int N> bool expand_pin(functor* o){ return false; }
+    template<class Device, int N> void expand_load(functor* o){ }
+    template<class Device, int N> void expand_deallocate(functor* o){ }
+    template<class Device, int N> bool expand_ready(functor* o){ return true; }
 
-    template<int N, typename T, typename... TF>
+    template<class Device, int N, typename T, typename... TF>
     void expand_modify_remote(T& arg, TF&... other){
-        modifier<T>::type::template apply_remote<N>(arg);
-        expand_modify_remote<N+1>(other...);
+        modifier<Device, T>::type::template apply_remote<N>(arg);
+        expand_modify_remote<Device, N+1>(other...);
     }
-    template<int N, typename T, typename... TF>
+    template<class Device, int N, typename T, typename... TF>
     void expand_modify_local(functor* o, T& arg, TF&... other){
-        modifier<T>::type::template apply_local<N>(arg, o);
-        expand_modify_local<N+1>(o, other...);
+        modifier<Device, T>::type::template apply_local<N>(arg, o);
+        expand_modify_local<Device, N+1>(o, other...);
     }
-    template<int N, typename T, typename... TF>
+    template<class Device, int N, typename T, typename... TF>
     void expand_modify(functor* o, T& arg, TF&... other){
-        modifier<T>::type::template apply<N>(arg, o);
-        expand_modify<N+1>(o, other...);
+        modifier<Device, T>::type::template apply<N>(arg, o);
+        expand_modify<Device, N+1>(o, other...);
     }
-    template<int N, typename T, typename... TF>
+    template<class Device, int N, typename T, typename... TF>
     bool expand_pin(functor* o){
-        return modifier<remove_reference<T> >::type::template pin<N>(o) ||
-               expand_pin<N+1,TF...>(o);
+        return modifier<Device, checked_remove_reference<Device, T> >::type::template pin<N>(o) ||
+               expand_pin<Device, N+1, TF...>(o);
     }
-    template<int N, typename T, typename... TF>
+    template<class Device, int N, typename T, typename... TF>
     void expand_load(functor* o){
-        modifier<remove_reference<T> >::type::template load<N>(o);
-        expand_load<N+1,TF...>(o);
+        modifier<Device, checked_remove_reference<Device, T> >::type::template load<N>(o);
+        expand_load<Device, N+1, TF...>(o);
     }
-    template<int N, typename T, typename... TF>
+    template<class Device, int N, typename T, typename... TF>
     void expand_deallocate(functor* o){
-        modifier<remove_reference<T> >::type::template deallocate<N>(o);
-        expand_deallocate<N+1,TF...>(o);
+        modifier<Device, checked_remove_reference<Device, T> >::type::template deallocate<N>(o);
+        expand_deallocate<Device, N+1, TF...>(o);
     }
-    template<int N, typename T, typename... TF>
+    template<class Device, int N, typename T, typename... TF>
     bool expand_ready(functor* o){
-        return modifier<remove_reference<T> >::type::template ready<N>(o) &&
-               expand_ready<N+1,TF...>(o);
+        return modifier<Device, checked_remove_reference<Device, T> >::type::template ready<N>(o) &&
+               expand_ready<Device, N+1, TF...>(o);
     }
 
-    template<typename FP, FP fp>
+    template<class Device, typename FP, FP fp>
     struct kernel_inliner {};
 
-    template< typename... TF , void(*fp)( TF... )>
-    struct kernel_inliner<void(*)( TF... ), fp> {
+    template<class Device, typename... TF , void(*fp)( TF... )>
+    struct kernel_inliner<Device, void(*)( TF... ), fp> {
         static const int arity = sizeof...(TF);
 
         static inline void latch(functor* o, TF&... args){
             #ifndef BIND_TRANSPORT_NOP
-            if(bind::select().get_node().remote())   { expand_modify_remote<0>(args...); return; }
-            else if(bind::select().get_node().local()) expand_modify_local<0>(o, args...);
+            if(bind::select().get_node().remote())   { expand_modify_remote<Device, 0>(args...); return; }
+            else if(bind::select().get_node().local()) expand_modify_local<Device, 0>(o, args...);
             else
             #endif
-            expand_modify<0>(o, args...);
-            expand_pin<0,TF...>(o) || bind::select().queue(o);
+            expand_modify<Device, 0>(o, args...);
+            expand_pin<Device, 0, TF...>(o) || bind::select().queue(o);
         }
         static inline void cleanup(functor* o){
-            expand_deallocate<0,TF...>(o);
+            expand_deallocate<Device, 0, TF...>(o);
         }
         static inline bool ready(functor* o){
-            return expand_ready<0,TF...>(o);
+            return expand_ready<Device, 0, TF...>(o);
         }
         template<size_t...I>
         static void expand_invoke(index_sequence<I...>, functor* o){
-            (*fp)(modifier<remove_reference<TF> >::type::template forward<I>(o)...);
+            (*fp)(modifier<Device, checked_remove_reference<Device, TF> >::type::template forward<I>(o)...);
         }
         static inline void invoke(functor* o){
-            expand_load<0,TF...>(o);
+            expand_load<Device, 0, TF...>(o);
             expand_invoke(make_index_sequence<sizeof...(TF)>(), o);
         }
     };
@@ -2619,10 +2674,10 @@ namespace bind {
 
     using model::functor;
 
-    template<class K>
+    template<typename Device, class K>
     class kernel : public functor {
     public:
-        #define inliner kernel_inliner<typename K::ftype,K::c>
+        #define inliner kernel_inliner<Device, typename K::ftype, K::c>
         inline void operator delete (void* ptr){ }
         inline void* operator new (size_t size){
             return memory::cpu::instr_bulk::malloc<sizeof(K)+sizeof(void*)*inliner::arity>();
@@ -2686,8 +2741,8 @@ namespace bind {
 
 namespace bind {
 
-    template<typename F, typename... T>
-    struct lambda_kernel : public kernel< lambda_kernel<F, T...> > {
+    template<class Device, typename F, typename... T>
+    struct lambda_kernel : public kernel<Device, lambda_kernel<Device, F, T...> > {
         typedef void(*ftype)(T..., F&);
         static void fw(T... args, F& func){ func(args...); }
         static constexpr ftype c = &fw;
@@ -2700,31 +2755,32 @@ namespace bind {
     struct function_traits<ReturnType(ClassType::*)(Args...) const> {
         typedef ReturnType (*pointer)(Args...);
         typedef const std::function<ReturnType(Args...)> function;
-        typedef lambda_kernel<const std::function<ReturnType(Args...)>, Args... > kernel_type;
+        template<class Device>
+        using kernel_type = lambda_kernel<Device, const std::function<ReturnType(Args...)>, Args... >;
     };
 
     template <typename Function>
-    typename function_traits<Function>::function to_function (Function& lambda) {
+    typename function_traits<Function>::function to_function(Function& lambda){
         return static_cast<typename function_traits<Function>::function>(lambda);
     }
 
-    template <class L>
+    template <class Device, class L>
     struct overload_lambda : L {
         overload_lambda(L l) : L(l) {}
         template <typename... T>
         void operator()(T&& ... values){
-            function_traits<L>::kernel_type::spawn(std::forward<T>(values)... , to_function(*(L*)this));
+            function_traits<L>::template kernel_type<Device>::spawn(std::forward<T>(values)... , to_function(*(L*)this));
         }
     };
 
-    template <class L>
-    overload_lambda<L> lambda(L l){
-        return overload_lambda<L>(l);
+    template <class Device, class L>
+    overload_lambda<Device, L> lambda(L l){
+        return overload_lambda<Device, L>(l);
     }
 
     template <class L, class... Args>
     void cpu(L l, Args&& ... args){
-        lambda(l)(std::forward<Args>(args)...);
+        lambda<devices::cpu>(l)(std::forward<Args>(args)...);
     }
 
     template <class... L, class R, class... Args>
@@ -2732,6 +2788,15 @@ namespace bind {
         bind::cpu(std::function<R(L...)>(l), std::forward<Args>(args)...);
     }
 
+    template <class L, class... Args>
+    void gpu(L l, Args&& ... args){
+        lambda<devices::gpu>(l)(std::forward<Args>(args)...);
+    }
+
+    template <class... L, class R, class... Args>
+    void gpu(R(*l)(L...), Args&& ... args){
+        bind::gpu(std::function<R(L...)>(l), std::forward<Args>(args)...);
+    }
 }
 
 #endif

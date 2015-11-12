@@ -51,26 +51,26 @@ namespace bind {
     template <typename T> class proxy_iterator;
     template <typename T> class shared_ptr;
 
-    template <typename T> struct modifier {
+    template <class Device, typename T> struct modifier {
         typedef typename detail::get_modifier<detail::has_versioning<T>::value,T>::type type;
     };
-    template <typename T> struct modifier <const T> {
+    template <class Device, typename T> struct modifier<Device, const T> {
         typedef typename detail::const_get_modifier<detail::has_versioning<T>::value,T>::type type;
     };
-    template <typename T> struct modifier <volatile T> {
+    template <class Device, typename T> struct modifier<Device, volatile T> {
         typedef typename detail::volatile_get_modifier<detail::has_versioning<T>::value,T>::type type;
     };
-    template <typename S> struct modifier < shared_ptr<S> > {
+    template <class Device, typename S> struct modifier<Device, shared_ptr<S> > {
         typedef shared_ptr_modifier< shared_ptr<S> > type; 
     };
-    template <typename S> struct modifier < const shared_ptr<S> > {
+    template <class Device, typename S> struct modifier<Device, const shared_ptr<S> > {
         typedef const_shared_ptr_modifier< const shared_ptr<S> > type; 
     };
-    template <typename S> struct modifier < volatile shared_ptr<S> > {
+    template <class Device, typename S> struct modifier<Device, volatile shared_ptr<S> > {
         typedef volatile_shared_ptr_modifier< volatile shared_ptr<S> > type; 
     };
-    template <typename S> struct modifier < proxy_iterator<S> > {
-        typedef iterator_modifier<proxy_iterator<S> > type;
+    template <class Device, typename S> struct modifier<Device, proxy_iterator<S> > {
+        typedef iterator_modifier<Device, proxy_iterator<S> > type;
     };
 }
 

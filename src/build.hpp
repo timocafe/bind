@@ -116,6 +116,9 @@
 #else
 #include "transport/nop/channel.hpp"
 #endif
+#ifdef CUDART_VERSION
+#include "transport/cuda/channel.hpp"
+#endif
 // }}}
 // {{{ core package (requires :model :transport)
 #include "core/collector.h"
@@ -130,6 +133,7 @@
 #include "core/node.hpp"
 // }}}
 // {{{ interface package (requires :model :transport :core)
+#include "interface/devices.hpp"
 #include "interface/shortcuts.hpp"
 #include "interface/modifiers/singular.hpp"
 #include "interface/modifiers/shared_ptr.hpp"

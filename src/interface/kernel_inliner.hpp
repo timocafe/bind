@@ -29,95 +29,97 @@
 #define BIND_INTERFACE_KERNEL_INLINER
 
 namespace bind {
+    using model::functor;
 
-    template<typename T>
+    template<class Device, typename T>
     struct check_if_not_reference {
         template<bool C, typename F>  struct fail_if_true { typedef F type; };
         template<typename F> struct fail_if_true<true, F> { };
-        typedef typename fail_if_true<modifier<T>::type::ReferenceOnly, T>::type type; // T can be passed only by reference
+        typedef typename fail_if_true<modifier<Device, T>::type::ReferenceOnly, T>::type type; // T can be passed only by reference
     };
  
-    template<typename T>
-    struct check_if_not_reference<T&> {
+    template<class Device, typename T>
+    struct check_if_not_reference<Device, T&> {
         typedef T type;
     };
 
-    template <typename T>
-    using remove_reference = typename std::remove_reference< typename check_if_not_reference< T >::type >::type;
-    using model::functor;
+    template <class Device, typename T>
+    using checked_remove_reference = typename std::remove_reference<
+                                         typename check_if_not_reference< Device, T >::type 
+                                     >::type;
 
-    template<int N> void expand_modify_remote(){}
-    template<int N> void expand_modify_local(functor* o){}
-    template<int N> void expand_modify(functor* o){}
-    template<int N> bool expand_pin(functor* o){ return false; }
-    template<int N> void expand_load(functor* o){ }
-    template<int N> void expand_deallocate(functor* o){ }
-    template<int N> bool expand_ready(functor* o){ return true; }
+    template<class Device, int N> void expand_modify_remote(){}
+    template<class Device, int N> void expand_modify_local(functor* o){}
+    template<class Device, int N> void expand_modify(functor* o){}
+    template<class Device, int N> bool expand_pin(functor* o){ return false; }
+    template<class Device, int N> void expand_load(functor* o){ }
+    template<class Device, int N> void expand_deallocate(functor* o){ }
+    template<class Device, int N> bool expand_ready(functor* o){ return true; }
 
-    template<int N, typename T, typename... TF>
+    template<class Device, int N, typename T, typename... TF>
     void expand_modify_remote(T& arg, TF&... other){
-        modifier<T>::type::template apply_remote<N>(arg);
-        expand_modify_remote<N+1>(other...);
+        modifier<Device, T>::type::template apply_remote<N>(arg);
+        expand_modify_remote<Device, N+1>(other...);
     }
-    template<int N, typename T, typename... TF>
+    template<class Device, int N, typename T, typename... TF>
     void expand_modify_local(functor* o, T& arg, TF&... other){
-        modifier<T>::type::template apply_local<N>(arg, o);
-        expand_modify_local<N+1>(o, other...);
+        modifier<Device, T>::type::template apply_local<N>(arg, o);
+        expand_modify_local<Device, N+1>(o, other...);
     }
-    template<int N, typename T, typename... TF>
+    template<class Device, int N, typename T, typename... TF>
     void expand_modify(functor* o, T& arg, TF&... other){
-        modifier<T>::type::template apply<N>(arg, o);
-        expand_modify<N+1>(o, other...);
+        modifier<Device, T>::type::template apply<N>(arg, o);
+        expand_modify<Device, N+1>(o, other...);
     }
-    template<int N, typename T, typename... TF>
+    template<class Device, int N, typename T, typename... TF>
     bool expand_pin(functor* o){
-        return modifier<remove_reference<T> >::type::template pin<N>(o) ||
-               expand_pin<N+1,TF...>(o);
+        return modifier<Device, checked_remove_reference<Device, T> >::type::template pin<N>(o) ||
+               expand_pin<Device, N+1, TF...>(o);
     }
-    template<int N, typename T, typename... TF>
+    template<class Device, int N, typename T, typename... TF>
     void expand_load(functor* o){
-        modifier<remove_reference<T> >::type::template load<N>(o);
-        expand_load<N+1,TF...>(o);
+        modifier<Device, checked_remove_reference<Device, T> >::type::template load<N>(o);
+        expand_load<Device, N+1, TF...>(o);
     }
-    template<int N, typename T, typename... TF>
+    template<class Device, int N, typename T, typename... TF>
     void expand_deallocate(functor* o){
-        modifier<remove_reference<T> >::type::template deallocate<N>(o);
-        expand_deallocate<N+1,TF...>(o);
+        modifier<Device, checked_remove_reference<Device, T> >::type::template deallocate<N>(o);
+        expand_deallocate<Device, N+1, TF...>(o);
     }
-    template<int N, typename T, typename... TF>
+    template<class Device, int N, typename T, typename... TF>
     bool expand_ready(functor* o){
-        return modifier<remove_reference<T> >::type::template ready<N>(o) &&
-               expand_ready<N+1,TF...>(o);
+        return modifier<Device, checked_remove_reference<Device, T> >::type::template ready<N>(o) &&
+               expand_ready<Device, N+1, TF...>(o);
     }
 
-    template<typename FP, FP fp>
+    template<class Device, typename FP, FP fp>
     struct kernel_inliner {};
 
-    template< typename... TF , void(*fp)( TF... )>
-    struct kernel_inliner<void(*)( TF... ), fp> {
+    template<class Device, typename... TF , void(*fp)( TF... )>
+    struct kernel_inliner<Device, void(*)( TF... ), fp> {
         static const int arity = sizeof...(TF);
 
         static inline void latch(functor* o, TF&... args){
             #ifndef BIND_TRANSPORT_NOP
-            if(bind::select().get_node().remote())   { expand_modify_remote<0>(args...); return; }
-            else if(bind::select().get_node().local()) expand_modify_local<0>(o, args...);
+            if(bind::select().get_node().remote())   { expand_modify_remote<Device, 0>(args...); return; }
+            else if(bind::select().get_node().local()) expand_modify_local<Device, 0>(o, args...);
             else
             #endif
-            expand_modify<0>(o, args...);
-            expand_pin<0,TF...>(o) || bind::select().queue(o);
+            expand_modify<Device, 0>(o, args...);
+            expand_pin<Device, 0, TF...>(o) || bind::select().queue(o);
         }
         static inline void cleanup(functor* o){
-            expand_deallocate<0,TF...>(o);
+            expand_deallocate<Device, 0, TF...>(o);
         }
         static inline bool ready(functor* o){
-            return expand_ready<0,TF...>(o);
+            return expand_ready<Device, 0, TF...>(o);
         }
         template<size_t...I>
         static void expand_invoke(index_sequence<I...>, functor* o){
-            (*fp)(modifier<remove_reference<TF> >::type::template forward<I>(o)...);
+            (*fp)(modifier<Device, checked_remove_reference<Device, TF> >::type::template forward<I>(o)...);
         }
         static inline void invoke(functor* o){
-            expand_load<0,TF...>(o);
+            expand_load<Device, 0, TF...>(o);
             expand_invoke(make_index_sequence<sizeof...(TF)>(), o);
         }
     };
