@@ -50,7 +50,7 @@ namespace bind {
         }
         template<size_t arg>
         static void load(functor* m){ 
-            EXTRACT(o); revise(o);
+            EXTRACT(o); load_(o);
         }
         static void deallocate_(T& o){
             revision& parent  = *o.allocator_.before;
@@ -115,6 +115,16 @@ namespace bind {
             if(r.generator == NULL || r.generator == m) return true;
             return false;
         }
+        static void load_(T& o){ 
+            revision& c = *o.allocator_.after; if(c.valid()) return;
+            revision& p = *o.allocator_.before;
+            if(!p.valid()) c.embed(o.allocator_.calloc(c.spec));
+            else if(p.locked_once() && !p.referenced() && c.spec.conserves(p.spec)) c.reuse(p);
+            else{
+                c.embed(o.allocator_.alloc(c.spec));
+                memcpy(c.data, p.data, p.spec.extent);
+            }
+        }
         static constexpr bool ReferenceOnly = true;
     };
     // {{{ compile-time type modifier: const/volatile cases of the versioned types
@@ -128,6 +138,14 @@ namespace bind {
             revision& r = *o.allocator_.before;
             bind::select().squeeze(&r);
             r.release();
+        }
+        template<size_t arg>
+        static void load(functor* m){ 
+            EXTRACT(o); load_(o);
+        }
+        static void load_(T& o){
+            revision& c = *o.allocator_.before; if(c.valid()) return;
+            c.embed(o.allocator_.calloc(c.spec));
         }
         template<size_t arg> static void apply_remote(T& obj){
             auto o = obj.allocator_.desc;
@@ -154,6 +172,15 @@ namespace bind {
     };
     template <typename T>
     struct volatile_versioned_modifier : public versioned_modifier<T> {
+        template<size_t arg> static void load(functor* m){ 
+            EXTRACT(o); load_(o);
+        }
+        static void load_(T& o){
+            revision& c = *o.allocator_.after; if(c.valid()) return;
+            revision& p = *o.allocator_.before;
+            if(p.valid() && p.locked_once() && !p.referenced() && c.spec.conserves(p.spec)) c.reuse(p);
+            else c.embed(o.allocator_.alloc(c.spec));
+        }
         template<size_t arg> static void apply_remote(T& obj){
             auto o = obj.allocator_.desc;
             bind::select().touch(o, bind::rank());

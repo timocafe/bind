@@ -61,7 +61,7 @@ namespace bind {
         }
         template<size_t arg>
         static void load(functor* m){
-            EXTRACT(o); revise(*o.container);
+            EXTRACT(o); type::load_(*o.container);
         }
         template<size_t arg> 
         static bool pin(functor* m){ 

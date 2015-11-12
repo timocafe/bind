@@ -143,7 +143,6 @@
 #include "interface/allocator.hpp"
 #include "interface/kernel_inliner.hpp"
 #include "interface/kernel.hpp"
-#include "interface/access.hpp"
 #include "interface/lambda.hpp"
 // }}}
 // {{{ container package (requires :*)
