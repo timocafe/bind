@@ -344,14 +344,17 @@ namespace bind { namespace memory {
         class standard;
         class bulk;
     }
-
     namespace gpu {
+        class pinned;
+        class standard;
     }
 
     struct types {
         typedef int id_type;
         typedef std::tuple< memory::cpu::bulk,
-                            memory::cpu::standard
+                            memory::cpu::standard,
+                            memory::gpu::pinned,
+                            memory::gpu::standard
                             > list;
 
         template<typename T>
@@ -360,6 +363,10 @@ namespace bind { namespace memory {
         struct cpu {
             static constexpr id_type bulk = id<memory::cpu::bulk>::value;
             static constexpr id_type standard = id<memory::cpu::standard>::value;
+        };
+        struct gpu {
+            static constexpr id_type pinned = id<memory::gpu::pinned>::value;
+            static constexpr id_type standard = id<memory::gpu::standard>::value;
         };
         static constexpr id_type none = std::tuple_size<list>::value;
     };
@@ -716,6 +723,50 @@ namespace bind { namespace memory { namespace cpu {
 #endif
     // }}}
     // {{{ memory::gpu package
+    #ifdef CUDART_VERSION
+
+#ifndef BIND_MEMORY_GPU_PINNED
+#define BIND_MEMORY_GPU_PINNED
+
+namespace bind { namespace memory { namespace gpu {
+
+    struct pinned {
+	static constexpr int type = types::gpu::pinned;
+
+	template<size_t S> static void* malloc(){ void* ptr; cudaMallocHost(&ptr, S); return ptr; }
+	template<size_t S> static void* calloc(){ void* ptr = malloc<S>(); memset(ptr, 0, S); return ptr; }
+
+	static void* malloc(size_t sz){ void* ptr; cudaMallocHost(&ptr, sz); return ptr; }
+	static void* calloc(size_t sz){ void* ptr = malloc(sz); memset(ptr, 0, sz); return ptr; }
+
+	static void free(void* ptr){ cudaFreeHost(ptr); }
+    };
+
+} } }
+
+#endif
+
+#ifndef BIND_MEMORY_GPU_STANDARD
+#define BIND_MEMORY_GPU_STANDARD
+
+namespace bind { namespace memory { namespace gpu {
+
+    struct standard {
+        static constexpr int type = types::gpu::standard;
+
+        template<size_t S> static void* malloc(){ void* ptr; cudaMalloc(&ptr, S); return ptr; }
+        template<size_t S> static void* calloc(){ void* ptr = malloc<S>(); cudaMemset(ptr, 0, S); return ptr; }
+
+        static void* malloc(size_t sz){ void* ptr; cudaMalloc(&ptr, sz); return ptr; }
+        static void* calloc(size_t sz){ void* ptr = malloc(sz); cudaMemset(ptr, 0, sz); return ptr; }
+
+        static void free(void* ptr){ cudaFree(ptr); }
+    };
+
+} } }
+
+#endif
+    #endif
     // }}}
 
 #ifndef BIND_MEMORY_DESCRIPTOR

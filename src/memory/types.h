@@ -54,14 +54,17 @@ namespace bind { namespace memory {
         class standard;
         class bulk;
     }
-
     namespace gpu {
+        class pinned;
+        class standard;
     }
 
     struct types {
         typedef int id_type;
         typedef std::tuple< memory::cpu::bulk,
-                            memory::cpu::standard
+                            memory::cpu::standard,
+                            memory::gpu::pinned,
+                            memory::gpu::standard
                             > list;
 
         template<typename T>
@@ -70,6 +73,10 @@ namespace bind { namespace memory {
         struct cpu {
             static constexpr id_type bulk = id<memory::cpu::bulk>::value;
             static constexpr id_type standard = id<memory::cpu::standard>::value;
+        };
+        struct gpu {
+            static constexpr id_type pinned = id<memory::gpu::pinned>::value;
+            static constexpr id_type standard = id<memory::gpu::standard>::value;
         };
         static constexpr id_type none = std::tuple_size<list>::value;
     };

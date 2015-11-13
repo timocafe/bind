@@ -92,6 +92,10 @@
     #include "memory/cpu/new.hpp"
     // }}}
     // {{{ memory::gpu package
+    #ifdef CUDART_VERSION
+    #include "memory/gpu/pinned.hpp"
+    #include "memory/gpu/standard.hpp"
+    #endif
     // }}}
 #include "memory/descriptor.hpp"
 // }}}
