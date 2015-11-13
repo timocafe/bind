@@ -54,9 +54,7 @@ namespace bind {
     struct singular_modifier<T, true> : public singular_modifier<T> {
         template<size_t Arg> static T& forward(functor* m){ return *(T*)&m->arguments[Arg]; }
         template<size_t Arg> static void apply_local(T& o, functor* m){ *(T*)&m->arguments[Arg] = o; }
-        template<size_t Arg> static void apply_common(T& o, functor* m){
-            *(T*)&m->arguments[Arg] = o;
-        }
+        template<size_t Arg> static void apply_common(T& o, functor* m){ *(T*)&m->arguments[Arg] = o; }
     };
 }
 
