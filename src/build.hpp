@@ -144,7 +144,7 @@
 #include "interface/modifiers/iterator.hpp"
 #include "interface/modifiers/versioned.hpp"
 #include "interface/modifiers/dispatch.hpp"
-#include "interface/allocator.hpp"
+#include "interface/snapshot.hpp"
 #include "interface/kernel_inliner.hpp"
 #include "interface/kernel.hpp"
 #include "interface/lambda.hpp"

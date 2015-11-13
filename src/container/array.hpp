@@ -44,7 +44,7 @@ namespace bind {
     }
     // }}}
 
-    template <class T, class Allocator = bind::allocator>
+    template <class T, class Allocator = bind::snapshot>
     class array {
     public:
         void* operator new (size_t size, void* ptr){ return ptr; }

@@ -2588,27 +2588,22 @@ namespace bind {
 
 #endif
 
-#ifndef BIND_INTERFACE_ALLOCATOR
-#define BIND_INTERFACE_ALLOCATOR
+#ifndef BIND_INTERFACE_SNAPSHOT
+#define BIND_INTERFACE_SNAPSHOT
 
 namespace bind {
-    using model::history;
+
     using model::revision;
 
-    struct stateful {
-        revision* before = NULL;
-        revision* after = NULL;
-    };
+    struct snapshot {
+        typedef model::history bind_type;
 
-    struct allocator : public stateful {
-        typedef history bind_type;
-
-        allocator& operator=(const allocator&) = delete;
-        allocator(){ }
-        allocator(size_t size){
+        snapshot& operator=(const snapshot&) = delete;
+        snapshot(){ }
+        snapshot(size_t size){
             desc = new bind_type(size);
         }
-        allocator(const allocator& origin){
+        snapshot(const snapshot& origin){
             desc = new bind_type(origin.desc->extent);
             revision* r = origin.desc->back(); if(!r) return;
             desc->current = r;
@@ -2616,13 +2611,15 @@ namespace bind {
                 r->spec.protect(); // keep origin intact
             r->spec.crefs++;
         }
-       ~allocator(){
+       ~snapshot(){
             if(desc->weak()) delete desc;
             else destroy(desc);
         }
         void* data() volatile {
             return after->data;
         }
+        revision* before = NULL;
+        revision* after = NULL;
         bind_type* desc;
     };
 }
@@ -3036,7 +3033,7 @@ namespace bind {
     }
     // }}}
 
-    template <class T, class Allocator = bind::allocator>
+    template <class T, class Allocator = bind::snapshot>
     class array {
     public:
         void* operator new (size_t size, void* ptr){ return ptr; }
@@ -3144,7 +3141,7 @@ namespace bind {
 
 namespace bind {
      
-    template<typename T, class Allocator = bind::allocator> class block;
+    template<typename T, class Allocator = bind::snapshot> class block;
     namespace detail { 
         template<typename T>
         void fill_value(volatile block<T>& a, T& value){

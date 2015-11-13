@@ -1,7 +1,7 @@
 #include "utils/bind.hpp"
 
 template<typename T>
-using array = bind::array<T, bind::allocator>;
+using array = bind::array<T>;
 
 template<typename T>
 void reverse(array<T>& arr){

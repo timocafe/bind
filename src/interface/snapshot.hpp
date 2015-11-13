@@ -25,27 +25,22 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef BIND_INTERFACE_ALLOCATOR
-#define BIND_INTERFACE_ALLOCATOR
+#ifndef BIND_INTERFACE_SNAPSHOT
+#define BIND_INTERFACE_SNAPSHOT
 
 namespace bind {
-    using model::history;
+
     using model::revision;
 
-    struct stateful {
-        revision* before = NULL;
-        revision* after = NULL;
-    };
+    struct snapshot {
+        typedef model::history bind_type;
 
-    struct allocator : public stateful {
-        typedef history bind_type;
-
-        allocator& operator=(const allocator&) = delete;
-        allocator(){ }
-        allocator(size_t size){
+        snapshot& operator=(const snapshot&) = delete;
+        snapshot(){ }
+        snapshot(size_t size){
             desc = new bind_type(size);
         }
-        allocator(const allocator& origin){
+        snapshot(const snapshot& origin){
             desc = new bind_type(origin.desc->extent);
             revision* r = origin.desc->back(); if(!r) return;
             desc->current = r;
@@ -53,13 +48,15 @@ namespace bind {
                 r->spec.protect(); // keep origin intact
             r->spec.crefs++;
         }
-       ~allocator(){
+       ~snapshot(){
             if(desc->weak()) delete desc;
             else destroy(desc);
         }
         void* data() volatile {
             return after->data;
         }
+        revision* before = NULL;
+        revision* after = NULL;
         bind_type* desc;
     };
 }
