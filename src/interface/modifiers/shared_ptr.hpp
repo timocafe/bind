@@ -72,7 +72,7 @@ namespace bind {
             bind::select().lsync(o.impl);
             m->arguments[Arg] = memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy(m->arguments[Arg], &o, sizeof(T)); 
         }
-        template<size_t Arg> static void apply(T& o, functor* m){
+        template<size_t Arg> static void apply_common(T& o, functor* m){
             if(o.impl->generator != m){
                 o.resit();
                 o.impl->generator = m;
@@ -92,10 +92,10 @@ namespace bind {
     struct volatile_shared_ptr_modifier : public shared_ptr_modifier<T> {
         template<size_t Arg> static void apply_remote(T& o){ }
         template<size_t Arg> static void apply_local(T& o, functor* m){
-            apply<Arg>(o, m);
+            apply_common<Arg>(o, m);
         }
-        template<size_t Arg> static void apply(T& o, functor* m){
-            shared_ptr_modifier<typename std::remove_volatile<T>::type>::apply<Arg>(const_cast<typename std::remove_volatile<T>::type&>(o), m);
+        template<size_t Arg> static void apply_common(T& o, functor* m){
+            shared_ptr_modifier<typename std::remove_volatile<T>::type>::apply_common<Arg>(const_cast<typename std::remove_volatile<T>::type&>(o), m);
         }
     };
 }

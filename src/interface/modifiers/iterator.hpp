@@ -54,8 +54,8 @@ namespace bind {
             var->container = (container_type*)m->arguments[Arg]; m->arguments[Arg] = (void*)var;
         }
         template<size_t Arg>
-        static void apply(T& o, functor* m){
-            type::template apply<Arg>(*o.container, m);
+        static void apply_common(T& o, functor* m){
+            type::template apply_common<Arg>(*o.container, m);
             T* var = (T*)memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy((void*)var, &o, sizeof(T));
             var->container = (container_type*)m->arguments[Arg]; m->arguments[Arg] = (void*)var;
         }

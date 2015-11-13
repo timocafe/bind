@@ -2195,7 +2195,7 @@ namespace bind {
         template<size_t Arg> static void apply_local(T& o, functor* m){
             m->arguments[Arg] = memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy(m->arguments[Arg], &o, sizeof(T));
         }
-        template<size_t Arg> static void apply (T& o, functor* m){
+        template<size_t Arg> static void apply_common(T& o, functor* m){
             m->arguments[Arg] = memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy(m->arguments[Arg], &o, sizeof(T));
         }
         static constexpr bool ReferenceOnly = false;
@@ -2205,7 +2205,7 @@ namespace bind {
     struct singular_modifier<T, true> : public singular_modifier<T> {
         template<size_t Arg> static T& forward(functor* m){ return *(T*)&m->arguments[Arg]; }
         template<size_t Arg> static void apply_local(T& o, functor* m){ *(T*)&m->arguments[Arg] = o; }
-        template<size_t Arg> static void apply(T& o, functor* m){
+        template<size_t Arg> static void apply_common(T& o, functor* m){
             *(T*)&m->arguments[Arg] = o;
         }
     };
@@ -2261,7 +2261,7 @@ namespace bind {
             bind::select().lsync(o.impl);
             m->arguments[Arg] = memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy(m->arguments[Arg], &o, sizeof(T)); 
         }
-        template<size_t Arg> static void apply(T& o, functor* m){
+        template<size_t Arg> static void apply_common(T& o, functor* m){
             if(o.impl->generator != m){
                 o.resit();
                 o.impl->generator = m;
@@ -2281,10 +2281,10 @@ namespace bind {
     struct volatile_shared_ptr_modifier : public shared_ptr_modifier<T> {
         template<size_t Arg> static void apply_remote(T& o){ }
         template<size_t Arg> static void apply_local(T& o, functor* m){
-            apply<Arg>(o, m);
+            apply_common<Arg>(o, m);
         }
-        template<size_t Arg> static void apply(T& o, functor* m){
-            shared_ptr_modifier<typename std::remove_volatile<T>::type>::apply<Arg>(const_cast<typename std::remove_volatile<T>::type&>(o), m);
+        template<size_t Arg> static void apply_common(T& o, functor* m){
+            shared_ptr_modifier<typename std::remove_volatile<T>::type>::apply_common<Arg>(const_cast<typename std::remove_volatile<T>::type&>(o), m);
         }
     };
 }
@@ -2321,8 +2321,8 @@ namespace bind {
             var->container = (container_type*)m->arguments[Arg]; m->arguments[Arg] = (void*)var;
         }
         template<size_t Arg>
-        static void apply(T& o, functor* m){
-            type::template apply<Arg>(*o.container, m);
+        static void apply_common(T& o, functor* m){
+            type::template apply_common<Arg>(*o.container, m);
             T* var = (T*)memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy((void*)var, &o, sizeof(T));
             var->container = (container_type*)m->arguments[Arg]; m->arguments[Arg] = (void*)var;
         }
@@ -2406,7 +2406,7 @@ namespace bind {
             var->allocator_.after = obj.allocator_.after = o->current;
         }
         template<size_t Arg>
-        static void apply(T& obj, functor* m){
+        static void apply_common(T& obj, functor* m){
             auto o = obj.allocator_.desc;
             bind::select().touch(o, bind::rank());
             T* var = (T*)memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy((void*)var, &obj, sizeof(T)); m->arguments[Arg] = (void*)var;
@@ -2480,7 +2480,7 @@ namespace bind {
             bind::select().lsync(o->back());
             bind::select().use_revision(o);
         }
-        template<size_t Arg> static void apply(T& obj, functor* m){
+        template<size_t Arg> static void apply_common(T& obj, functor* m){
             auto o = obj.allocator_.desc;
             bind::select().touch(o, bind::rank());
             T* var = (T*)memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy((void*)var, &obj, sizeof(T)); m->arguments[Arg] = (void*)var;
@@ -2520,7 +2520,7 @@ namespace bind {
             bind::select().use_revision(o);
             var->allocator_.after = obj.allocator_.after = o->current;
         }
-        template<size_t Arg> static void apply(T& obj, functor* m){
+        template<size_t Arg> static void apply_common(T& obj, functor* m){
             auto o = obj.allocator_.desc;
             bind::select().touch(o, bind::rank());
             T* var = (T*)memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy((void*)var, (void*)&obj, sizeof(T)); m->arguments[Arg] = (void*)var;
@@ -2671,7 +2671,7 @@ namespace bind {
 
     template<class Device, int N> void expand_modify_remote(){}
     template<class Device, int N> void expand_modify_local(functor* o){}
-    template<class Device, int N> void expand_modify(functor* o){}
+    template<class Device, int N> void expand_modify_common(functor* o){}
     template<class Device, int N> bool expand_pin(functor* o){ return false; }
     template<class Device, int N> void expand_load(functor* o){ }
     template<class Device, int N> void expand_deallocate(functor* o){ }
@@ -2688,9 +2688,9 @@ namespace bind {
         expand_modify_local<Device, N+1>(o, other...);
     }
     template<class Device, int N, typename T, typename... TF>
-    void expand_modify(functor* o, T& arg, TF&... other){
-        modifier<Device, T>::type::template apply<N>(arg, o);
-        expand_modify<Device, N+1>(o, other...);
+    void expand_modify_common(functor* o, T& arg, TF&... other){
+        modifier<Device, T>::type::template apply_common<N>(arg, o);
+        expand_modify_common<Device, N+1>(o, other...);
     }
     template<class Device, int N, typename T, typename... TF>
     bool expand_pin(functor* o){
@@ -2726,7 +2726,7 @@ namespace bind {
             else if(bind::select().get_node().local()) expand_modify_local<Device, 0>(o, args...);
             else
             #endif
-            expand_modify<Device, 0>(o, args...);
+            expand_modify_common<Device, 0>(o, args...);
             expand_pin<Device, 0, TF...>(o) || bind::select().queue(o);
         }
         static inline void cleanup(functor* o){

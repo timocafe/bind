@@ -87,7 +87,7 @@ namespace bind {
             var->allocator_.after = obj.allocator_.after = o->current;
         }
         template<size_t Arg>
-        static void apply(T& obj, functor* m){
+        static void apply_common(T& obj, functor* m){
             auto o = obj.allocator_.desc;
             bind::select().touch(o, bind::rank());
             T* var = (T*)memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy((void*)var, &obj, sizeof(T)); m->arguments[Arg] = (void*)var;
@@ -161,7 +161,7 @@ namespace bind {
             bind::select().lsync(o->back());
             bind::select().use_revision(o);
         }
-        template<size_t Arg> static void apply(T& obj, functor* m){
+        template<size_t Arg> static void apply_common(T& obj, functor* m){
             auto o = obj.allocator_.desc;
             bind::select().touch(o, bind::rank());
             T* var = (T*)memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy((void*)var, &obj, sizeof(T)); m->arguments[Arg] = (void*)var;
@@ -201,7 +201,7 @@ namespace bind {
             bind::select().use_revision(o);
             var->allocator_.after = obj.allocator_.after = o->current;
         }
-        template<size_t Arg> static void apply(T& obj, functor* m){
+        template<size_t Arg> static void apply_common(T& obj, functor* m){
             auto o = obj.allocator_.desc;
             bind::select().touch(o, bind::rank());
             T* var = (T*)memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy((void*)var, (void*)&obj, sizeof(T)); m->arguments[Arg] = (void*)var;

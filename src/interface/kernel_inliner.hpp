@@ -50,7 +50,7 @@ namespace bind {
 
     template<class Device, int N> void expand_modify_remote(){}
     template<class Device, int N> void expand_modify_local(functor* o){}
-    template<class Device, int N> void expand_modify(functor* o){}
+    template<class Device, int N> void expand_modify_common(functor* o){}
     template<class Device, int N> bool expand_pin(functor* o){ return false; }
     template<class Device, int N> void expand_load(functor* o){ }
     template<class Device, int N> void expand_deallocate(functor* o){ }
@@ -67,9 +67,9 @@ namespace bind {
         expand_modify_local<Device, N+1>(o, other...);
     }
     template<class Device, int N, typename T, typename... TF>
-    void expand_modify(functor* o, T& arg, TF&... other){
-        modifier<Device, T>::type::template apply<N>(arg, o);
-        expand_modify<Device, N+1>(o, other...);
+    void expand_modify_common(functor* o, T& arg, TF&... other){
+        modifier<Device, T>::type::template apply_common<N>(arg, o);
+        expand_modify_common<Device, N+1>(o, other...);
     }
     template<class Device, int N, typename T, typename... TF>
     bool expand_pin(functor* o){
@@ -105,7 +105,7 @@ namespace bind {
             else if(bind::select().get_node().local()) expand_modify_local<Device, 0>(o, args...);
             else
             #endif
-            expand_modify<Device, 0>(o, args...);
+            expand_modify_common<Device, 0>(o, args...);
             expand_pin<Device, 0, TF...>(o) || bind::select().queue(o);
         }
         static inline void cleanup(functor* o){
