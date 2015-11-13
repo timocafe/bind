@@ -28,19 +28,19 @@
 #ifndef BIND_INTERFACE_MODIFIERS_SHARED_PTR
 #define BIND_INTERFACE_MODIFIERS_SHARED_PTR
 
-#define EXTRACT(var) T& var = *(T*)m->arguments[arg];
+#define EXTRACT(var) T& var = *(T*)m->arguments[Arg];
 
 namespace bind {
     using model::functor;
 
     template <typename T>
     struct const_shared_ptr_modifier : public singular_modifier<T> {
-        template<size_t arg> static bool ready(functor* m){
+        template<size_t Arg> static bool ready(functor* m){
             EXTRACT(o);
             if(o.impl->origin && o.impl->origin->generator != NULL) return false;
             return (o.impl->generator == m || o.impl->generator == NULL);
         }
-        template<size_t arg> static bool pin(functor* m){
+        template<size_t Arg> static bool pin(functor* m){
             EXTRACT(o);
             if(o.impl->generator == NULL) return false;
             (o.impl->generator.load())->queue(m);
@@ -51,35 +51,35 @@ namespace bind {
 
     template <typename T>
     struct shared_ptr_modifier : public const_shared_ptr_modifier<T> {
-        template<size_t arg> static void deallocate(functor* m){
+        template<size_t Arg> static void deallocate(functor* m){
             EXTRACT(o); o.impl->complete();
         }
-        template<size_t arg> static bool pin(functor* m){
+        template<size_t Arg> static bool pin(functor* m){
             EXTRACT(o);
             if(!o.impl->origin || o.impl->origin->generator == NULL) return false;
             (o.impl->origin->generator.load())->queue(m);
             return true;
         }
-        template<size_t arg> static void apply_remote(T& o){
+        template<size_t Arg> static void apply_remote(T& o){
             o.resit();
             bind::select().rsync(o.impl);
         }
-        template<size_t arg> static void apply_local(T& o, functor* m){
+        template<size_t Arg> static void apply_local(T& o, functor* m){
             if(o.impl->generator != m){
                 o.resit();
                 o.impl->generator = m;
             }
             bind::select().lsync(o.impl);
-            m->arguments[arg] = memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy(m->arguments[arg], &o, sizeof(T)); 
+            m->arguments[Arg] = memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy(m->arguments[Arg], &o, sizeof(T)); 
         }
-        template<size_t arg> static void apply(T& o, functor* m){
+        template<size_t Arg> static void apply(T& o, functor* m){
             if(o.impl->generator != m){
                 o.resit();
                 o.impl->generator = m;
             }
-            m->arguments[arg] = memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy(m->arguments[arg], &o, sizeof(T)); 
+            m->arguments[Arg] = memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy(m->arguments[Arg], &o, sizeof(T)); 
         }
-        template<size_t arg> static void load(functor* m){
+        template<size_t Arg> static void load(functor* m){
             EXTRACT(o);
             if(o.impl->origin){
                 *o.impl = (typename T::element_type&)*o.impl->origin;
@@ -90,12 +90,12 @@ namespace bind {
 
     template <typename T>
     struct volatile_shared_ptr_modifier : public shared_ptr_modifier<T> {
-        template<size_t arg> static void apply_remote(T& o){ }
-        template<size_t arg> static void apply_local(T& o, functor* m){
-            apply<arg>(o, m);
+        template<size_t Arg> static void apply_remote(T& o){ }
+        template<size_t Arg> static void apply_local(T& o, functor* m){
+            apply<Arg>(o, m);
         }
-        template<size_t arg> static void apply(T& o, functor* m){
-            shared_ptr_modifier<typename std::remove_volatile<T>::type>::apply<arg>(const_cast<typename std::remove_volatile<T>::type&>(o), m);
+        template<size_t Arg> static void apply(T& o, functor* m){
+            shared_ptr_modifier<typename std::remove_volatile<T>::type>::apply<Arg>(const_cast<typename std::remove_volatile<T>::type&>(o), m);
         }
     };
 }

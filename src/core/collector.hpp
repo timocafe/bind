@@ -64,6 +64,15 @@ namespace bind { namespace memory {
         this->str.push_back(o);
     }
 
+    inline void collector::squeeze(revision* r) const {
+        if(r->valid() && !r->referenced() && r->locked_once()){
+            if(r->spec.type == memory::types::cpu::standard){
+                r->spec.free(r->data);
+                r->spec.type = memory::types::none;
+            }
+        }
+    }
+
     inline void collector::delete_ptr::operator()( revision* r ) const {
         if(r->valid() && r->spec.type == types::cpu::standard){
             r->spec.free(r->data); // artifacts

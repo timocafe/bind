@@ -46,6 +46,7 @@ namespace bind{ namespace memory {
         void push_back(history* o);
         void push_back(revision* o);
         void push_back(any* o);
+        void squeeze(revision* r) const;
         void clear();
     private:
         size_t reserve_limit;

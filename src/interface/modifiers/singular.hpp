@@ -28,34 +28,34 @@
 #ifndef BIND_INTERFACE_MODIFIERS_SINGULAR
 #define BIND_INTERFACE_MODIFIERS_SINGULAR
 
-#define EXTRACT(var) T& var = *(T*)m->arguments[arg];
+#define EXTRACT(var) T& var = *(T*)m->arguments[Arg];
 
 namespace bind {
     using model::functor;
 
     template <typename T, bool Compact = false>
     struct singular_modifier {
-        template<size_t arg> static void deallocate(functor* ){ }
-        template<size_t arg> static bool pin(functor* ){ return false; }
-        template<size_t arg> static bool ready(functor* ){ return true; }
-        template<size_t arg> static void load(functor* m){ }
-        template<size_t arg> static T&   forward(functor* m){ EXTRACT(o); return o; }
-        template<size_t arg> static void apply_remote(T&){ }
-        template<size_t arg> static void apply_local(T& o, functor* m){
-            m->arguments[arg] = memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy(m->arguments[arg], &o, sizeof(T));
+        template<size_t Arg> static void deallocate(functor* ){ }
+        template<size_t Arg> static bool pin(functor* ){ return false; }
+        template<size_t Arg> static bool ready(functor* ){ return true; }
+        template<size_t Arg> static void load(functor* m){ }
+        template<size_t Arg> static T&   forward(functor* m){ EXTRACT(o); return o; }
+        template<size_t Arg> static void apply_remote(T&){ }
+        template<size_t Arg> static void apply_local(T& o, functor* m){
+            m->arguments[Arg] = memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy(m->arguments[Arg], &o, sizeof(T));
         }
-        template<size_t arg> static void apply (T& o, functor* m){
-            m->arguments[arg] = memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy(m->arguments[arg], &o, sizeof(T));
+        template<size_t Arg> static void apply (T& o, functor* m){
+            m->arguments[Arg] = memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy(m->arguments[Arg], &o, sizeof(T));
         }
         static constexpr bool ReferenceOnly = false;
     };
 
     template <typename T>
     struct singular_modifier<T, true> : public singular_modifier<T> {
-        template<size_t arg> static T& forward(functor* m){ return *(T*)&m->arguments[arg]; }
-        template<size_t arg> static void apply_local(T& o, functor* m){ *(T*)&m->arguments[arg] = o; }
-        template<size_t arg> static void apply(T& o, functor* m){
-            *(T*)&m->arguments[arg] = o;
+        template<size_t Arg> static T& forward(functor* m){ return *(T*)&m->arguments[Arg]; }
+        template<size_t Arg> static void apply_local(T& o, functor* m){ *(T*)&m->arguments[Arg] = o; }
+        template<size_t Arg> static void apply(T& o, functor* m){
+            *(T*)&m->arguments[Arg] = o;
         }
     };
 }

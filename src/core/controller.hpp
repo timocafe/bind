@@ -154,12 +154,7 @@ namespace bind { namespace core {
     }
 
     inline void controller::squeeze(revision* r) const {
-        if(r->valid() && !r->referenced() && r->locked_once()){
-            if(r->spec.type == memory::types::cpu::standard){
-                r->spec.free(r->data);
-                r->spec.type = memory::types::none;
-            }
-        }
+        this->garbage.squeeze(r);
     }
 
     inline void controller::touch(const history* o, rank_t owner){

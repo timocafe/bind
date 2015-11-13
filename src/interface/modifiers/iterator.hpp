@@ -28,7 +28,7 @@
 #ifndef BIND_INTERFACE_MODIFIERS_ITERATOR
 #define BIND_INTERFACE_MODIFIERS_ITERATOR
 
-#define EXTRACT(var) T& var = *(T*)m->arguments[arg];
+#define EXTRACT(var) T& var = *(T*)m->arguments[Arg];
 
 namespace bind {
     using model::functor;
@@ -39,35 +39,35 @@ namespace bind {
         typedef typename modifier<Device, typename T::container_type>::type type;
         typedef typename T::container_type container_type;
 
-        template<size_t arg> 
+        template<size_t Arg> 
         static void deallocate(functor* m){
             EXTRACT(o); type::deallocate_(*o.container);
         }
-        template<size_t arg>
+        template<size_t Arg>
         static void apply_remote(T& o){
-            type::template apply_remote<arg>(*o.container);
+            type::template apply_remote<Arg>(*o.container);
         }
-        template<size_t arg>
+        template<size_t Arg>
         static void apply_local(T& o, functor* m){
-            type::template apply_local<arg>(*o.container, m);
+            type::template apply_local<Arg>(*o.container, m);
             T* var = (T*)memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy((void*)var, &o, sizeof(T));
-            var->container = (container_type*)m->arguments[arg]; m->arguments[arg] = (void*)var;
+            var->container = (container_type*)m->arguments[Arg]; m->arguments[Arg] = (void*)var;
         }
-        template<size_t arg>
+        template<size_t Arg>
         static void apply(T& o, functor* m){
-            type::template apply<arg>(*o.container, m);
+            type::template apply<Arg>(*o.container, m);
             T* var = (T*)memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy((void*)var, &o, sizeof(T));
-            var->container = (container_type*)m->arguments[arg]; m->arguments[arg] = (void*)var;
+            var->container = (container_type*)m->arguments[Arg]; m->arguments[Arg] = (void*)var;
         }
-        template<size_t arg>
+        template<size_t Arg>
         static void load(functor* m){
             EXTRACT(o); type::load_(*o.container);
         }
-        template<size_t arg> 
+        template<size_t Arg> 
         static bool pin(functor* m){ 
             EXTRACT(o); return type::pin_(*o.container, m);
         }
-        template<size_t arg> 
+        template<size_t Arg> 
         static bool ready(functor* m){
             EXTRACT(o); return type::ready_(*o.container, m);
         }
