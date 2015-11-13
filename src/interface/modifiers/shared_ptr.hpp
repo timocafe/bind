@@ -62,14 +62,14 @@ namespace bind {
         }
         template<size_t Arg> static void apply_remote(T& o){
             o.resit();
-            bind::select().rsync(o.impl);
+            bind::select().sync<devices::cpu, locality::remote>(o.impl);
         }
         template<size_t Arg> static void apply_local(T& o, functor* m){
             if(o.impl->generator != m){
                 o.resit();
                 o.impl->generator = m;
             }
-            bind::select().lsync(o.impl);
+            bind::select().sync<devices::cpu, locality::local>(o.impl);
             m->arguments[Arg] = memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy(m->arguments[Arg], &o, sizeof(T)); 
         }
         template<size_t Arg> static void apply_common(T& o, functor* m){

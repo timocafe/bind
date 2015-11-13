@@ -51,6 +51,47 @@ namespace bind { namespace nodes {
     }
 } }
 
+namespace bind { namespace transport {
+
+    using model::revision;
+    using model::any;
+
+    template<class Device, locality L = locality::common>
+    struct hub {
+        static void sync(revision* r){
+            if(bind::nodes::size() == 1) return; // serial
+            if(model::common(r)) return;
+            if(model::local(r)) core::set<revision>::spawn(*r);
+            else core::get<revision>::spawn(*r);
+        }
+    };
+
+    template<class Device>
+    struct hub<Device, locality::local> {
+        static void sync(revision* r){
+            if(model::common(r)) return;
+            if(!model::local(r)) core::get<revision>::spawn(*r);
+        }
+        static void sync(any* v){
+            if(bind::nodes::size() == 1) return;
+            core::set<any>::spawn(*v);
+        }
+    };
+
+    template<class Device>
+    struct hub<Device, locality::remote> {
+        static void sync(revision* r){
+            if(model::common(r)) return;
+            if(model::local(r)) core::set<revision>::spawn(*r);
+            else core::get<revision>::spawn(*r); // assist
+        }
+        static void sync(any* v){
+            core::get<any>::spawn(*v);
+        }
+    };
+
+} }
+
 namespace bind { namespace core {
 
     inline controller::~controller(){ 
@@ -122,31 +163,9 @@ namespace bind { namespace core {
         return false;
     }
 
-    inline void controller::sync(revision* r){
-        if(is_serial()) return;
-        if(model::common(r)) return;
-        if(model::local(r)) set<revision>::spawn(*r);
-        else get<revision>::spawn(*r);
-    }
-
-    inline void controller::lsync(revision* r){
-        if(model::common(r)) return;
-        if(!model::local(r)) get<revision>::spawn(*r);
-    }
-
-    inline void controller::rsync(revision* r){
-        if(model::common(r)) return;
-        if(model::local(r)) set<revision>::spawn(*r);
-        else get<revision>::spawn(*r); // assist
-    }
-
-    inline void controller::lsync(any* v){
-        if(is_serial()) return;
-        set<any>::spawn(*v);
-    }
-
-    inline void controller::rsync(any* v){
-        get<any>::spawn(*v);
+    template<class Device, locality L, typename T>
+    inline void controller::sync(T* o){
+        transport::hub<Device, L>::sync(o);
     }
 
     template<typename T> void controller::collect(T* o){
@@ -175,10 +194,6 @@ namespace bind { namespace core {
         return channel.rank;
     }
 
-    inline bool controller::is_serial() const {
-        return (get_num_procs() == 1);
-    }
-        
     inline bool controller::verbose() const {
         return (get_rank() == 0);
     }

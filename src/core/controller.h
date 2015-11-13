@@ -46,11 +46,8 @@ namespace bind { namespace core {
         void clear();
         bool queue (functor* f);
         bool update(revision& r);
-        void sync  (revision* r);
-        void lsync (revision* r);
-        void rsync (revision* r);
-        void lsync (any* v);
-        void rsync (any* v);
+
+        template<class Device, locality L, typename T> void sync(T* o);
         template<typename T> void collect(T* o);
         void squeeze(revision* r) const;
 
@@ -60,7 +57,6 @@ namespace bind { namespace core {
         void add_revision(history* o, functor* g, rank_t owner);
 
         bool verbose() const;
-        bool is_serial() const;
         rank_t get_rank() const;
         int get_num_procs() const;
         channel_type& get_channel();

@@ -65,7 +65,7 @@ namespace bind {
             auto o = obj.allocator_.desc;
             bind::select().touch(o, bind::rank());
             if(o->back()->owner != bind::nodes::which_())
-                bind::select().rsync(o->back());
+                bind::select().sync<Device, locality::remote>(o->back());
             bind::select().collect(o->back());
             bind::select().add_revision<locality::remote>(o, NULL, bind::nodes::which_()); 
         }
@@ -75,7 +75,7 @@ namespace bind {
             bind::select().touch(o, bind::rank());
             T* var = (T*)memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy((void*)var, &obj, sizeof(T)); 
             m->arguments[Arg] = (void*)var;
-            bind::select().lsync(o->back());
+            bind::select().sync<Device, locality::local>(o->back());
             bind::select().use_revision(o);
 
             var->allocator_.before = o->current;
@@ -91,7 +91,7 @@ namespace bind {
             auto o = obj.allocator_.desc;
             bind::select().touch(o, bind::rank());
             T* var = (T*)memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy((void*)var, &obj, sizeof(T)); m->arguments[Arg] = (void*)var;
-            bind::select().sync(o->back());
+            bind::select().sync<Device, locality::common>(o->back());
             bind::select().use_revision(o);
 
             var->allocator_.before = o->current;
@@ -151,14 +151,14 @@ namespace bind {
             auto o = obj.allocator_.desc;
             bind::select().touch(o, bind::rank());
             if(o->back()->owner != bind::nodes::which_())
-                bind::select().rsync(o->back());
+                bind::select().sync<Device, locality::remote>(o->back());
         }
         template<size_t Arg> static void apply_local(T& obj, functor* m){
             auto o = obj.allocator_.desc;
             bind::select().touch(o, bind::rank());
             T* var = (T*)memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy((void*)var, &obj, sizeof(T)); m->arguments[Arg] = (void*)var;
             var->allocator_.before = var->allocator_.after = o->current;
-            bind::select().lsync(o->back());
+            bind::select().sync<Device, locality::local>(o->back());
             bind::select().use_revision(o);
         }
         template<size_t Arg> static void apply_common(T& obj, functor* m){
@@ -166,7 +166,7 @@ namespace bind {
             bind::select().touch(o, bind::rank());
             T* var = (T*)memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy((void*)var, &obj, sizeof(T)); m->arguments[Arg] = (void*)var;
             var->allocator_.before = var->allocator_.after = o->current;
-            bind::select().sync(o->back());
+            bind::select().sync<Device, locality::common>(o->back());
             bind::select().use_revision(o);
         }
     };
