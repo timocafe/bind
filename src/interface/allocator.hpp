@@ -57,15 +57,6 @@ namespace bind {
             if(desc->weak()) delete desc;
             else destroy(desc);
         }
-        static void* alloc(memory::descriptor& spec){
-            return spec.malloc();
-        }
-        static void* calloc(memory::descriptor& spec){
-            void* m = alloc(spec); memset(m, 0, spec.extent); return m;
-        }
-        static void free(void* ptr, memory::descriptor& spec){
-            spec.free(ptr);
-        }
         void* data() volatile {
             return after->data;
         }

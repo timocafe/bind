@@ -81,7 +81,7 @@ namespace bind { namespace transport {
     template<class Device>
     struct hub<Device, locality::remote> {
         static void sync(revision* r){
-            if(model::common(r)) return;
+            if(r->owner == bind::nodes::which_() || model::common(r)) return;
             if(model::local(r)) core::set<revision>::spawn(*r);
             else core::get<revision>::spawn(*r); // assist
         }

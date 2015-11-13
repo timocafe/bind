@@ -61,6 +61,9 @@ namespace bind { namespace memory {
             type = Memory::type;
             return Memory::malloc(extent);
         }
+        void* calloc(){
+            void* m = malloc(); memset(m, 0, extent); return m; // should be memory-specific
+        }
         void free(void* ptr){ 
             if(ptr == NULL || type == types::none) return;
             if(type == types::cpu::standard) cpu::standard::free(ptr);

@@ -805,6 +805,9 @@ namespace bind { namespace memory {
             type = Memory::type;
             return Memory::malloc(extent);
         }
+        void* calloc(){
+            void* m = malloc(); memset(m, 0, extent); return m; // should be memory-specific
+        }
         void free(void* ptr){ 
             if(ptr == NULL || type == types::none) return;
             if(type == types::cpu::standard) cpu::standard::free(ptr);
@@ -1851,7 +1854,7 @@ namespace bind { namespace transport {
     template<class Device>
     struct hub<Device, locality::remote> {
         static void sync(revision* r){
-            if(model::common(r)) return;
+            if(r->owner == bind::nodes::which_() || model::common(r)) return;
             if(model::local(r)) core::set<revision>::spawn(*r);
             else core::get<revision>::spawn(*r); // assist
         }
@@ -2409,8 +2412,7 @@ namespace bind {
         static void apply_remote(T& obj){
             auto o = obj.allocator_.desc;
             bind::select().touch(o, bind::rank());
-            if(o->back()->owner != bind::nodes::which_())
-                bind::select().sync<Device, locality::remote>(o->back());
+            bind::select().sync<Device, locality::remote>(o->back());
             bind::select().collect(o->back());
             bind::select().add_revision<locality::remote>(o, NULL, bind::nodes::which_()); 
         }
@@ -2438,10 +2440,10 @@ namespace bind {
         static void load_(T& o){ 
             revision& c = *o.allocator_.after; if(c.valid()) return;
             revision& p = *o.allocator_.before;
-            if(!p.valid()) c.embed(o.allocator_.calloc(c.spec));
+            if(!p.valid()) c.embed(c.spec.calloc());
             else if(p.locked_once() && !p.referenced() && c.spec.conserves(p.spec)) c.reuse(p);
             else{
-                c.embed(o.allocator_.alloc(c.spec));
+                c.embed(c.spec.malloc());
                 memcpy(c.data, p.data, p.spec.extent);
             }
         }
@@ -2465,7 +2467,7 @@ namespace bind {
         }
         static void load_(T& o){
             revision& c = *o.allocator_.before; if(c.valid()) return;
-            c.embed(o.allocator_.calloc(c.spec));
+            c.embed(c.spec.calloc());
         }
         template<locality L, size_t Arg> static void apply_(T& obj, functor* m){
             auto o = obj.allocator_.desc;
@@ -2478,8 +2480,7 @@ namespace bind {
         template<size_t Arg> static void apply_remote(T& obj){
             auto o = obj.allocator_.desc;
             bind::select().touch(o, bind::rank());
-            if(o->back()->owner != bind::nodes::which_())
-                bind::select().sync<Device, locality::remote>(o->back());
+            bind::select().sync<Device, locality::remote>(o->back());
         }
         template<size_t Arg> static void apply_local(T& obj, functor* m){
             apply_<locality::local, Arg>(obj, m);
@@ -2497,7 +2498,7 @@ namespace bind {
             revision& c = *o.allocator_.after; if(c.valid()) return;
             revision& p = *o.allocator_.before;
             if(p.valid() && p.locked_once() && !p.referenced() && c.spec.conserves(p.spec)) c.reuse(p);
-            else c.embed(o.allocator_.alloc(c.spec));
+            else c.embed(c.spec.malloc());
         }
         template<locality L, size_t Arg> static void apply_(T& obj, functor* m){
             auto o = obj.allocator_.desc;
@@ -2618,15 +2619,6 @@ namespace bind {
        ~allocator(){
             if(desc->weak()) delete desc;
             else destroy(desc);
-        }
-        static void* alloc(memory::descriptor& spec){
-            return spec.malloc();
-        }
-        static void* calloc(memory::descriptor& spec){
-            void* m = alloc(spec); memset(m, 0, spec.extent); return m;
-        }
-        static void free(void* ptr, memory::descriptor& spec){
-            spec.free(ptr);
         }
         void* data() volatile {
             return after->data;
