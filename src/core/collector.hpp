@@ -44,17 +44,9 @@ namespace bind { namespace memory {
     }
 
     inline void collector::push_back(revision* r){
-        if(!r->valid() && r->state != locality::remote){
-            assert(r->spec.type != types::cpu::bulk);
-            assert(r->spec.type != types::none);
-            r->spec.weaken();
-        }
-        r->spec.crefs--;
-        if(!r->referenced()){ // squeeze
-            if(r->valid() && !r->locked() && r->spec.type == types::cpu::standard){
-                r->spec.free(r->data); // artifacts or last one
-                r->spec.type = types::none;
-            }
+        r->spec.weaken(r->valid() || r->state == locality::remote);
+        if(!r->spec.referenced()){ // squeeze
+            if(!r->locked()) r->spec.free(r->data); // artifacts or last one
             this->rev.push_back(r);
         }
     }
@@ -65,27 +57,19 @@ namespace bind { namespace memory {
     }
 
     inline void collector::squeeze(revision* r) const {
-        if(r->valid() && !r->referenced() && r->locked_once()){
-            if(r->spec.type == memory::types::cpu::standard){
-                r->spec.free(r->data);
-                r->spec.type = memory::types::none;
-            }
-        }
+        if(!r->spec.referenced() && r->locked_once()) r->spec.free(r->data);
     }
 
-    inline void collector::delete_ptr::operator()( revision* r ) const {
-        if(r->valid() && r->spec.type == types::cpu::standard){
-            r->spec.free(r->data); // artifacts
-            r->spec.type = types::none;
-        }
+    inline void collector::delete_ptr::operator()(revision* r) const {
+        r->spec.free(r->data);
         delete r; 
     }
 
-    inline void collector::delete_ptr::operator()( history* e ) const {
+    inline void collector::delete_ptr::operator()(history* e) const {
         delete e;
     }
 
-    inline void collector::delete_ptr::operator()( any* e ) const {
+    inline void collector::delete_ptr::operator()(any* e) const {
         memory::cpu::standard::free(e);
     } 
 

@@ -75,10 +75,6 @@ namespace bind { namespace model {
             return (data != NULL);
         }
 
-        bool referenced() const {
-            return (spec.crefs != 0);
-        }
-
         std::atomic<functor*> generator;
         void* data;
         rank_t owner;

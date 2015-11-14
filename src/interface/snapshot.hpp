@@ -44,9 +44,7 @@ namespace bind {
             desc = new bind_type(origin.desc->extent);
             revision* r = origin.desc->back(); if(!r) return;
             desc->current = r;
-            if(!r->valid() && r->state != locality::remote)
-                r->spec.protect(); // keep origin intact
-            r->spec.crefs++;
+            r->spec.protect(r->valid() || r->state == locality::remote);
         }
        ~snapshot(){
             if(desc->weak()) delete desc;

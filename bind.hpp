@@ -47,6 +47,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <string>
+#include <cstring>
 #include <limits>
 #include <vector>
 #include <stack>
@@ -777,20 +778,30 @@ namespace bind { namespace memory {
     struct descriptor {
         descriptor(size_t e, types::id_type t = types::cpu::standard) : extent(e), type(t), persistency(1), crefs(1) {}
 
-        void protect(){
+        void protect(bool solid){
+            crefs++;
+            if(solid) return;
             if(!(persistency++)) type = types::cpu::standard;
         }
-        void weaken(){
+        void weaken(bool solid){
+            crefs--;
+            if(solid) return; assert(type != types::cpu::bulk); assert(type != types::none);
             if(!(--persistency)) type = types::cpu::bulk;
         }
         void reuse(descriptor& d){
             type = d.type;
             d.type = types::none;
         }
+        template<class Device>
         bool conserves(descriptor& p){
             assert(p.type != types::none && type != types::none);
             return (p.type != types::cpu::bulk || type == types::cpu::bulk);
         }
+        template<class Device>
+        bool complies(){
+            return true;
+        }
+        template<class Device>
         void* malloc(){
             assert(type != types::none);
             if(type == types::cpu::bulk){
@@ -800,23 +811,39 @@ namespace bind { namespace memory {
             }
             return cpu::standard::malloc(extent);
         }
+        template<class Device>
+        void* calloc(){
+            void* m = malloc<Device>(); memset(m, 0, extent); return m; // should be memory-specific
+        }
+        template<class Device>
+        void memmove(void* ptr){
+        }
+        template<class Device>
+        void memcpy(void* dst, void* src, descriptor& src_desc){
+            std::memcpy(dst, src, src_desc.extent);
+        }
         template<class Memory>
         void* hard_malloc(){
             type = Memory::type;
             return Memory::malloc(extent);
         }
-        void* calloc(){
-            void* m = malloc(); memset(m, 0, extent); return m; // should be memory-specific
-        }
         void free(void* ptr){ 
             if(ptr == NULL || type == types::none) return;
-            if(type == types::cpu::standard) cpu::standard::free(ptr);
+            if(type == types::cpu::standard){
+                cpu::standard::free(ptr);
+                type = types::none;
+            }
         }
-
-        size_t extent;
+        bool referenced() const {
+            return (crefs != 0);
+        }
+    private:
+        bool temporary;
         types::id_type type;
         int persistency;
         int crefs;
+    public:
+        const size_t extent;
     };
 
 } }
@@ -901,10 +928,6 @@ namespace bind { namespace model {
 
         bool valid() const {
             return (data != NULL);
-        }
-
-        bool referenced() const {
-            return (spec.crefs != 0);
         }
 
         std::atomic<functor*> generator;
@@ -1556,17 +1579,9 @@ namespace bind { namespace memory {
     }
 
     inline void collector::push_back(revision* r){
-        if(!r->valid() && r->state != locality::remote){
-            assert(r->spec.type != types::cpu::bulk);
-            assert(r->spec.type != types::none);
-            r->spec.weaken();
-        }
-        r->spec.crefs--;
-        if(!r->referenced()){ // squeeze
-            if(r->valid() && !r->locked() && r->spec.type == types::cpu::standard){
-                r->spec.free(r->data); // artifacts or last one
-                r->spec.type = types::none;
-            }
+        r->spec.weaken(r->valid() || r->state == locality::remote);
+        if(!r->spec.referenced()){ // squeeze
+            if(!r->locked()) r->spec.free(r->data); // artifacts or last one
             this->rev.push_back(r);
         }
     }
@@ -1577,27 +1592,19 @@ namespace bind { namespace memory {
     }
 
     inline void collector::squeeze(revision* r) const {
-        if(r->valid() && !r->referenced() && r->locked_once()){
-            if(r->spec.type == memory::types::cpu::standard){
-                r->spec.free(r->data);
-                r->spec.type = memory::types::none;
-            }
-        }
+        if(!r->spec.referenced() && r->locked_once()) r->spec.free(r->data);
     }
 
-    inline void collector::delete_ptr::operator()( revision* r ) const {
-        if(r->valid() && r->spec.type == types::cpu::standard){
-            r->spec.free(r->data); // artifacts
-            r->spec.type = types::none;
-        }
+    inline void collector::delete_ptr::operator()(revision* r) const {
+        r->spec.free(r->data);
         delete r; 
     }
 
-    inline void collector::delete_ptr::operator()( history* e ) const {
+    inline void collector::delete_ptr::operator()(history* e) const {
         delete e;
     }
 
-    inline void collector::delete_ptr::operator()( any* e ) const {
+    inline void collector::delete_ptr::operator()(any* e) const {
         memory::cpu::standard::free(e);
     } 
 
@@ -2438,14 +2445,17 @@ namespace bind {
             return false;
         }
         static void load_(T& o){ 
-            revision& c = *o.allocator_.after; if(c.valid()) return;
+            revision& c = *o.allocator_.after;
             revision& p = *o.allocator_.before;
-            if(!p.valid()) c.embed(c.spec.calloc());
-            else if(p.locked_once() && !p.referenced() && c.spec.conserves(p.spec)) c.reuse(p);
-            else{
-                c.embed(c.spec.malloc());
-                memcpy(c.data, p.data, p.spec.extent);
-            }
+            if(c.valid()){
+                if(!c.spec.complies<Device>()) c.spec.memmove<Device>(c.data);
+            }else if(!p.valid()){
+                c.embed(c.spec.calloc<Device>());
+            }else if(!p.locked_once() || p.spec.referenced() || !c.spec.conserves<Device>(p.spec)){
+                c.embed(c.spec.malloc<Device>());
+                c.spec.memcpy<Device>(c.data, p.data, p.spec);
+            }else
+                c.reuse(p);
         }
         static constexpr bool ReferenceOnly = true;
     };
@@ -2466,8 +2476,9 @@ namespace bind {
             EXTRACT(o); load_(o);
         }
         static void load_(T& o){
-            revision& c = *o.allocator_.before; if(c.valid()) return;
-            c.embed(c.spec.calloc());
+            revision& c = *o.allocator_.before;
+            if(!c.valid()) c.embed(c.spec.calloc<Device>());
+            else if(!c.spec.complies<Device>()) c.spec.memmove<Device>(c.data);
         }
         template<locality L, size_t Arg> static void apply_(T& obj, functor* m){
             auto o = obj.allocator_.desc;
@@ -2495,10 +2506,14 @@ namespace bind {
             EXTRACT(o); load_(o);
         }
         static void load_(T& o){
-            revision& c = *o.allocator_.after; if(c.valid()) return;
+            revision& c = *o.allocator_.after;
             revision& p = *o.allocator_.before;
-            if(p.valid() && p.locked_once() && !p.referenced() && c.spec.conserves(p.spec)) c.reuse(p);
-            else c.embed(c.spec.malloc());
+            if(c.valid()){
+                if(!c.spec.complies<Device>()) c.spec.memmove<Device>(c.data); // does it occur?
+            }else if(!p.valid() || !p.locked_once() || p.spec.referenced() || !c.spec.conserves<Device>(p.spec)){
+                c.embed(c.spec.malloc<Device>());
+            }else
+                c.reuse(p);
         }
         template<locality L, size_t Arg> static void apply_(T& obj, functor* m){
             auto o = obj.allocator_.desc;
@@ -2607,9 +2622,7 @@ namespace bind {
             desc = new bind_type(origin.desc->extent);
             revision* r = origin.desc->back(); if(!r) return;
             desc->current = r;
-            if(!r->valid() && r->state != locality::remote)
-                r->spec.protect(); // keep origin intact
-            r->spec.crefs++;
+            r->spec.protect(r->valid() || r->state == locality::remote);
         }
        ~snapshot(){
             if(desc->weak()) delete desc;

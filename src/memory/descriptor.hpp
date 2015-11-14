@@ -33,20 +33,30 @@ namespace bind { namespace memory {
     struct descriptor {
         descriptor(size_t e, types::id_type t = types::cpu::standard) : extent(e), type(t), persistency(1), crefs(1) {}
 
-        void protect(){
+        void protect(bool solid){
+            crefs++;
+            if(solid) return;
             if(!(persistency++)) type = types::cpu::standard;
         }
-        void weaken(){
+        void weaken(bool solid){
+            crefs--;
+            if(solid) return; assert(type != types::cpu::bulk); assert(type != types::none);
             if(!(--persistency)) type = types::cpu::bulk;
         }
         void reuse(descriptor& d){
             type = d.type;
             d.type = types::none;
         }
+        template<class Device>
         bool conserves(descriptor& p){
             assert(p.type != types::none && type != types::none);
             return (p.type != types::cpu::bulk || type == types::cpu::bulk);
         }
+        template<class Device>
+        bool complies(){
+            return true;
+        }
+        template<class Device>
         void* malloc(){
             assert(type != types::none);
             if(type == types::cpu::bulk){
@@ -56,23 +66,39 @@ namespace bind { namespace memory {
             }
             return cpu::standard::malloc(extent);
         }
+        template<class Device>
+        void* calloc(){
+            void* m = malloc<Device>(); memset(m, 0, extent); return m; // should be memory-specific
+        }
+        template<class Device>
+        void memmove(void* ptr){
+        }
+        template<class Device>
+        void memcpy(void* dst, void* src, descriptor& src_desc){
+            std::memcpy(dst, src, src_desc.extent);
+        }
         template<class Memory>
         void* hard_malloc(){
             type = Memory::type;
             return Memory::malloc(extent);
         }
-        void* calloc(){
-            void* m = malloc(); memset(m, 0, extent); return m; // should be memory-specific
-        }
         void free(void* ptr){ 
             if(ptr == NULL || type == types::none) return;
-            if(type == types::cpu::standard) cpu::standard::free(ptr);
+            if(type == types::cpu::standard){
+                cpu::standard::free(ptr);
+                type = types::none;
+            }
         }
-
-        size_t extent;
+        bool referenced() const {
+            return (crefs != 0);
+        }
+    private:
+        bool temporary;
         types::id_type type;
         int persistency;
         int crefs;
+    public:
+        const size_t extent;
     };
 
 } }

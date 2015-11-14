@@ -107,14 +107,17 @@ namespace bind {
             return false;
         }
         static void load_(T& o){ 
-            revision& c = *o.allocator_.after; if(c.valid()) return;
+            revision& c = *o.allocator_.after;
             revision& p = *o.allocator_.before;
-            if(!p.valid()) c.embed(c.spec.calloc());
-            else if(p.locked_once() && !p.referenced() && c.spec.conserves(p.spec)) c.reuse(p);
-            else{
-                c.embed(c.spec.malloc());
-                memcpy(c.data, p.data, p.spec.extent);
-            }
+            if(c.valid()){
+                if(!c.spec.complies<Device>()) c.spec.memmove<Device>(c.data);
+            }else if(!p.valid()){
+                c.embed(c.spec.calloc<Device>());
+            }else if(!p.locked_once() || p.spec.referenced() || !c.spec.conserves<Device>(p.spec)){
+                c.embed(c.spec.malloc<Device>());
+                c.spec.memcpy<Device>(c.data, p.data, p.spec);
+            }else
+                c.reuse(p);
         }
         static constexpr bool ReferenceOnly = true;
     };
@@ -135,8 +138,9 @@ namespace bind {
             EXTRACT(o); load_(o);
         }
         static void load_(T& o){
-            revision& c = *o.allocator_.before; if(c.valid()) return;
-            c.embed(c.spec.calloc());
+            revision& c = *o.allocator_.before;
+            if(!c.valid()) c.embed(c.spec.calloc<Device>());
+            else if(!c.spec.complies<Device>()) c.spec.memmove<Device>(c.data);
         }
         template<locality L, size_t Arg> static void apply_(T& obj, functor* m){
             auto o = obj.allocator_.desc;
@@ -164,10 +168,14 @@ namespace bind {
             EXTRACT(o); load_(o);
         }
         static void load_(T& o){
-            revision& c = *o.allocator_.after; if(c.valid()) return;
+            revision& c = *o.allocator_.after;
             revision& p = *o.allocator_.before;
-            if(p.valid() && p.locked_once() && !p.referenced() && c.spec.conserves(p.spec)) c.reuse(p);
-            else c.embed(c.spec.malloc());
+            if(c.valid()){
+                if(!c.spec.complies<Device>()) c.spec.memmove<Device>(c.data); // does it occur?
+            }else if(!p.valid() || !p.locked_once() || p.spec.referenced() || !c.spec.conserves<Device>(p.spec)){
+                c.embed(c.spec.malloc<Device>());
+            }else
+                c.reuse(p);
         }
         template<locality L, size_t Arg> static void apply_(T& obj, functor* m){
             auto o = obj.allocator_.desc;

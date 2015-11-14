@@ -47,6 +47,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <string>
+#include <cstring>
 #include <limits>
 #include <vector>
 #include <stack>
