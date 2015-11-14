@@ -31,30 +31,22 @@
 namespace bind { namespace memory {
 
     struct descriptor {
-        descriptor(size_t e, types::id_type t = types::cpu::standard) : extent(e), type(t), persistency(1), crefs(1) {}
+        descriptor(size_t e, types::id_type t = types::cpu::standard) : extent(e), type(t), tmp(false) {}
 
-        void protect(bool solid){
-            crefs++;
-            if(solid) return;
-            if(!(persistency++)) type = types::cpu::standard;
-        }
-        void weaken(bool solid){
-            crefs--;
-            if(solid) return; assert(type != types::cpu::bulk); assert(type != types::none);
-            if(!(--persistency)) type = types::cpu::bulk;
-        }
-        void reuse(descriptor& d){
-            type = d.type;
-            d.type = types::none;
-        }
         template<class Device>
         bool conserves(descriptor& p){
-            assert(p.type != types::none && type != types::none);
             return (p.type != types::cpu::bulk || type == types::cpu::bulk);
         }
         template<class Device>
         bool complies(){
             return true;
+        }
+        void free(void* ptr){ 
+            if(ptr == NULL || type == types::none) return;
+            if(type == types::cpu::standard){
+                cpu::standard::free(ptr);
+                type = types::none;
+            }
         }
         template<class Device>
         void* malloc(){
@@ -65,6 +57,11 @@ namespace bind { namespace memory {
                 type = types::cpu::standard;
             }
             return cpu::standard::malloc(extent);
+        }
+        template<class Memory>
+        void* hard_malloc(){
+            type = Memory::type;
+            return Memory::malloc(extent);
         }
         template<class Device>
         void* calloc(){
@@ -77,28 +74,19 @@ namespace bind { namespace memory {
         void memcpy(void* dst, void* src, descriptor& src_desc){
             std::memcpy(dst, src, src_desc.extent);
         }
-        template<class Memory>
-        void* hard_malloc(){
-            type = Memory::type;
-            return Memory::malloc(extent);
+        void reuse(descriptor& d){
+            type = d.type;
+            d.type = types::none;
         }
-        void free(void* ptr){ 
-            if(ptr == NULL || type == types::none) return;
-            if(type == types::cpu::standard){
-                cpu::standard::free(ptr);
-                type = types::none;
-            }
+        void temporary(bool t){
+            if(t) type = types::cpu::bulk;
+            else type = types::cpu::standard;
         }
-        bool referenced() const {
-            return (crefs != 0);
-        }
-    private:
-        bool temporary;
-        types::id_type type;
-        int persistency;
-        int crefs;
     public:
         const size_t extent;
+    private:
+        types::id_type type;
+        bool tmp;
     };
 
 } }

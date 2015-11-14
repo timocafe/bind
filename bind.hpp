@@ -776,30 +776,22 @@ namespace bind { namespace memory { namespace gpu {
 namespace bind { namespace memory {
 
     struct descriptor {
-        descriptor(size_t e, types::id_type t = types::cpu::standard) : extent(e), type(t), persistency(1), crefs(1) {}
+        descriptor(size_t e, types::id_type t = types::cpu::standard) : extent(e), type(t), tmp(false) {}
 
-        void protect(bool solid){
-            crefs++;
-            if(solid) return;
-            if(!(persistency++)) type = types::cpu::standard;
-        }
-        void weaken(bool solid){
-            crefs--;
-            if(solid) return; assert(type != types::cpu::bulk); assert(type != types::none);
-            if(!(--persistency)) type = types::cpu::bulk;
-        }
-        void reuse(descriptor& d){
-            type = d.type;
-            d.type = types::none;
-        }
         template<class Device>
         bool conserves(descriptor& p){
-            assert(p.type != types::none && type != types::none);
             return (p.type != types::cpu::bulk || type == types::cpu::bulk);
         }
         template<class Device>
         bool complies(){
             return true;
+        }
+        void free(void* ptr){ 
+            if(ptr == NULL || type == types::none) return;
+            if(type == types::cpu::standard){
+                cpu::standard::free(ptr);
+                type = types::none;
+            }
         }
         template<class Device>
         void* malloc(){
@@ -810,6 +802,11 @@ namespace bind { namespace memory {
                 type = types::cpu::standard;
             }
             return cpu::standard::malloc(extent);
+        }
+        template<class Memory>
+        void* hard_malloc(){
+            type = Memory::type;
+            return Memory::malloc(extent);
         }
         template<class Device>
         void* calloc(){
@@ -822,28 +819,19 @@ namespace bind { namespace memory {
         void memcpy(void* dst, void* src, descriptor& src_desc){
             std::memcpy(dst, src, src_desc.extent);
         }
-        template<class Memory>
-        void* hard_malloc(){
-            type = Memory::type;
-            return Memory::malloc(extent);
+        void reuse(descriptor& d){
+            type = d.type;
+            d.type = types::none;
         }
-        void free(void* ptr){ 
-            if(ptr == NULL || type == types::none) return;
-            if(type == types::cpu::standard){
-                cpu::standard::free(ptr);
-                type = types::none;
-            }
+        void temporary(bool t){
+            if(t) type = types::cpu::bulk;
+            else type = types::cpu::standard;
         }
-        bool referenced() const {
-            return (crefs != 0);
-        }
-    private:
-        bool temporary;
-        types::id_type type;
-        int persistency;
-        int crefs;
     public:
         const size_t extent;
+    private:
+        types::id_type type;
+        bool tmp;
     };
 
 } }
@@ -889,54 +877,62 @@ namespace bind { namespace model {
     public:
         revision(size_t extent, functor* g, locality l, rank_t owner)
         : spec(extent), generator(g), state(l), 
-          data(NULL), users(0), owner(owner)
+          data(NULL), users(0), owner(owner),
+          crefs(1), persistency(1)
         {
         }
 
         void embed(void* ptr){
             data = ptr;
         }
-
         void reuse(revision& r){
             data = r.data;
             spec.reuse(r.spec);
         }
-
         void use(){
             ++users;
         }
-
         void release(){
             --users;
         }
-
         void complete(){
             generator = NULL;
         }
-
         void invalidate(){
             data = NULL;
         }
-
         bool locked() const {
             return (users != 0);
         }
-
         bool locked_once() const {
             return (users == 1);
         }
-
         bool valid() const {
             return (data != NULL);
         }
-
+        bool referenced() const {
+            return (crefs != 0);
+        }
+        void protect(){
+            crefs++;
+            if(valid() || state == locality::remote) return;
+            if(!(persistency++)) spec.temporary(false);
+        }
+        void weaken(){
+            crefs--;
+            if(valid() || state == locality::remote) return;
+            if(!(--persistency)) spec.temporary(true);
+        }
         std::atomic<functor*> generator;
         void* data;
         rank_t owner;
         std::atomic<int> users;
-        locality state;
+        const locality state;
         std::pair<size_t, functor*> assist;
         memory::descriptor spec;
+    private:
+        int crefs;
+        int persistency;
     };
 
     inline bool local(const revision* r){
@@ -1579,8 +1575,8 @@ namespace bind { namespace memory {
     }
 
     inline void collector::push_back(revision* r){
-        r->spec.weaken(r->valid() || r->state == locality::remote);
-        if(!r->spec.referenced()){ // squeeze
+        r->weaken();
+        if(!r->referenced()){ // squeeze
             if(!r->locked()) r->spec.free(r->data); // artifacts or last one
             this->rev.push_back(r);
         }
@@ -1592,7 +1588,7 @@ namespace bind { namespace memory {
     }
 
     inline void collector::squeeze(revision* r) const {
-        if(!r->spec.referenced() && r->locked_once()) r->spec.free(r->data);
+        if(!r->referenced() && r->locked_once()) r->spec.free(r->data);
     }
 
     inline void collector::delete_ptr::operator()(revision* r) const {
@@ -2451,7 +2447,7 @@ namespace bind {
                 if(!c.spec.complies<Device>()) c.spec.memmove<Device>(c.data);
             }else if(!p.valid()){
                 c.embed(c.spec.calloc<Device>());
-            }else if(!p.locked_once() || p.spec.referenced() || !c.spec.conserves<Device>(p.spec)){
+            }else if(!p.locked_once() || p.referenced() || !c.spec.conserves<Device>(p.spec)){
                 c.embed(c.spec.malloc<Device>());
                 c.spec.memcpy<Device>(c.data, p.data, p.spec);
             }else
@@ -2510,7 +2506,7 @@ namespace bind {
             revision& p = *o.allocator_.before;
             if(c.valid()){
                 if(!c.spec.complies<Device>()) c.spec.memmove<Device>(c.data); // does it occur?
-            }else if(!p.valid() || !p.locked_once() || p.spec.referenced() || !c.spec.conserves<Device>(p.spec)){
+            }else if(!p.valid() || !p.locked_once() || p.referenced() || !c.spec.conserves<Device>(p.spec)){
                 c.embed(c.spec.malloc<Device>());
             }else
                 c.reuse(p);
@@ -2622,7 +2618,7 @@ namespace bind {
             desc = new bind_type(origin.desc->extent);
             revision* r = origin.desc->back(); if(!r) return;
             desc->current = r;
-            r->spec.protect(r->valid() || r->state == locality::remote);
+            r->protect();
         }
        ~snapshot(){
             if(desc->weak()) delete desc;

@@ -44,8 +44,8 @@ namespace bind { namespace memory {
     }
 
     inline void collector::push_back(revision* r){
-        r->spec.weaken(r->valid() || r->state == locality::remote);
-        if(!r->spec.referenced()){ // squeeze
+        r->weaken();
+        if(!r->referenced()){ // squeeze
             if(!r->locked()) r->spec.free(r->data); // artifacts or last one
             this->rev.push_back(r);
         }
@@ -57,7 +57,7 @@ namespace bind { namespace memory {
     }
 
     inline void collector::squeeze(revision* r) const {
-        if(!r->spec.referenced() && r->locked_once()) r->spec.free(r->data);
+        if(!r->referenced() && r->locked_once()) r->spec.free(r->data);
     }
 
     inline void collector::delete_ptr::operator()(revision* r) const {

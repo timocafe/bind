@@ -113,7 +113,7 @@ namespace bind {
                 if(!c.spec.complies<Device>()) c.spec.memmove<Device>(c.data);
             }else if(!p.valid()){
                 c.embed(c.spec.calloc<Device>());
-            }else if(!p.locked_once() || p.spec.referenced() || !c.spec.conserves<Device>(p.spec)){
+            }else if(!p.locked_once() || p.referenced() || !c.spec.conserves<Device>(p.spec)){
                 c.embed(c.spec.malloc<Device>());
                 c.spec.memcpy<Device>(c.data, p.data, p.spec);
             }else
@@ -172,7 +172,7 @@ namespace bind {
             revision& p = *o.allocator_.before;
             if(c.valid()){
                 if(!c.spec.complies<Device>()) c.spec.memmove<Device>(c.data); // does it occur?
-            }else if(!p.valid() || !p.locked_once() || p.spec.referenced() || !c.spec.conserves<Device>(p.spec)){
+            }else if(!p.valid() || !p.locked_once() || p.referenced() || !c.spec.conserves<Device>(p.spec)){
                 c.embed(c.spec.malloc<Device>());
             }else
                 c.reuse(p);

@@ -34,54 +34,62 @@ namespace bind { namespace model {
     public:
         revision(size_t extent, functor* g, locality l, rank_t owner)
         : spec(extent), generator(g), state(l), 
-          data(NULL), users(0), owner(owner)
+          data(NULL), users(0), owner(owner),
+          crefs(1), persistency(1)
         {
         }
 
         void embed(void* ptr){
             data = ptr;
         }
-
         void reuse(revision& r){
             data = r.data;
             spec.reuse(r.spec);
         }
-
         void use(){
             ++users;
         }
-
         void release(){
             --users;
         }
-
         void complete(){
             generator = NULL;
         }
-
         void invalidate(){
             data = NULL;
         }
-
         bool locked() const {
             return (users != 0);
         }
-
         bool locked_once() const {
             return (users == 1);
         }
-
         bool valid() const {
             return (data != NULL);
         }
-
+        bool referenced() const {
+            return (crefs != 0);
+        }
+        void protect(){
+            crefs++;
+            if(valid() || state == locality::remote) return;
+            if(!(persistency++)) spec.temporary(false);
+        }
+        void weaken(){
+            crefs--;
+            if(valid() || state == locality::remote) return;
+            if(!(--persistency)) spec.temporary(true);
+        }
         std::atomic<functor*> generator;
         void* data;
         rank_t owner;
         std::atomic<int> users;
-        locality state;
+        const locality state;
         std::pair<size_t, functor*> assist;
         memory::descriptor spec;
+    private:
+        int crefs;
+        int persistency;
     };
 
     inline bool local(const revision* r){
