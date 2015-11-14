@@ -31,17 +31,17 @@
 namespace bind { namespace memory {
 
     struct descriptor {
-        descriptor(size_t e, types::id_type t = types::cpu::standard) : extent(e), type(t), tmp(false) {}
+        descriptor(size_t e, types::id_type t = types::none) : extent(e), type(t), tmp(false) {}
 
         template<class Device>
         bool conserves(descriptor& p){
-            return (p.type != types::cpu::bulk || type == types::cpu::bulk);
+            return (p.type == types::cpu::standard || type == types::cpu::bulk);
         }
         template<class Device>
         bool complies(){
             return true;
         }
-        void free(void* ptr){ 
+        void free(void* ptr){
             if(ptr == NULL || type == types::none) return;
             if(type == types::cpu::standard){
                 cpu::standard::free(ptr);
@@ -50,12 +50,11 @@ namespace bind { namespace memory {
         }
         template<class Device>
         void* malloc(){
-            assert(type != types::none);
             if(type == types::cpu::bulk){
                 void* ptr = cpu::data_bulk::soft_malloc(extent);
                 if(ptr) return ptr;
-                type = types::cpu::standard;
             }
+            type = types::cpu::standard;
             return cpu::standard::malloc(extent);
         }
         template<class Memory>

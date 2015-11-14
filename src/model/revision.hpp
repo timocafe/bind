@@ -35,7 +35,7 @@ namespace bind { namespace model {
         revision(size_t extent, functor* g, locality l, rank_t owner)
         : spec(extent), generator(g), state(l), 
           data(NULL), users(0), owner(owner),
-          crefs(1), persistency(1)
+          crefs(1)
         {
         }
 
@@ -73,12 +73,12 @@ namespace bind { namespace model {
         void protect(){
             crefs++;
             if(valid() || state == locality::remote) return;
-            if(!(persistency++)) spec.temporary(false);
+            if(crefs == 1) spec.temporary(false);
         }
         void weaken(){
             crefs--;
             if(valid() || state == locality::remote) return;
-            if(!(--persistency)) spec.temporary(true);
+            if(!crefs) spec.temporary(true);
         }
         std::atomic<functor*> generator;
         void* data;
@@ -89,7 +89,6 @@ namespace bind { namespace model {
         memory::descriptor spec;
     private:
         int crefs;
-        int persistency;
     };
 
     inline bool local(const revision* r){
