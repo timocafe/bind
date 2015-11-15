@@ -775,17 +775,38 @@ namespace bind { namespace memory { namespace gpu {
 
 namespace bind { namespace memory {
 
-    struct descriptor {
-        descriptor(size_t e, types::id_type t = types::none) : extent(e), type(t), tmp(false) {}
+    class descriptor;
 
-        template<class Device>
-        bool conserves(descriptor& p){
-            return (p.type == types::cpu::standard || type == types::cpu::bulk);
+    template<class Device>
+    struct hub {
+        static bool conserves(descriptor& c, descriptor& p){
+            return (c.tmp || p.type == types::cpu::standard || c.type == types::cpu::bulk);
         }
-        template<class Device>
-        bool complies(){
+        static bool complies(descriptor& c){
             return true;
         }
+        static void* malloc(descriptor& c){
+            if(c.tmp || c.type == types::cpu::bulk){
+                void* ptr = cpu::data_bulk::soft_malloc(c.extent);
+                if(ptr){ c.type = types::cpu::bulk; return ptr; }
+            }
+            c.type = types::cpu::standard;
+            return cpu::standard::malloc(c.extent);
+        }
+        static void memset(descriptor& desc, void* ptr){
+            std::memset(ptr, 0, desc.extent);
+        }
+        static void memcpy(descriptor& dst_desc, void* dst, descriptor& src_desc, void* src){
+            std::memcpy(dst, src, src_desc.extent);
+        }
+        static void memmove(descriptor& desc, void* ptr){
+        }
+    };
+
+    struct descriptor {
+        template<class Device> friend struct hub;
+        descriptor(size_t e, types::id_type t = types::none) : extent(e), type(t), tmp(false) {}
+
         void free(void* ptr){
             if(ptr == NULL || type == types::none) return;
             if(type == types::cpu::standard){
@@ -793,38 +814,43 @@ namespace bind { namespace memory {
                 type = types::none;
             }
         }
-        template<class Device>
-        void* malloc(){
-            if(type == types::cpu::bulk){
-                void* ptr = cpu::data_bulk::soft_malloc(extent);
-                if(ptr) return ptr;
-            }
-            type = types::cpu::standard;
-            return cpu::standard::malloc(extent);
-        }
         template<class Memory>
         void* hard_malloc(){
             type = Memory::type;
             return Memory::malloc(extent);
         }
         template<class Device>
+        void* malloc(){
+            return hub<Device>::malloc(*this);
+        }
+        template<class Device>
         void* calloc(){
-            void* m = malloc<Device>(); memset(m, 0, extent); return m; // should be memory-specific
+            void* m = hub<Device>::malloc(*this);
+            hub<Device>::memset(*this, m);
+            return m;
         }
         template<class Device>
         void memmove(void* ptr){
+            hub<Device>::memmove(*this, ptr);
         }
         template<class Device>
         void memcpy(void* dst, void* src, descriptor& src_desc){
-            std::memcpy(dst, src, src_desc.extent);
+            hub<Device>::memcpy(*this, dst, src_desc, src);
+        }
+        template<class Device>
+        bool conserves(descriptor& p){
+            return hub<Device>::conserves(*this, p);
+        }
+        template<class Device>
+        bool complies(){
+            return hub<Device>::complies(*this);
         }
         void reuse(descriptor& d){
             type = d.type;
             d.type = types::none;
         }
         void temporary(bool t){
-            if(t) type = types::cpu::bulk;
-            else type = types::cpu::standard;
+            tmp = t;
         }
     public:
         const size_t extent;
