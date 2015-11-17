@@ -32,7 +32,7 @@ namespace bind { namespace memory {
 
     class descriptor;
 
-    template<class Device>
+    template<device D>
     struct hub {
         static bool conserves(descriptor& c, descriptor& p){
             return (c.tmp || p.type == types::cpu::standard || c.type == types::cpu::bulk);
@@ -54,7 +54,7 @@ namespace bind { namespace memory {
     };
 
     struct descriptor {
-        template<class Device> friend struct hub;
+        template<device D> friend struct hub;
         descriptor(size_t e, types::id_type t = types::none) : extent(e), type(t), tmp(false) {}
 
         void free(void* ptr){
@@ -71,23 +71,23 @@ namespace bind { namespace memory {
             type = Memory::type;
             return Memory::malloc(extent);
         }
-        template<class Device>
+        template<device D>
         void* malloc(){
-            return hub<Device>::malloc(*this);
+            return hub<D>::malloc(*this);
         }
-        template<class Device>
+        template<device D>
         void* calloc(){
-            void* m = hub<Device>::malloc(*this);
-            hub<Device>::memset(*this, m);
+            void* m = hub<D>::malloc(*this);
+            hub<D>::memset(*this, m);
             return m;
         }
-        template<class Device>
+        template<device D>
         void memcpy(void* dst, void* src, descriptor& src_desc){
-            hub<Device>::memcpy(*this, dst, src_desc, src);
+            hub<D>::memcpy(*this, dst, src_desc, src);
         }
-        template<class Device>
+        template<device D>
         bool conserves(descriptor& p){
-            return hub<Device>::conserves(*this, p);
+            return hub<D>::conserves(*this, p);
         }
         void reuse(descriptor& d){
             type = d.type;

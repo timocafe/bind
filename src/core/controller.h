@@ -47,7 +47,7 @@ namespace bind { namespace core {
         bool queue (functor* f);
         bool update(revision& r);
 
-        template<class Device, locality L, typename T> void sync(T* o);
+        template<locality L, device D, typename T> void sync(T* o);
         template<typename T> void collect(T* o);
         void squeeze(revision* r) const;
 

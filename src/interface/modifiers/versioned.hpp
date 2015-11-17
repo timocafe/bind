@@ -34,7 +34,7 @@ namespace bind {
     using model::functor;
     using model::revision;
 
-    template <class Device, typename T>
+    template <device D, typename T>
     struct versioned_modifier : public singular_modifier<T> {
         template<size_t Arg> 
         static void deallocate(functor* m){
@@ -66,7 +66,7 @@ namespace bind {
             bind::select().touch(o, bind::rank());
             T* var = (T*)memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy((void*)var, &obj, sizeof(T)); 
             m->arguments[Arg] = (void*)var;
-            bind::select().sync<Device, L>(o->current);
+            bind::select().sync<L,D>(o->current);
             bind::select().use_revision(o);
 
             var->allocator_.before = o->current;
@@ -81,7 +81,7 @@ namespace bind {
         static void apply_remote(T& obj){
             auto o = obj.allocator_.desc;
             bind::select().touch(o, bind::rank());
-            bind::select().sync<Device, locality::remote>(o->current);
+            bind::select().sync<locality::remote,D>(o->current);
             bind::select().collect(o->current);
             bind::select().add_revision<locality::remote>(o, NULL, bind::nodes::which_()); 
         }
@@ -110,18 +110,18 @@ namespace bind {
             revision& c = *o.allocator_.after; if(c.valid()) return;
             revision& p = *o.allocator_.before;
             if(!p.valid()){
-                c.embed(c.spec.calloc<Device>());
-            }else if(!p.locked_once() || p.referenced() || !c.spec.conserves<Device>(p.spec)){
-                c.embed(c.spec.malloc<Device>());
-                c.spec.memcpy<Device>(c.data, p.data, p.spec);
+                c.embed(c.spec.calloc<D>());
+            }else if(!p.locked_once() || p.referenced() || !c.spec.conserves<D>(p.spec)){
+                c.embed(c.spec.malloc<D>());
+                c.spec.memcpy<D>(c.data, p.data, p.spec);
             }else
                 c.reuse(p);
         }
         static constexpr bool ReferenceOnly = true;
     };
     // {{{ compile-time type modifier: const/volatile cases of the versioned types
-    template <class Device, typename T>
-    struct const_versioned_modifier : public versioned_modifier<Device, T> {
+    template <device D, typename T>
+    struct const_versioned_modifier : public versioned_modifier<D, T> {
         template<size_t Arg>
         static void deallocate(functor* m){
             EXTRACT(o); deallocate_(o);
@@ -137,20 +137,20 @@ namespace bind {
         }
         static void load_(T& o){
             revision& c = *o.allocator_.before;
-            if(!c.valid()) c.embed(c.spec.calloc<Device>());
+            if(!c.valid()) c.embed(c.spec.calloc<D>());
         }
         template<locality L, size_t Arg> static void apply_(T& obj, functor* m){
             auto o = obj.allocator_.desc;
             bind::select().touch(o, bind::rank());
             T* var = (T*)memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy((void*)var, &obj, sizeof(T)); m->arguments[Arg] = (void*)var;
-            bind::select().sync<Device, L>(o->current);
+            bind::select().sync<L,D>(o->current);
             bind::select().use_revision(o);
             var->allocator_.before = var->allocator_.after = o->current;
         }
         template<size_t Arg> static void apply_remote(T& obj){
             auto o = obj.allocator_.desc;
             bind::select().touch(o, bind::rank());
-            bind::select().sync<Device, locality::remote>(o->current);
+            bind::select().sync<locality::remote,D>(o->current);
         }
         template<size_t Arg> static void apply_local(T& obj, functor* m){
             apply_<locality::local, Arg>(obj, m);
@@ -159,16 +159,16 @@ namespace bind {
             apply_<locality::common, Arg>(obj, m);
         }
     };
-    template <class Device, typename T>
-    struct volatile_versioned_modifier : public versioned_modifier<Device, T> {
+    template <device D, typename T>
+    struct volatile_versioned_modifier : public versioned_modifier<D, T> {
         template<size_t Arg> static void load(functor* m){ 
             EXTRACT(o); load_(o);
         }
         static void load_(T& o){
             revision& c = *o.allocator_.after; if(c.valid()) return; // can it occur?
             revision& p = *o.allocator_.before;
-            if(!p.valid() || !p.locked_once() || p.referenced() || !c.spec.conserves<Device>(p.spec)){
-                c.embed(c.spec.malloc<Device>());
+            if(!p.valid() || !p.locked_once() || p.referenced() || !c.spec.conserves<D>(p.spec)){
+                c.embed(c.spec.malloc<D>());
             }else
                 c.reuse(p);
         }

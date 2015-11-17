@@ -314,6 +314,15 @@ namespace bind {
 
 #endif
 // }}}
+
+#ifndef BIND_MODEL_DEVICE
+#define BIND_MODEL_DEVICE
+
+namespace bind {
+    enum class device { cpu, gpu };
+}
+
+#endif
 // {{{ memory package
 
 #ifndef BIND_MEMORY_TYPES
@@ -777,7 +786,7 @@ namespace bind { namespace memory {
 
     class descriptor;
 
-    template<class Device>
+    template<device D>
     struct hub {
         static bool conserves(descriptor& c, descriptor& p){
             return (c.tmp || p.type == types::cpu::standard || c.type == types::cpu::bulk);
@@ -799,7 +808,7 @@ namespace bind { namespace memory {
     };
 
     struct descriptor {
-        template<class Device> friend struct hub;
+        template<device D> friend struct hub;
         descriptor(size_t e, types::id_type t = types::none) : extent(e), type(t), tmp(false) {}
 
         void free(void* ptr){
@@ -816,23 +825,23 @@ namespace bind { namespace memory {
             type = Memory::type;
             return Memory::malloc(extent);
         }
-        template<class Device>
+        template<device D>
         void* malloc(){
-            return hub<Device>::malloc(*this);
+            return hub<D>::malloc(*this);
         }
-        template<class Device>
+        template<device D>
         void* calloc(){
-            void* m = hub<Device>::malloc(*this);
-            hub<Device>::memset(*this, m);
+            void* m = hub<D>::malloc(*this);
+            hub<D>::memset(*this, m);
             return m;
         }
-        template<class Device>
+        template<device D>
         void memcpy(void* dst, void* src, descriptor& src_desc){
-            hub<Device>::memcpy(*this, dst, src_desc, src);
+            hub<D>::memcpy(*this, dst, src_desc, src);
         }
-        template<class Device>
+        template<device D>
         bool conserves(descriptor& p){
-            return hub<Device>::conserves(*this, p);
+            return hub<D>::conserves(*this, p);
         }
         void reuse(descriptor& d){
             type = d.type;
@@ -1688,7 +1697,7 @@ namespace bind { namespace core {
         bool queue (functor* f);
         bool update(revision& r);
 
-        template<class Device, locality L, typename T> void sync(T* o);
+        template<locality L, device D, typename T> void sync(T* o);
         template<typename T> void collect(T* o);
         void squeeze(revision* r) const;
 
@@ -1846,7 +1855,7 @@ namespace bind { namespace transport {
     using model::revision;
     using model::any;
 
-    template<class Device, locality L = locality::common>
+    template<device D, locality L = locality::common>
     struct hub {
         static void sync(revision* r){
             if(bind::nodes::size() == 1) return; // serial
@@ -1856,8 +1865,8 @@ namespace bind { namespace transport {
         }
     };
 
-    template<class Device>
-    struct hub<Device, locality::local> {
+    template<device D>
+    struct hub<D, locality::local> {
         static void sync(revision* r){
             if(model::common(r)) return;
             if(!model::local(r)) core::get<revision>::spawn(*r);
@@ -1868,8 +1877,8 @@ namespace bind { namespace transport {
         }
     };
 
-    template<class Device>
-    struct hub<Device, locality::remote> {
+    template<device D>
+    struct hub<D, locality::remote> {
         static void sync(revision* r){
             if(r->owner == bind::nodes::which_() || model::common(r)) return;
             if(model::local(r)) core::set<revision>::spawn(*r);
@@ -1958,9 +1967,9 @@ namespace bind { namespace core {
         return false;
     }
 
-    template<class Device, locality L, typename T>
+    template<locality L, device D, typename T>
     inline void controller::sync(T* o){
-        transport::hub<Device, L>::sync(o);
+        transport::hub<D,L>::sync(o);
     }
 
     template<typename T> void controller::collect(T* o){
@@ -2159,19 +2168,6 @@ namespace bind {
 // }}}
 // {{{ interface package (requires :model :transport :core)
 
-#ifndef BIND_INTERFACE_DEVICES
-#define BIND_INTERFACE_DEVICES
-
-namespace bind { namespace devices {
-
-    class cpu;
-    class gpu;
-
-} }
-
-#endif
-
-
 #ifndef BIND_INTERFACE_SHORTCUTS
 #define BIND_INTERFACE_SHORTCUTS
 
@@ -2285,14 +2281,14 @@ namespace bind {
         }
         template<size_t Arg> static void apply_remote(T& o){
             o.resit();
-            bind::select().sync<devices::cpu, locality::remote>(o.impl);
+            bind::select().sync<locality::remote, device::cpu>(o.impl);
         }
         template<size_t Arg> static void apply_local(T& o, functor* m){
             if(o.impl->generator != m){
                 o.resit();
                 o.impl->generator = m;
             }
-            bind::select().sync<devices::cpu, locality::local>(o.impl);
+            bind::select().sync<locality::local, device::cpu>(o.impl);
             m->arguments[Arg] = memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy(m->arguments[Arg], &o, sizeof(T)); 
         }
         template<size_t Arg> static void apply_common(T& o, functor* m){
@@ -2333,11 +2329,11 @@ namespace bind {
 
 namespace bind {
     using model::functor;
-    template <class Device, typename T> struct modifier;
+    template <device D, typename T> struct modifier;
 
-    template <class Device, typename T>
+    template <device D, typename T>
     struct iterator_modifier : public singular_modifier<T> {
-        typedef typename modifier<Device, typename T::container_type>::type type;
+        typedef typename modifier<D, typename T::container_type>::type type;
         typedef typename T::container_type container_type;
 
         template<size_t Arg> 
@@ -2387,7 +2383,7 @@ namespace bind {
     using model::functor;
     using model::revision;
 
-    template <class Device, typename T>
+    template <device D, typename T>
     struct versioned_modifier : public singular_modifier<T> {
         template<size_t Arg> 
         static void deallocate(functor* m){
@@ -2419,7 +2415,7 @@ namespace bind {
             bind::select().touch(o, bind::rank());
             T* var = (T*)memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy((void*)var, &obj, sizeof(T)); 
             m->arguments[Arg] = (void*)var;
-            bind::select().sync<Device, L>(o->current);
+            bind::select().sync<L,D>(o->current);
             bind::select().use_revision(o);
 
             var->allocator_.before = o->current;
@@ -2434,7 +2430,7 @@ namespace bind {
         static void apply_remote(T& obj){
             auto o = obj.allocator_.desc;
             bind::select().touch(o, bind::rank());
-            bind::select().sync<Device, locality::remote>(o->current);
+            bind::select().sync<locality::remote,D>(o->current);
             bind::select().collect(o->current);
             bind::select().add_revision<locality::remote>(o, NULL, bind::nodes::which_()); 
         }
@@ -2463,18 +2459,18 @@ namespace bind {
             revision& c = *o.allocator_.after; if(c.valid()) return;
             revision& p = *o.allocator_.before;
             if(!p.valid()){
-                c.embed(c.spec.calloc<Device>());
-            }else if(!p.locked_once() || p.referenced() || !c.spec.conserves<Device>(p.spec)){
-                c.embed(c.spec.malloc<Device>());
-                c.spec.memcpy<Device>(c.data, p.data, p.spec);
+                c.embed(c.spec.calloc<D>());
+            }else if(!p.locked_once() || p.referenced() || !c.spec.conserves<D>(p.spec)){
+                c.embed(c.spec.malloc<D>());
+                c.spec.memcpy<D>(c.data, p.data, p.spec);
             }else
                 c.reuse(p);
         }
         static constexpr bool ReferenceOnly = true;
     };
     // {{{ compile-time type modifier: const/volatile cases of the versioned types
-    template <class Device, typename T>
-    struct const_versioned_modifier : public versioned_modifier<Device, T> {
+    template <device D, typename T>
+    struct const_versioned_modifier : public versioned_modifier<D, T> {
         template<size_t Arg>
         static void deallocate(functor* m){
             EXTRACT(o); deallocate_(o);
@@ -2490,20 +2486,20 @@ namespace bind {
         }
         static void load_(T& o){
             revision& c = *o.allocator_.before;
-            if(!c.valid()) c.embed(c.spec.calloc<Device>());
+            if(!c.valid()) c.embed(c.spec.calloc<D>());
         }
         template<locality L, size_t Arg> static void apply_(T& obj, functor* m){
             auto o = obj.allocator_.desc;
             bind::select().touch(o, bind::rank());
             T* var = (T*)memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy((void*)var, &obj, sizeof(T)); m->arguments[Arg] = (void*)var;
-            bind::select().sync<Device, L>(o->current);
+            bind::select().sync<L,D>(o->current);
             bind::select().use_revision(o);
             var->allocator_.before = var->allocator_.after = o->current;
         }
         template<size_t Arg> static void apply_remote(T& obj){
             auto o = obj.allocator_.desc;
             bind::select().touch(o, bind::rank());
-            bind::select().sync<Device, locality::remote>(o->current);
+            bind::select().sync<locality::remote,D>(o->current);
         }
         template<size_t Arg> static void apply_local(T& obj, functor* m){
             apply_<locality::local, Arg>(obj, m);
@@ -2512,16 +2508,16 @@ namespace bind {
             apply_<locality::common, Arg>(obj, m);
         }
     };
-    template <class Device, typename T>
-    struct volatile_versioned_modifier : public versioned_modifier<Device, T> {
+    template <device D, typename T>
+    struct volatile_versioned_modifier : public versioned_modifier<D, T> {
         template<size_t Arg> static void load(functor* m){ 
             EXTRACT(o); load_(o);
         }
         static void load_(T& o){
             revision& c = *o.allocator_.after; if(c.valid()) return; // can it occur?
             revision& p = *o.allocator_.before;
-            if(!p.valid() || !p.locked_once() || p.referenced() || !c.spec.conserves<Device>(p.spec)){
-                c.embed(c.spec.malloc<Device>());
+            if(!p.valid() || !p.locked_once() || p.referenced() || !c.spec.conserves<D>(p.spec)){
+                c.embed(c.spec.malloc<D>());
             }else
                 c.reuse(p);
         }
@@ -2575,39 +2571,39 @@ namespace bind {
             template <typename> static void test(...);
             enum { value = !std::is_void<decltype(test<T>(0))>::value };
         };
-        template <bool Versioned, class Device, typename T> struct get_modifier { typedef singular_modifier<T, compact<T>()> type; };
-        template<class Device, typename T> struct get_modifier<true, Device, T> { typedef versioned_modifier<Device, T> type; };
+        template <bool Versioned, device D, typename T> struct get_modifier { typedef singular_modifier<T, compact<T>()> type; };
+        template<device D, typename T> struct get_modifier<true, D, T> { typedef versioned_modifier<D, T> type; };
 
-        template <bool Versioned, class Device, typename T> struct const_get_modifier { typedef singular_modifier<const T, compact<T>()> type; };
-        template<class Device, typename T> struct const_get_modifier<true, Device, T> { typedef const_versioned_modifier<Device, const T> type; };
+        template <bool Versioned, device D, typename T> struct const_get_modifier { typedef singular_modifier<const T, compact<T>()> type; };
+        template<device D, typename T> struct const_get_modifier<true, D, T> { typedef const_versioned_modifier<D, const T> type; };
 
-        template <bool Versioned, class Device, typename T> struct volatile_get_modifier { typedef singular_modifier<volatile T, compact<T>()> type; };
-        template<class Device, typename T> struct volatile_get_modifier<true, Device, T> { typedef volatile_versioned_modifier<Device, volatile T> type; };
+        template <bool Versioned, device D, typename T> struct volatile_get_modifier { typedef singular_modifier<volatile T, compact<T>()> type; };
+        template<device D, typename T> struct volatile_get_modifier<true, D, T> { typedef volatile_versioned_modifier<D, volatile T> type; };
     }
 
     template <typename T> class proxy_iterator;
     template <typename T> class shared_ptr;
 
-    template <class Device, typename T> struct modifier {
-        typedef typename detail::get_modifier<detail::has_versioning<T>::value, Device, T>::type type;
+    template <device D, typename T> struct modifier {
+        typedef typename detail::get_modifier<detail::has_versioning<T>::value, D, T>::type type;
     };
-    template <class Device, typename T> struct modifier<Device, const T> {
-        typedef typename detail::const_get_modifier<detail::has_versioning<T>::value, Device, T>::type type;
+    template <device D, typename T> struct modifier<D, const T> {
+        typedef typename detail::const_get_modifier<detail::has_versioning<T>::value, D, T>::type type;
     };
-    template <class Device, typename T> struct modifier<Device, volatile T> {
-        typedef typename detail::volatile_get_modifier<detail::has_versioning<T>::value, Device, T>::type type;
+    template <device D, typename T> struct modifier<D, volatile T> {
+        typedef typename detail::volatile_get_modifier<detail::has_versioning<T>::value, D, T>::type type;
     };
-    template <class Device, typename S> struct modifier<Device, shared_ptr<S> > {
+    template <device D, typename S> struct modifier<D, shared_ptr<S> > {
         typedef shared_ptr_modifier< shared_ptr<S> > type; 
     };
-    template <class Device, typename S> struct modifier<Device, const shared_ptr<S> > {
+    template <device D, typename S> struct modifier<D, const shared_ptr<S> > {
         typedef const_shared_ptr_modifier< const shared_ptr<S> > type; 
     };
-    template <class Device, typename S> struct modifier<Device, volatile shared_ptr<S> > {
+    template <device D, typename S> struct modifier<D, volatile shared_ptr<S> > {
         typedef volatile_shared_ptr_modifier< volatile shared_ptr<S> > type; 
     };
-    template <class Device, typename S> struct modifier<Device, proxy_iterator<S> > {
-        typedef iterator_modifier<Device, proxy_iterator<S> > type;
+    template <device D, typename S> struct modifier<D, proxy_iterator<S> > {
+        typedef iterator_modifier<D, proxy_iterator<S> > type;
     };
 }
 
@@ -2655,95 +2651,95 @@ namespace bind {
 namespace bind {
     using model::functor;
 
-    template<class Device, typename T>
+    template<device D, typename T>
     struct check_if_not_reference {
         template<bool C, typename F>  struct fail_if_true { typedef F type; };
         template<typename F> struct fail_if_true<true, F> { };
-        typedef typename fail_if_true<modifier<Device, T>::type::ReferenceOnly, T>::type type; // T can be passed only by reference
+        typedef typename fail_if_true<modifier<D, T>::type::ReferenceOnly, T>::type type; // T can be passed only by reference
     };
  
-    template<class Device, typename T>
-    struct check_if_not_reference<Device, T&> {
+    template<device D, typename T>
+    struct check_if_not_reference<D, T&> {
         typedef T type;
     };
 
-    template <class Device, typename T>
+    template <device D, typename T>
     using checked_remove_reference = typename std::remove_reference<
-                                         typename check_if_not_reference< Device, T >::type 
+                                         typename check_if_not_reference< D, T >::type 
                                      >::type;
 
-    template<class Device, int N> void expand_modify_remote(){}
-    template<class Device, int N> void expand_modify_local(functor* o){}
-    template<class Device, int N> void expand_modify_common(functor* o){}
-    template<class Device, int N> bool expand_pin(functor* o){ return false; }
-    template<class Device, int N> void expand_load(functor* o){ }
-    template<class Device, int N> void expand_deallocate(functor* o){ }
-    template<class Device, int N> bool expand_ready(functor* o){ return true; }
+    template<device D, int N> void expand_modify_remote(){}
+    template<device D, int N> void expand_modify_local(functor* o){}
+    template<device D, int N> void expand_modify_common(functor* o){}
+    template<device D, int N> bool expand_pin(functor* o){ return false; }
+    template<device D, int N> void expand_load(functor* o){ }
+    template<device D, int N> void expand_deallocate(functor* o){ }
+    template<device D, int N> bool expand_ready(functor* o){ return true; }
 
-    template<class Device, int N, typename T, typename... TF>
+    template<device D, int N, typename T, typename... TF>
     void expand_modify_remote(T& arg, TF&... other){
-        modifier<Device, T>::type::template apply_remote<N>(arg);
-        expand_modify_remote<Device, N+1>(other...);
+        modifier<D, T>::type::template apply_remote<N>(arg);
+        expand_modify_remote<D, N+1>(other...);
     }
-    template<class Device, int N, typename T, typename... TF>
+    template<device D, int N, typename T, typename... TF>
     void expand_modify_local(functor* o, T& arg, TF&... other){
-        modifier<Device, T>::type::template apply_local<N>(arg, o);
-        expand_modify_local<Device, N+1>(o, other...);
+        modifier<D, T>::type::template apply_local<N>(arg, o);
+        expand_modify_local<D, N+1>(o, other...);
     }
-    template<class Device, int N, typename T, typename... TF>
+    template<device D, int N, typename T, typename... TF>
     void expand_modify_common(functor* o, T& arg, TF&... other){
-        modifier<Device, T>::type::template apply_common<N>(arg, o);
-        expand_modify_common<Device, N+1>(o, other...);
+        modifier<D, T>::type::template apply_common<N>(arg, o);
+        expand_modify_common<D, N+1>(o, other...);
     }
-    template<class Device, int N, typename T, typename... TF>
+    template<device D, int N, typename T, typename... TF>
     bool expand_pin(functor* o){
-        return modifier<Device, checked_remove_reference<Device, T> >::type::template pin<N>(o) ||
-               expand_pin<Device, N+1, TF...>(o);
+        return modifier<D, checked_remove_reference<D, T> >::type::template pin<N>(o) ||
+               expand_pin<D, N+1, TF...>(o);
     }
-    template<class Device, int N, typename T, typename... TF>
+    template<device D, int N, typename T, typename... TF>
     void expand_load(functor* o){
-        modifier<Device, checked_remove_reference<Device, T> >::type::template load<N>(o);
-        expand_load<Device, N+1, TF...>(o);
+        modifier<D, checked_remove_reference<D, T> >::type::template load<N>(o);
+        expand_load<D, N+1, TF...>(o);
     }
-    template<class Device, int N, typename T, typename... TF>
+    template<device D, int N, typename T, typename... TF>
     void expand_deallocate(functor* o){
-        modifier<Device, checked_remove_reference<Device, T> >::type::template deallocate<N>(o);
-        expand_deallocate<Device, N+1, TF...>(o);
+        modifier<D, checked_remove_reference<D, T> >::type::template deallocate<N>(o);
+        expand_deallocate<D, N+1, TF...>(o);
     }
-    template<class Device, int N, typename T, typename... TF>
+    template<device D, int N, typename T, typename... TF>
     bool expand_ready(functor* o){
-        return modifier<Device, checked_remove_reference<Device, T> >::type::template ready<N>(o) &&
-               expand_ready<Device, N+1, TF...>(o);
+        return modifier<D, checked_remove_reference<D, T> >::type::template ready<N>(o) &&
+               expand_ready<D, N+1, TF...>(o);
     }
 
-    template<class Device, typename FP, FP fp>
+    template<device D, typename FP, FP fp>
     struct kernel_inliner {};
 
-    template<class Device, typename... TF , void(*fp)( TF... )>
-    struct kernel_inliner<Device, void(*)( TF... ), fp> {
+    template<device D, typename... TF , void(*fp)( TF... )>
+    struct kernel_inliner<D, void(*)( TF... ), fp> {
         static const int arity = sizeof...(TF);
 
         static inline void latch(functor* o, TF&... args){
             #ifndef BIND_TRANSPORT_NOP
-            if(bind::select().get_node().remote())   { expand_modify_remote<Device, 0>(args...); return; }
-            else if(bind::select().get_node().local()) expand_modify_local<Device, 0>(o, args...);
+            if(bind::select().get_node().remote())   { expand_modify_remote<D, 0>(args...); return; }
+            else if(bind::select().get_node().local()) expand_modify_local<D, 0>(o, args...);
             else
             #endif
-            expand_modify_common<Device, 0>(o, args...);
-            expand_pin<Device, 0, TF...>(o) || bind::select().queue(o);
+            expand_modify_common<D, 0>(o, args...);
+            expand_pin<D, 0, TF...>(o) || bind::select().queue(o);
         }
         static inline void cleanup(functor* o){
-            expand_deallocate<Device, 0, TF...>(o);
+            expand_deallocate<D, 0, TF...>(o);
         }
         static inline bool ready(functor* o){
-            return expand_ready<Device, 0, TF...>(o);
+            return expand_ready<D, 0, TF...>(o);
         }
         template<size_t...I>
         static void expand_invoke(index_sequence<I...>, functor* o){
-            (*fp)(modifier<Device, checked_remove_reference<Device, TF> >::type::template forward<I>(o)...);
+            (*fp)(modifier<D, checked_remove_reference<D, TF> >::type::template forward<I>(o)...);
         }
         static inline void invoke(functor* o){
-            expand_load<Device, 0, TF...>(o);
+            expand_load<D, 0, TF...>(o);
             expand_invoke(make_index_sequence<sizeof...(TF)>(), o);
         }
     };
@@ -2760,10 +2756,10 @@ namespace bind {
 
     using model::functor;
 
-    template<typename Device, class K>
+    template<device D, class K>
     class kernel : public functor {
     public:
-        #define inliner kernel_inliner<Device, typename K::ftype, K::c>
+        #define inliner kernel_inliner<D, typename K::ftype, K::c>
         inline void operator delete (void* ptr){ }
         inline void* operator new (size_t size){
             return memory::cpu::instr_bulk::malloc<sizeof(K)+sizeof(void*)*inliner::arity>();
@@ -2794,8 +2790,8 @@ namespace bind {
 
 namespace bind {
 
-    template<class Device, typename F, typename... T>
-    struct lambda_kernel : public kernel<Device, lambda_kernel<Device, F, T...> > {
+    template<device D, typename F, typename... T>
+    struct lambda_kernel : public kernel<D, lambda_kernel<D, F, T...> > {
         typedef void(*ftype)(T..., F&);
         static void fw(T... args, F& func){ func(args...); }
         static constexpr ftype c = &fw;
@@ -2808,8 +2804,8 @@ namespace bind {
     struct function_traits<ReturnType(ClassType::*)(Args...) const> {
         typedef ReturnType (*pointer)(Args...);
         typedef const std::function<ReturnType(Args...)> function;
-        template<class Device>
-        using kernel_type = lambda_kernel<Device, const std::function<ReturnType(Args...)>, Args... >;
+        template<device D>
+        using kernel_type = lambda_kernel<D, const std::function<ReturnType(Args...)>, Args... >;
     };
 
     template <typename Function>
@@ -2817,23 +2813,23 @@ namespace bind {
         return static_cast<typename function_traits<Function>::function>(lambda);
     }
 
-    template <class Device, class L>
+    template <device D, class L>
     struct overload_lambda : L {
         overload_lambda(L l) : L(l) {}
         template <typename... T>
         void operator()(T&& ... values){
-            function_traits<L>::template kernel_type<Device>::spawn(std::forward<T>(values)... , to_function(*(L*)this));
+            function_traits<L>::template kernel_type<D>::spawn(std::forward<T>(values)... , to_function(*(L*)this));
         }
     };
 
-    template <class Device, class L>
-    overload_lambda<Device, L> lambda(L l){
-        return overload_lambda<Device, L>(l);
+    template <device D, class L>
+    overload_lambda<D, L> lambda(L l){
+        return overload_lambda<D, L>(l);
     }
 
     template <class L, class... Args>
     void cpu(L l, Args&& ... args){
-        lambda<devices::cpu>(l)(std::forward<Args>(args)...);
+        lambda<device::cpu>(l)(std::forward<Args>(args)...);
     }
 
     template <class... L, class R, class... Args>
@@ -2843,7 +2839,7 @@ namespace bind {
 
     template <class L, class... Args>
     void gpu(L l, Args&& ... args){
-        lambda<devices::gpu>(l)(std::forward<Args>(args)...);
+        lambda<device::gpu>(l)(std::forward<Args>(args)...);
     }
 
     template <class... L, class R, class... Args>

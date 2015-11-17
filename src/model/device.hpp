@@ -25,38 +25,11 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef BIND_INTERFACE_KERNEL
-#define BIND_INTERFACE_KERNEL
+#ifndef BIND_MODEL_DEVICE
+#define BIND_MODEL_DEVICE
 
 namespace bind {
-
-    using model::functor;
-
-    template<device D, class K>
-    class kernel : public functor {
-    public:
-        #define inliner kernel_inliner<D, typename K::ftype, K::c>
-        inline void operator delete (void* ptr){ }
-        inline void* operator new (size_t size){
-            return memory::cpu::instr_bulk::malloc<sizeof(K)+sizeof(void*)*inliner::arity>();
-        }
-        virtual bool ready() override { 
-            return inliner::ready(this);
-        }
-        virtual void invoke() override {
-            inliner::invoke(this);
-            inliner::cleanup(this);
-        }
-        template<size_t...I, typename... Args>
-        static void expand_spawn(index_sequence<I...>, Args&... args){
-            inliner::latch(new kernel(), args...);
-        }
-        template<typename... Args>
-        static inline void spawn(Args&& ... args){
-            expand_spawn(make_index_sequence<sizeof...(Args)>(), args...);
-        }
-        #undef inliner
-    };
+    enum class device { cpu, gpu };
 }
 
 #endif

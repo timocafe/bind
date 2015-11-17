@@ -25,15 +25,24 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef BIND_INTERFACE_DEVICES
-#define BIND_INTERFACE_DEVICES
+#ifndef BIND_TRANSPORT_CUDA_TRANSFER_H
+#define BIND_TRANSPORT_CUDA_TRANSFER_H
 
-namespace bind { namespace devices {
+namespace bind { namespace transport { namespace cuda {
+    using model::functor;
+    using model::revision;
 
-    class cpu;
-    class gpu;
+    template<device From, device To>
+    struct transfer : public functor, public memory::cpu::use_bulk_new<transfer<From, To> > {
+	static void spawn(revision* r, revision*& s);
+	transfer(revision& r, revision& s);
+	virtual void invoke() override;
+	virtual bool ready() override;
+    private:
+	revision& r;
+	revision& s;
+    };
 
-} }
+} } }
 
 #endif
-

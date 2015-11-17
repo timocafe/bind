@@ -99,9 +99,9 @@ namespace bind { namespace core {
         return false;
     }
 
-    template<class Device, locality L, typename T>
+    template<locality L, device D, typename T>
     inline void controller::sync(T* o){
-        transport::hub<Device, L>::sync(o);
+        transport::hub<D,L>::sync(o);
     }
 
     template<typename T> void controller::collect(T* o){

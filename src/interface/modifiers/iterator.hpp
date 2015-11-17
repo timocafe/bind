@@ -32,11 +32,11 @@
 
 namespace bind {
     using model::functor;
-    template <class Device, typename T> struct modifier;
+    template <device D, typename T> struct modifier;
 
-    template <class Device, typename T>
+    template <device D, typename T>
     struct iterator_modifier : public singular_modifier<T> {
-        typedef typename modifier<Device, typename T::container_type>::type type;
+        typedef typename modifier<D, typename T::container_type>::type type;
         typedef typename T::container_type container_type;
 
         template<size_t Arg> 

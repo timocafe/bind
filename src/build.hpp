@@ -80,6 +80,7 @@
 #include "utils/mutex.hpp"
 #include "utils/rank_t.hpp"
 // }}}
+#include "model/device.hpp"
 // {{{ memory package
 #include "memory/types.h"
 #include "memory/detail/factory.hpp"
@@ -139,7 +140,6 @@
 #include "core/node.hpp"
 // }}}
 // {{{ interface package (requires :model :transport :core)
-#include "interface/devices.hpp"
 #include "interface/shortcuts.hpp"
 #include "interface/modifiers/singular.hpp"
 #include "interface/modifiers/shared_ptr.hpp"

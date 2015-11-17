@@ -38,39 +38,39 @@ namespace bind {
             template <typename> static void test(...);
             enum { value = !std::is_void<decltype(test<T>(0))>::value };
         };
-        template <bool Versioned, class Device, typename T> struct get_modifier { typedef singular_modifier<T, compact<T>()> type; };
-        template<class Device, typename T> struct get_modifier<true, Device, T> { typedef versioned_modifier<Device, T> type; };
+        template <bool Versioned, device D, typename T> struct get_modifier { typedef singular_modifier<T, compact<T>()> type; };
+        template<device D, typename T> struct get_modifier<true, D, T> { typedef versioned_modifier<D, T> type; };
 
-        template <bool Versioned, class Device, typename T> struct const_get_modifier { typedef singular_modifier<const T, compact<T>()> type; };
-        template<class Device, typename T> struct const_get_modifier<true, Device, T> { typedef const_versioned_modifier<Device, const T> type; };
+        template <bool Versioned, device D, typename T> struct const_get_modifier { typedef singular_modifier<const T, compact<T>()> type; };
+        template<device D, typename T> struct const_get_modifier<true, D, T> { typedef const_versioned_modifier<D, const T> type; };
 
-        template <bool Versioned, class Device, typename T> struct volatile_get_modifier { typedef singular_modifier<volatile T, compact<T>()> type; };
-        template<class Device, typename T> struct volatile_get_modifier<true, Device, T> { typedef volatile_versioned_modifier<Device, volatile T> type; };
+        template <bool Versioned, device D, typename T> struct volatile_get_modifier { typedef singular_modifier<volatile T, compact<T>()> type; };
+        template<device D, typename T> struct volatile_get_modifier<true, D, T> { typedef volatile_versioned_modifier<D, volatile T> type; };
     }
 
     template <typename T> class proxy_iterator;
     template <typename T> class shared_ptr;
 
-    template <class Device, typename T> struct modifier {
-        typedef typename detail::get_modifier<detail::has_versioning<T>::value, Device, T>::type type;
+    template <device D, typename T> struct modifier {
+        typedef typename detail::get_modifier<detail::has_versioning<T>::value, D, T>::type type;
     };
-    template <class Device, typename T> struct modifier<Device, const T> {
-        typedef typename detail::const_get_modifier<detail::has_versioning<T>::value, Device, T>::type type;
+    template <device D, typename T> struct modifier<D, const T> {
+        typedef typename detail::const_get_modifier<detail::has_versioning<T>::value, D, T>::type type;
     };
-    template <class Device, typename T> struct modifier<Device, volatile T> {
-        typedef typename detail::volatile_get_modifier<detail::has_versioning<T>::value, Device, T>::type type;
+    template <device D, typename T> struct modifier<D, volatile T> {
+        typedef typename detail::volatile_get_modifier<detail::has_versioning<T>::value, D, T>::type type;
     };
-    template <class Device, typename S> struct modifier<Device, shared_ptr<S> > {
+    template <device D, typename S> struct modifier<D, shared_ptr<S> > {
         typedef shared_ptr_modifier< shared_ptr<S> > type; 
     };
-    template <class Device, typename S> struct modifier<Device, const shared_ptr<S> > {
+    template <device D, typename S> struct modifier<D, const shared_ptr<S> > {
         typedef const_shared_ptr_modifier< const shared_ptr<S> > type; 
     };
-    template <class Device, typename S> struct modifier<Device, volatile shared_ptr<S> > {
+    template <device D, typename S> struct modifier<D, volatile shared_ptr<S> > {
         typedef volatile_shared_ptr_modifier< volatile shared_ptr<S> > type; 
     };
-    template <class Device, typename S> struct modifier<Device, proxy_iterator<S> > {
-        typedef iterator_modifier<Device, proxy_iterator<S> > type;
+    template <device D, typename S> struct modifier<D, proxy_iterator<S> > {
+        typedef iterator_modifier<D, proxy_iterator<S> > type;
     };
 }
 
