@@ -25,59 +25,30 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef BIND_MEMORY_DESCRIPTOR
-#define BIND_MEMORY_DESCRIPTOR
+#ifndef BIND_MEMORY_HUB
+#define BIND_MEMORY_HUB
 
 namespace bind { namespace memory {
 
-    struct descriptor {
-        template<device D> friend struct hub;
-        descriptor(size_t e, types::id_type t = types::none) : extent(e), type(t), tmp(false) {}
-
-        void free(void* ptr){
-            if(!ptr) return;
-            switch(type){
-                case types::none: return;
-                case types::cpu::standard: cpu::standard::free(ptr); break;
-                default: return;
+    template<device D>
+    struct hub {
+        static bool conserves(descriptor& c, descriptor& p){
+            return (c.tmp || p.type == types::cpu::standard || c.type == types::cpu::bulk);
+        }
+        static void* malloc(descriptor& c){
+            if(c.tmp || c.type == types::cpu::bulk){
+                void* ptr = cpu::data_bulk::soft_malloc(c.extent);
+                if(ptr){ c.type = types::cpu::bulk; return ptr; }
             }
-            type = types::none;
+            c.type = types::cpu::standard;
+            return cpu::standard::malloc(c.extent);
         }
-        template<class Memory>
-        void* hard_malloc(){
-            type = Memory::type;
-            return Memory::malloc(extent);
+        static void memset(descriptor& desc, void* ptr){
+            std::memset(ptr, 0, desc.extent);
         }
-        template<device D>
-        void* malloc(){
-            return hub<D>::malloc(*this);
+        static void memcpy(descriptor& dst_desc, void* dst, descriptor& src_desc, void* src){
+            std::memcpy(dst, src, src_desc.extent);
         }
-        template<device D>
-        void* calloc(){
-            void* m = hub<D>::malloc(*this);
-            hub<D>::memset(*this, m);
-            return m;
-        }
-        template<device D>
-        void memcpy(void* dst, void* src, descriptor& src_desc){
-            hub<D>::memcpy(*this, dst, src_desc, src);
-        }
-        template<device D>
-        bool conserves(descriptor& p){
-            return hub<D>::conserves(*this, p);
-        }
-        void reuse(descriptor& d){
-            type = d.type;
-            d.type = types::none;
-        }
-        void temporary(bool t){
-            tmp = t;
-        }
-    public:
-        const size_t extent;
-    private:
-        types::id_type type;
-        bool tmp;
     };
 
 } }

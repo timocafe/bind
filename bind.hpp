@@ -834,6 +834,15 @@ namespace bind { namespace memory {
         bool tmp;
     };
 
+} }
+
+#endif
+
+#ifndef BIND_MEMORY_HUB
+#define BIND_MEMORY_HUB
+
+namespace bind { namespace memory {
+
     template<device D>
     struct hub {
         static bool conserves(descriptor& c, descriptor& p){

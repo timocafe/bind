@@ -100,6 +100,7 @@
     #endif
     // }}}
 #include "memory/descriptor.hpp"
+#include "memory/hub.hpp"
 // }}}
 // {{{ model package
 #include "model/locality.hpp"
