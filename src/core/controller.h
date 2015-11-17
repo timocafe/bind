@@ -49,6 +49,8 @@ namespace bind { namespace core {
 
         template<locality L, device D, typename T> void sync(T* o);
         template<typename T> void collect(T* o);
+        template<locality L, device D> void sync(revision*& c, revision*& s);
+        void collect(revision* c, revision*& s);
         void squeeze(revision* r) const;
 
         template<device D>

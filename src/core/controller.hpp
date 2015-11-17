@@ -108,6 +108,15 @@ namespace bind { namespace core {
         this->garbage.push_back(o);
     }
 
+    template<locality L, device D>
+    inline void controller::sync(revision*& c, revision*& s){
+        transport::hub<D, L>::sync(c, s);
+    }
+
+    void controller::collect(revision* c, revision*& s){
+        collect(c); if(s){ collect(s); s = NULL; }
+    }
+
     inline void controller::squeeze(revision* r) const {
         this->garbage.squeeze(r);
     }

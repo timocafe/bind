@@ -51,6 +51,37 @@ namespace bind { namespace memory {
         }
     };
 
+    #ifdef CUDART_VERSION
+    template<>
+    struct hub<device::cpu> : public hub<device::any> {
+        static bool is_sibling(descriptor& c){
+            return c.type != types::gpu::standard;
+        }
+        static bool conserves(descriptor& c, descriptor& p){
+            if(!is_sibling(p)) return false;
+            return (c.tmp || p.type == types::cpu::standard || c.type == types::cpu::bulk);
+        }
+    };
+    template<>
+    struct hub<device::gpu> {
+        static bool is_sibling(descriptor& c){
+            return c.type == types::gpu::standard;
+        }
+        static bool conserves(descriptor& c, descriptor& p){
+            return is_sibling(p);
+        }
+        static void* malloc(descriptor& c){
+            c.type = types::gpu::standard;
+            return gpu::standard::malloc(c.extent);
+        }
+        static void memset(descriptor& desc, void* ptr){
+            cudaMemset(ptr, 0, desc.extent);
+        }
+        static void memcpy(descriptor& dst_desc, void* dst, descriptor& src_desc, void* src){
+            cudaMemcpy(dst, src, src_desc.extent, cudaMemcpyDeviceToDevice);
+        }
+    };
+    #endif
 } }
 
 #endif

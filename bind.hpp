@@ -793,6 +793,9 @@ namespace bind { namespace memory {
             switch(type){
                 case types::none: return;
                 case types::cpu::standard: cpu::standard::free(ptr); break;
+                #ifdef CUDART_VERSION
+                case types::gpu::standard: gpu::standard::free(ptr); break;
+                #endif
                 default: return;
             }
             type = types::none;
@@ -864,6 +867,37 @@ namespace bind { namespace memory {
         }
     };
 
+    #ifdef CUDART_VERSION
+    template<>
+    struct hub<device::cpu> : public hub<device::any> {
+        static bool is_sibling(descriptor& c){
+            return c.type != types::gpu::standard;
+        }
+        static bool conserves(descriptor& c, descriptor& p){
+            if(!is_sibling(p)) return false;
+            return (c.tmp || p.type == types::cpu::standard || c.type == types::cpu::bulk);
+        }
+    };
+    template<>
+    struct hub<device::gpu> {
+        static bool is_sibling(descriptor& c){
+            return c.type == types::gpu::standard;
+        }
+        static bool conserves(descriptor& c, descriptor& p){
+            return is_sibling(p);
+        }
+        static void* malloc(descriptor& c){
+            c.type = types::gpu::standard;
+            return gpu::standard::malloc(c.extent);
+        }
+        static void memset(descriptor& desc, void* ptr){
+            cudaMemset(ptr, 0, desc.extent);
+        }
+        static void memcpy(descriptor& dst_desc, void* dst, descriptor& src_desc, void* src){
+            cudaMemcpy(dst, src, src_desc.extent, cudaMemcpyDeviceToDevice);
+        }
+    };
+    #endif
 } }
 
 #endif
@@ -1000,7 +1034,7 @@ namespace bind { namespace model {
 
     class history : public memory::cpu::use_fixed_new<history> {
     public:
-        history(size_t size) : current(NULL), extent(memory::aligned_64(size)) { }
+        history(size_t size) : current(NULL), shadow(NULL), extent(memory::aligned_64(size)) { }
         template<device D>
         void init_state(rank_t owner){
             revision* r = new revision(extent, NULL, locality::common, D, owner);
@@ -1018,6 +1052,7 @@ namespace bind { namespace model {
             return (this->back() == NULL);
         }
         revision* current;
+        revision* shadow;
         size_t extent;
     };
 
@@ -1716,6 +1751,8 @@ namespace bind { namespace core {
 
         template<locality L, device D, typename T> void sync(T* o);
         template<typename T> void collect(T* o);
+        template<locality L, device D> void sync(revision*& c, revision*& s);
+        void collect(revision* c, revision*& s);
         void squeeze(revision* r) const;
 
         template<device D>
@@ -1840,6 +1877,30 @@ namespace bind { namespace core {
 } }
 
 #endif
+#ifdef CUDART_VERSION
+
+#ifndef BIND_TRANSPORT_CUDA_TRANSFER_H
+#define BIND_TRANSPORT_CUDA_TRANSFER_H
+
+namespace bind { namespace transport { namespace cuda {
+    using model::functor;
+    using model::revision;
+
+    template<device From, device To>
+    struct transfer : public functor, public memory::cpu::use_bulk_new<transfer<From, To> > {
+	static void spawn(revision* r, revision*& s);
+	transfer(revision& r, revision& s);
+	virtual void invoke() override;
+	virtual bool ready() override;
+    private:
+	revision& r;
+	revision& s;
+    };
+
+} } }
+
+#endif
+#endif
 
 #ifndef BIND_CORE_HUB_HPP
 #define BIND_CORE_HUB_HPP
@@ -1867,7 +1928,6 @@ namespace bind { namespace nodes {
     }
 } }
 
-
 namespace bind { namespace transport {
 
     using model::revision;
@@ -1875,7 +1935,7 @@ namespace bind { namespace transport {
 
     template<device D, locality L = locality::common>
     struct hub {
-        static void sync(revision* r){
+        static void sync(revision*& r, revision*& s){
             if(bind::nodes::size() == 1) return; // serial
             if(model::common(r)) return;
             if(model::local(r)) core::set<revision>::spawn(*r);
@@ -1885,7 +1945,7 @@ namespace bind { namespace transport {
 
     template<device D>
     struct hub<D, locality::local> {
-        static void sync(revision* r){
+        static void sync(revision*& r, revision*& s){
             if(model::common(r)) return;
             if(!model::local(r)) core::get<revision>::spawn(*r);
         }
@@ -1897,7 +1957,7 @@ namespace bind { namespace transport {
 
     template<device D>
     struct hub<D, locality::remote> {
-        static void sync(revision* r){
+        static void sync(revision*& r, revision*& s){
             if(r->owner == bind::nodes::which_() || model::common(r)) return;
             if(model::local(r)) core::set<revision>::spawn(*r);
             else core::get<revision>::spawn(*r); // assist
@@ -1907,6 +1967,29 @@ namespace bind { namespace transport {
         }
     };
 
+    #ifdef CUDART_VERSION
+    // if(r->owner != bind::nodes::which_() && model::local(r)) I will transfer
+    template<locality L>
+    struct hub<device::cpu, L> : public hub<device::any, L> {
+        static void sync(revision*& r, revision*& s){
+            if(model::gpu(r)){
+                if(!s) cuda::transfer<device::gpu, device::cpu>::spawn(r, s); 
+                std::swap(r, s);
+            }
+            hub<device::any, L>::sync(r, s);
+        }
+    };
+
+    template<locality L>
+    struct hub<device::gpu, L> : public hub<device::any, L> {
+        static void sync(revision*& r, revision*& s){
+            if(model::cpu(r) && L != locality::remote){
+                if(!s) cuda::transfer<device::cpu, device::gpu>::spawn(r, s);
+                std::swap(r, s);
+            }
+        }
+    };
+    #endif
 } }
 
 #endif
@@ -1992,6 +2075,15 @@ namespace bind { namespace core {
 
     template<typename T> void controller::collect(T* o){
         this->garbage.push_back(o);
+    }
+
+    template<locality L, device D>
+    inline void controller::sync(revision*& c, revision*& s){
+        transport::hub<D, L>::sync(c, s);
+    }
+
+    void controller::collect(revision* c, revision*& s){
+        collect(c); if(s){ collect(s); s = NULL; }
     }
 
     inline void controller::squeeze(revision* r) const {
@@ -2137,6 +2229,66 @@ namespace bind { namespace core {
 
 } }
 
+#endif
+#ifdef CUDART_VERSION
+
+#ifndef BIND_TRANSPORT_CUDA_TRANSFER_HPP
+#define BIND_TRANSPORT_CUDA_TRANSFER_HPP
+
+namespace bind { namespace transport { namespace cuda {
+
+    namespace detail {
+        template<device From, device To>
+        struct transfer_impl {};
+        
+        template<>
+        struct transfer_impl<device::cpu, device::gpu> {
+            using memory_type = memory::gpu::standard;
+            static void invoke(void* dst, void* src, size_t sz){
+                cudaMemcpy(dst, src, sz, cudaMemcpyHostToDevice);
+            }
+        };
+        
+        template<>
+        struct transfer_impl<device::gpu, device::cpu> {
+            using memory_type = memory::cpu::standard;
+            static void invoke(void* dst, void* src, size_t sz){
+                cudaMemcpy(dst, src, sz, cudaMemcpyDeviceToHost);
+            }
+        };
+    }
+
+    template<device From, device To>
+    void transfer<From, To>::spawn(revision* r, revision*& s){
+        s = new revision(r->spec.extent, NULL, r->state, To, r->owner);
+        s->generator = new transfer(*r, *s);
+    }
+
+    template<device From, device To>
+    transfer<From, To>::transfer(revision& r, revision& s) : r(r), s(s) {
+        r.use(); s.use();
+        s.embed(s.spec.hard_malloc<typename detail::transfer_impl<From, To>::memory_type>());
+        if(r.generator != NULL) (r.generator.load())->queue(this);
+        else bind::select().queue(this);
+    }
+
+    template<device From, device To>
+    void transfer<From, To>::invoke(){
+        detail::transfer_impl<From, To>::invoke(s.data, r.data, r.spec.extent);
+
+        bind::select().squeeze(&r); r.release();
+        bind::select().squeeze(&s); s.release();
+        s.complete();
+    }
+
+    template<device From, device To>
+    bool transfer<From, To>::ready(){
+        return (r.generator == NULL);
+    }
+
+} } }
+
+#endif
 #endif
 
 #ifndef BIND_CORE_NODE_HPP
@@ -2434,12 +2586,13 @@ namespace bind {
             bind::select().touch<D>(o, bind::rank());
             T* var = (T*)memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy((void*)var, &obj, sizeof(T)); 
             m->arguments[Arg] = (void*)var;
-            bind::select().sync<L,D>(o->current);
+            if(o->current->generator != m)
+                bind::select().sync<L,D>(o->current, o->shadow);
             bind::select().use_revision(o);
 
             var->allocator_.before = o->current;
             if(o->current->generator != m){
-                bind::select().collect(o->current);
+                bind::select().collect(o->current, o->shadow);
                 bind::select().add_revision<L, D>(o, m, bind::rank());
             }
             bind::select().use_revision(o);
@@ -2449,8 +2602,8 @@ namespace bind {
         static void apply_remote(T& obj){
             auto o = obj.allocator_.desc;
             bind::select().touch<D>(o, bind::rank());
-            bind::select().sync<locality::remote, D>(o->current);
-            bind::select().collect(o->current);
+            bind::select().sync<locality::remote, D>(o->current, o->shadow);
+            bind::select().collect(o->current, o->shadow);
             bind::select().add_revision<locality::remote, D>(o, NULL, bind::nodes::which_()); 
         }
         template<size_t Arg>
@@ -2511,14 +2664,15 @@ namespace bind {
             auto o = obj.allocator_.desc;
             bind::select().touch<D>(o, bind::rank());
             T* var = (T*)memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy((void*)var, &obj, sizeof(T)); m->arguments[Arg] = (void*)var;
-            bind::select().sync<L,D>(o->current);
+            if(o->current->generator != m)
+                bind::select().sync<L,D>(o->current, o->shadow);
             bind::select().use_revision(o);
             var->allocator_.before = var->allocator_.after = o->current;
         }
         template<size_t Arg> static void apply_remote(T& obj){
             auto o = obj.allocator_.desc;
             bind::select().touch<D>(o, bind::rank());
-            bind::select().sync<locality::remote,D>(o->current);
+            bind::select().sync<locality::remote,D>(o->current, o->shadow);
         }
         template<size_t Arg> static void apply_local(T& obj, functor* m){
             apply_<locality::local, Arg>(obj, m);
@@ -2548,7 +2702,7 @@ namespace bind {
 
             var->allocator_.before = o->current;
             if(o->current->generator != m){
-                bind::select().collect(o->current);
+                bind::select().collect(o->current, o->shadow);
                 bind::select().add_revision<L, D>(o, m, bind::rank()); 
             }
             bind::select().use_revision(o);
@@ -2557,7 +2711,7 @@ namespace bind {
         template<size_t Arg> static void apply_remote(T& obj){
             auto o = obj.allocator_.desc;
             bind::select().touch<D>(o, bind::rank());
-            bind::select().collect(o->current);
+            bind::select().collect(o->current, o->shadow);
             bind::select().add_revision<locality::remote, D>(o, NULL, bind::nodes::which_()); 
         }
         template<size_t Arg> static void apply_local(T& obj, functor* m){

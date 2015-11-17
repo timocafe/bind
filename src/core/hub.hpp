@@ -51,7 +51,6 @@ namespace bind { namespace nodes {
     }
 } }
 
-
 namespace bind { namespace transport {
 
     using model::revision;
@@ -59,7 +58,7 @@ namespace bind { namespace transport {
 
     template<device D, locality L = locality::common>
     struct hub {
-        static void sync(revision* r){
+        static void sync(revision*& r, revision*& s){
             if(bind::nodes::size() == 1) return; // serial
             if(model::common(r)) return;
             if(model::local(r)) core::set<revision>::spawn(*r);
@@ -69,7 +68,7 @@ namespace bind { namespace transport {
 
     template<device D>
     struct hub<D, locality::local> {
-        static void sync(revision* r){
+        static void sync(revision*& r, revision*& s){
             if(model::common(r)) return;
             if(!model::local(r)) core::get<revision>::spawn(*r);
         }
@@ -81,7 +80,7 @@ namespace bind { namespace transport {
 
     template<device D>
     struct hub<D, locality::remote> {
-        static void sync(revision* r){
+        static void sync(revision*& r, revision*& s){
             if(r->owner == bind::nodes::which_() || model::common(r)) return;
             if(model::local(r)) core::set<revision>::spawn(*r);
             else core::get<revision>::spawn(*r); // assist
@@ -91,6 +90,29 @@ namespace bind { namespace transport {
         }
     };
 
+    #ifdef CUDART_VERSION
+    // if(r->owner != bind::nodes::which_() && model::local(r)) I will transfer
+    template<locality L>
+    struct hub<device::cpu, L> : public hub<device::any, L> {
+        static void sync(revision*& r, revision*& s){
+            if(model::gpu(r)){
+                if(!s) cuda::transfer<device::gpu, device::cpu>::spawn(r, s); 
+                std::swap(r, s);
+            }
+            hub<device::any, L>::sync(r, s);
+        }
+    };
+
+    template<locality L>
+    struct hub<device::gpu, L> : public hub<device::any, L> {
+        static void sync(revision*& r, revision*& s){
+            if(model::cpu(r) && L != locality::remote){
+                if(!s) cuda::transfer<device::cpu, device::gpu>::spawn(r, s);
+                std::swap(r, s);
+            }
+        }
+    };
+    #endif
 } }
 
 #endif

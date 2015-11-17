@@ -39,6 +39,9 @@ namespace bind { namespace memory {
             switch(type){
                 case types::none: return;
                 case types::cpu::standard: cpu::standard::free(ptr); break;
+                #ifdef CUDART_VERSION
+                case types::gpu::standard: gpu::standard::free(ptr); break;
+                #endif
                 default: return;
             }
             type = types::none;

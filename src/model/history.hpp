@@ -33,7 +33,7 @@ namespace bind { namespace model {
 
     class history : public memory::cpu::use_fixed_new<history> {
     public:
-        history(size_t size) : current(NULL), extent(memory::aligned_64(size)) { }
+        history(size_t size) : current(NULL), shadow(NULL), extent(memory::aligned_64(size)) { }
         template<device D>
         void init_state(rank_t owner){
             revision* r = new revision(extent, NULL, locality::common, D, owner);
@@ -51,6 +51,7 @@ namespace bind { namespace model {
             return (this->back() == NULL);
         }
         revision* current;
+        revision* shadow;
         size_t extent;
     };
 

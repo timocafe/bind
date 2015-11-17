@@ -134,10 +134,16 @@
 #include "core/controller.h"
 #include "core/get.h"
 #include "core/set.h"
+#ifdef CUDART_VERSION
+#include "core/transfer.h"
+#endif
 #include "core/hub.hpp"
 #include "core/controller.hpp"
 #include "core/get.hpp"
 #include "core/set.hpp"
+#ifdef CUDART_VERSION
+#include "core/transfer.hpp"
+#endif
 #include "core/node.hpp"
 // }}}
 // {{{ interface package (requires :model :transport :core)
