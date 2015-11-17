@@ -66,12 +66,12 @@ namespace bind {
             bind::select().touch(o, bind::rank());
             T* var = (T*)memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy((void*)var, &obj, sizeof(T)); 
             m->arguments[Arg] = (void*)var;
-            bind::select().sync<Device, L>(o->back());
+            bind::select().sync<Device, L>(o->current);
             bind::select().use_revision(o);
 
             var->allocator_.before = o->current;
             if(o->current->generator != m){
-                bind::select().collect(o->back());
+                bind::select().collect(o->current);
                 bind::select().add_revision<L>(o, m, bind::rank());
             }
             bind::select().use_revision(o);
@@ -81,8 +81,8 @@ namespace bind {
         static void apply_remote(T& obj){
             auto o = obj.allocator_.desc;
             bind::select().touch(o, bind::rank());
-            bind::select().sync<Device, locality::remote>(o->back());
-            bind::select().collect(o->back());
+            bind::select().sync<Device, locality::remote>(o->current);
+            bind::select().collect(o->current);
             bind::select().add_revision<locality::remote>(o, NULL, bind::nodes::which_()); 
         }
         template<size_t Arg>
@@ -107,11 +107,9 @@ namespace bind {
             return false;
         }
         static void load_(T& o){ 
-            revision& c = *o.allocator_.after;
+            revision& c = *o.allocator_.after; if(c.valid()) return;
             revision& p = *o.allocator_.before;
-            if(c.valid()){
-                if(!c.spec.complies<Device>()) c.spec.memmove<Device>(c.data);
-            }else if(!p.valid()){
+            if(!p.valid()){
                 c.embed(c.spec.calloc<Device>());
             }else if(!p.locked_once() || p.referenced() || !c.spec.conserves<Device>(p.spec)){
                 c.embed(c.spec.malloc<Device>());
@@ -140,20 +138,19 @@ namespace bind {
         static void load_(T& o){
             revision& c = *o.allocator_.before;
             if(!c.valid()) c.embed(c.spec.calloc<Device>());
-            else if(!c.spec.complies<Device>()) c.spec.memmove<Device>(c.data);
         }
         template<locality L, size_t Arg> static void apply_(T& obj, functor* m){
             auto o = obj.allocator_.desc;
             bind::select().touch(o, bind::rank());
             T* var = (T*)memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy((void*)var, &obj, sizeof(T)); m->arguments[Arg] = (void*)var;
-            var->allocator_.before = var->allocator_.after = o->current;
-            bind::select().sync<Device, L>(o->back());
+            bind::select().sync<Device, L>(o->current);
             bind::select().use_revision(o);
+            var->allocator_.before = var->allocator_.after = o->current;
         }
         template<size_t Arg> static void apply_remote(T& obj){
             auto o = obj.allocator_.desc;
             bind::select().touch(o, bind::rank());
-            bind::select().sync<Device, locality::remote>(o->back());
+            bind::select().sync<Device, locality::remote>(o->current);
         }
         template<size_t Arg> static void apply_local(T& obj, functor* m){
             apply_<locality::local, Arg>(obj, m);
@@ -168,11 +165,9 @@ namespace bind {
             EXTRACT(o); load_(o);
         }
         static void load_(T& o){
-            revision& c = *o.allocator_.after;
+            revision& c = *o.allocator_.after; if(c.valid()) return; // can it occur?
             revision& p = *o.allocator_.before;
-            if(c.valid()){
-                if(!c.spec.complies<Device>()) c.spec.memmove<Device>(c.data); // does it occur?
-            }else if(!p.valid() || !p.locked_once() || p.referenced() || !c.spec.conserves<Device>(p.spec)){
+            if(!p.valid() || !p.locked_once() || p.referenced() || !c.spec.conserves<Device>(p.spec)){
                 c.embed(c.spec.malloc<Device>());
             }else
                 c.reuse(p);
@@ -185,7 +180,7 @@ namespace bind {
 
             var->allocator_.before = o->current;
             if(o->current->generator != m){
-                bind::select().collect(o->back());
+                bind::select().collect(o->current);
                 bind::select().add_revision<L>(o, m, bind::rank()); 
             }
             bind::select().use_revision(o);
@@ -194,7 +189,7 @@ namespace bind {
         template<size_t Arg> static void apply_remote(T& obj){
             auto o = obj.allocator_.desc;
             bind::select().touch(o, bind::rank());
-            bind::select().collect(o->back());
+            bind::select().collect(o->current);
             bind::select().add_revision<locality::remote>(o, NULL, bind::nodes::which_()); 
         }
         template<size_t Arg> static void apply_local(T& obj, functor* m){
@@ -204,7 +199,7 @@ namespace bind {
             apply_<locality::common, Arg>(obj, m);
         }
         template<size_t Arg> static bool pin(functor* m){ return false; }
-        template<size_t Arg> static bool ready(functor* m){ return true;  }
+        template<size_t Arg> static bool ready(functor* m){ return true; }
         static bool pin_(T&, functor*){ return false; }
         static bool ready_(T&, functor*){ return true; }
     };

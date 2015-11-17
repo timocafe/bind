@@ -782,9 +782,6 @@ namespace bind { namespace memory {
         static bool conserves(descriptor& c, descriptor& p){
             return (c.tmp || p.type == types::cpu::standard || c.type == types::cpu::bulk);
         }
-        static bool complies(descriptor& c){
-            return true;
-        }
         static void* malloc(descriptor& c){
             if(c.tmp || c.type == types::cpu::bulk){
                 void* ptr = cpu::data_bulk::soft_malloc(c.extent);
@@ -799,8 +796,6 @@ namespace bind { namespace memory {
         static void memcpy(descriptor& dst_desc, void* dst, descriptor& src_desc, void* src){
             std::memcpy(dst, src, src_desc.extent);
         }
-        static void memmove(descriptor& desc, void* ptr){
-        }
     };
 
     struct descriptor {
@@ -808,11 +803,13 @@ namespace bind { namespace memory {
         descriptor(size_t e, types::id_type t = types::none) : extent(e), type(t), tmp(false) {}
 
         void free(void* ptr){
-            if(ptr == NULL || type == types::none) return;
-            if(type == types::cpu::standard){
-                cpu::standard::free(ptr);
-                type = types::none;
+            if(!ptr) return;
+            switch(type){
+                case types::none: return;
+                case types::cpu::standard: cpu::standard::free(ptr); break;
+                default: return;
             }
+            type = types::none;
         }
         template<class Memory>
         void* hard_malloc(){
@@ -830,20 +827,12 @@ namespace bind { namespace memory {
             return m;
         }
         template<class Device>
-        void memmove(void* ptr){
-            hub<Device>::memmove(*this, ptr);
-        }
-        template<class Device>
         void memcpy(void* dst, void* src, descriptor& src_desc){
             hub<Device>::memcpy(*this, dst, src_desc, src);
         }
         template<class Device>
         bool conserves(descriptor& p){
             return hub<Device>::conserves(*this, p);
-        }
-        template<class Device>
-        bool complies(){
-            return hub<Device>::complies(*this);
         }
         void reuse(descriptor& d){
             type = d.type;
@@ -1825,6 +1814,58 @@ namespace bind { namespace core {
 
 #endif
 
+#ifndef BIND_CORE_HUB_HPP
+#define BIND_CORE_HUB_HPP
+
+namespace bind { namespace nodes {
+    inline size_t none(){
+        return select().nodes.size() == 1;
+    }
+} }
+
+namespace bind { namespace transport {
+
+    using model::revision;
+    using model::any;
+
+    template<class Device, locality L = locality::common>
+    struct hub {
+        static void sync(revision* r){
+            if(bind::nodes::none()) return; // serial
+            if(model::common(r)) return;
+            if(model::local(r)) core::set<revision>::spawn(*r);
+            else core::get<revision>::spawn(*r);
+        }
+    };
+
+    template<class Device>
+    struct hub<Device, locality::local> {
+        static void sync(revision* r){
+            if(model::common(r)) return;
+            if(!model::local(r)) core::get<revision>::spawn(*r);
+        }
+        static void sync(any* v){
+            if(bind::nodes::none()) return;
+            core::set<any>::spawn(*v);
+        }
+    };
+
+    template<class Device>
+    struct hub<Device, locality::remote> {
+        static void sync(revision* r){
+            if(r->owner == bind::nodes::which_() || model::common(r)) return;
+            if(model::local(r)) core::set<revision>::spawn(*r);
+            else core::get<revision>::spawn(*r); // assist
+        }
+        static void sync(any* v){
+            core::get<any>::spawn(*v);
+        }
+    };
+
+} }
+
+#endif
+
 #ifndef BIND_CORE_CONTROLLER_HPP
 #define BIND_CORE_CONTROLLER_HPP
 
@@ -1849,47 +1890,6 @@ namespace bind { namespace nodes {
         rank_t w = which_();
         return (w == select().get_num_procs() ? select().get_rank() : w);
     }
-} }
-
-namespace bind { namespace transport {
-
-    using model::revision;
-    using model::any;
-
-    template<class Device, locality L = locality::common>
-    struct hub {
-        static void sync(revision* r){
-            if(bind::nodes::size() == 1) return; // serial
-            if(model::common(r)) return;
-            if(model::local(r)) core::set<revision>::spawn(*r);
-            else core::get<revision>::spawn(*r);
-        }
-    };
-
-    template<class Device>
-    struct hub<Device, locality::local> {
-        static void sync(revision* r){
-            if(model::common(r)) return;
-            if(!model::local(r)) core::get<revision>::spawn(*r);
-        }
-        static void sync(any* v){
-            if(bind::nodes::size() == 1) return;
-            core::set<any>::spawn(*v);
-        }
-    };
-
-    template<class Device>
-    struct hub<Device, locality::remote> {
-        static void sync(revision* r){
-            if(r->owner == bind::nodes::which_() || model::common(r)) return;
-            if(model::local(r)) core::set<revision>::spawn(*r);
-            else core::get<revision>::spawn(*r); // assist
-        }
-        static void sync(any* v){
-            core::get<any>::spawn(*v);
-        }
-    };
-
 } }
 
 namespace bind { namespace core {
@@ -2424,12 +2424,12 @@ namespace bind {
             bind::select().touch(o, bind::rank());
             T* var = (T*)memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy((void*)var, &obj, sizeof(T)); 
             m->arguments[Arg] = (void*)var;
-            bind::select().sync<Device, L>(o->back());
+            bind::select().sync<Device, L>(o->current);
             bind::select().use_revision(o);
 
             var->allocator_.before = o->current;
             if(o->current->generator != m){
-                bind::select().collect(o->back());
+                bind::select().collect(o->current);
                 bind::select().add_revision<L>(o, m, bind::rank());
             }
             bind::select().use_revision(o);
@@ -2439,8 +2439,8 @@ namespace bind {
         static void apply_remote(T& obj){
             auto o = obj.allocator_.desc;
             bind::select().touch(o, bind::rank());
-            bind::select().sync<Device, locality::remote>(o->back());
-            bind::select().collect(o->back());
+            bind::select().sync<Device, locality::remote>(o->current);
+            bind::select().collect(o->current);
             bind::select().add_revision<locality::remote>(o, NULL, bind::nodes::which_()); 
         }
         template<size_t Arg>
@@ -2465,11 +2465,9 @@ namespace bind {
             return false;
         }
         static void load_(T& o){ 
-            revision& c = *o.allocator_.after;
+            revision& c = *o.allocator_.after; if(c.valid()) return;
             revision& p = *o.allocator_.before;
-            if(c.valid()){
-                if(!c.spec.complies<Device>()) c.spec.memmove<Device>(c.data);
-            }else if(!p.valid()){
+            if(!p.valid()){
                 c.embed(c.spec.calloc<Device>());
             }else if(!p.locked_once() || p.referenced() || !c.spec.conserves<Device>(p.spec)){
                 c.embed(c.spec.malloc<Device>());
@@ -2498,20 +2496,19 @@ namespace bind {
         static void load_(T& o){
             revision& c = *o.allocator_.before;
             if(!c.valid()) c.embed(c.spec.calloc<Device>());
-            else if(!c.spec.complies<Device>()) c.spec.memmove<Device>(c.data);
         }
         template<locality L, size_t Arg> static void apply_(T& obj, functor* m){
             auto o = obj.allocator_.desc;
             bind::select().touch(o, bind::rank());
             T* var = (T*)memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy((void*)var, &obj, sizeof(T)); m->arguments[Arg] = (void*)var;
-            var->allocator_.before = var->allocator_.after = o->current;
-            bind::select().sync<Device, L>(o->back());
+            bind::select().sync<Device, L>(o->current);
             bind::select().use_revision(o);
+            var->allocator_.before = var->allocator_.after = o->current;
         }
         template<size_t Arg> static void apply_remote(T& obj){
             auto o = obj.allocator_.desc;
             bind::select().touch(o, bind::rank());
-            bind::select().sync<Device, locality::remote>(o->back());
+            bind::select().sync<Device, locality::remote>(o->current);
         }
         template<size_t Arg> static void apply_local(T& obj, functor* m){
             apply_<locality::local, Arg>(obj, m);
@@ -2526,11 +2523,9 @@ namespace bind {
             EXTRACT(o); load_(o);
         }
         static void load_(T& o){
-            revision& c = *o.allocator_.after;
+            revision& c = *o.allocator_.after; if(c.valid()) return; // can it occur?
             revision& p = *o.allocator_.before;
-            if(c.valid()){
-                if(!c.spec.complies<Device>()) c.spec.memmove<Device>(c.data); // does it occur?
-            }else if(!p.valid() || !p.locked_once() || p.referenced() || !c.spec.conserves<Device>(p.spec)){
+            if(!p.valid() || !p.locked_once() || p.referenced() || !c.spec.conserves<Device>(p.spec)){
                 c.embed(c.spec.malloc<Device>());
             }else
                 c.reuse(p);
@@ -2543,7 +2538,7 @@ namespace bind {
 
             var->allocator_.before = o->current;
             if(o->current->generator != m){
-                bind::select().collect(o->back());
+                bind::select().collect(o->current);
                 bind::select().add_revision<L>(o, m, bind::rank()); 
             }
             bind::select().use_revision(o);
@@ -2552,7 +2547,7 @@ namespace bind {
         template<size_t Arg> static void apply_remote(T& obj){
             auto o = obj.allocator_.desc;
             bind::select().touch(o, bind::rank());
-            bind::select().collect(o->back());
+            bind::select().collect(o->current);
             bind::select().add_revision<locality::remote>(o, NULL, bind::nodes::which_()); 
         }
         template<size_t Arg> static void apply_local(T& obj, functor* m){
@@ -2562,7 +2557,7 @@ namespace bind {
             apply_<locality::common, Arg>(obj, m);
         }
         template<size_t Arg> static bool pin(functor* m){ return false; }
-        template<size_t Arg> static bool ready(functor* m){ return true;  }
+        template<size_t Arg> static bool ready(functor* m){ return true; }
         static bool pin_(T&, functor*){ return false; }
         static bool ready_(T&, functor*){ return true; }
     };

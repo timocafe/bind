@@ -37,9 +37,6 @@ namespace bind { namespace memory {
         static bool conserves(descriptor& c, descriptor& p){
             return (c.tmp || p.type == types::cpu::standard || c.type == types::cpu::bulk);
         }
-        static bool complies(descriptor& c){
-            return true;
-        }
         static void* malloc(descriptor& c){
             if(c.tmp || c.type == types::cpu::bulk){
                 void* ptr = cpu::data_bulk::soft_malloc(c.extent);
@@ -54,8 +51,6 @@ namespace bind { namespace memory {
         static void memcpy(descriptor& dst_desc, void* dst, descriptor& src_desc, void* src){
             std::memcpy(dst, src, src_desc.extent);
         }
-        static void memmove(descriptor& desc, void* ptr){
-        }
     };
 
     struct descriptor {
@@ -63,11 +58,13 @@ namespace bind { namespace memory {
         descriptor(size_t e, types::id_type t = types::none) : extent(e), type(t), tmp(false) {}
 
         void free(void* ptr){
-            if(ptr == NULL || type == types::none) return;
-            if(type == types::cpu::standard){
-                cpu::standard::free(ptr);
-                type = types::none;
+            if(!ptr) return;
+            switch(type){
+                case types::none: return;
+                case types::cpu::standard: cpu::standard::free(ptr); break;
+                default: return;
             }
+            type = types::none;
         }
         template<class Memory>
         void* hard_malloc(){
@@ -85,20 +82,12 @@ namespace bind { namespace memory {
             return m;
         }
         template<class Device>
-        void memmove(void* ptr){
-            hub<Device>::memmove(*this, ptr);
-        }
-        template<class Device>
         void memcpy(void* dst, void* src, descriptor& src_desc){
             hub<Device>::memcpy(*this, dst, src_desc, src);
         }
         template<class Device>
         bool conserves(descriptor& p){
             return hub<Device>::conserves(*this, p);
-        }
-        template<class Device>
-        bool complies(){
-            return hub<Device>::complies(*this);
         }
         void reuse(descriptor& d){
             type = d.type;

@@ -51,47 +51,6 @@ namespace bind { namespace nodes {
     }
 } }
 
-namespace bind { namespace transport {
-
-    using model::revision;
-    using model::any;
-
-    template<class Device, locality L = locality::common>
-    struct hub {
-        static void sync(revision* r){
-            if(bind::nodes::size() == 1) return; // serial
-            if(model::common(r)) return;
-            if(model::local(r)) core::set<revision>::spawn(*r);
-            else core::get<revision>::spawn(*r);
-        }
-    };
-
-    template<class Device>
-    struct hub<Device, locality::local> {
-        static void sync(revision* r){
-            if(model::common(r)) return;
-            if(!model::local(r)) core::get<revision>::spawn(*r);
-        }
-        static void sync(any* v){
-            if(bind::nodes::size() == 1) return;
-            core::set<any>::spawn(*v);
-        }
-    };
-
-    template<class Device>
-    struct hub<Device, locality::remote> {
-        static void sync(revision* r){
-            if(r->owner == bind::nodes::which_() || model::common(r)) return;
-            if(model::local(r)) core::set<revision>::spawn(*r);
-            else core::get<revision>::spawn(*r); // assist
-        }
-        static void sync(any* v){
-            core::get<any>::spawn(*v);
-        }
-    };
-
-} }
-
 namespace bind { namespace core {
 
     inline controller::~controller(){ 

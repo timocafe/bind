@@ -132,6 +132,7 @@
 #include "core/controller.h"
 #include "core/get.h"
 #include "core/set.h"
+#include "core/hub.hpp"
 #include "core/controller.hpp"
 #include "core/get.hpp"
 #include "core/set.hpp"
