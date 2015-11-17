@@ -101,7 +101,7 @@ namespace bind { namespace core {
 
     template<locality L, device D, typename T>
     inline void controller::sync(T* o){
-        transport::hub<D,L>::sync(o);
+        transport::hub<D, L>::sync(o);
     }
 
     template<typename T> void controller::collect(T* o){
@@ -112,18 +112,19 @@ namespace bind { namespace core {
         this->garbage.squeeze(r);
     }
 
+    template<device D>
     inline void controller::touch(const history* o, rank_t owner){
         if(o->back() == NULL)
-            const_cast<history*>(o)->init_state(owner);
+            const_cast<history*>(o)->init_state<D>(owner);
     }
 
     inline void controller::use_revision(history* o){
         o->back()->use();
     }
 
-    template<locality L>
+    template<locality L, device D>
     void controller::add_revision(history* o, functor* g, rank_t owner){
-        o->add_state<L>(g, owner);
+        o->add_state<L, D>(g, owner);
     }
 
     inline rank_t controller::get_rank() const {

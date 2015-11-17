@@ -30,29 +30,6 @@
 
 namespace bind { namespace memory {
 
-    class descriptor;
-
-    template<device D>
-    struct hub {
-        static bool conserves(descriptor& c, descriptor& p){
-            return (c.tmp || p.type == types::cpu::standard || c.type == types::cpu::bulk);
-        }
-        static void* malloc(descriptor& c){
-            if(c.tmp || c.type == types::cpu::bulk){
-                void* ptr = cpu::data_bulk::soft_malloc(c.extent);
-                if(ptr){ c.type = types::cpu::bulk; return ptr; }
-            }
-            c.type = types::cpu::standard;
-            return cpu::standard::malloc(c.extent);
-        }
-        static void memset(descriptor& desc, void* ptr){
-            std::memset(ptr, 0, desc.extent);
-        }
-        static void memcpy(descriptor& dst_desc, void* dst, descriptor& src_desc, void* src){
-            std::memcpy(dst, src, src_desc.extent);
-        }
-    };
-
     struct descriptor {
         template<device D> friend struct hub;
         descriptor(size_t e, types::id_type t = types::none) : extent(e), type(t), tmp(false) {}
@@ -101,6 +78,27 @@ namespace bind { namespace memory {
     private:
         types::id_type type;
         bool tmp;
+    };
+
+    template<device D>
+    struct hub {
+        static bool conserves(descriptor& c, descriptor& p){
+            return (c.tmp || p.type == types::cpu::standard || c.type == types::cpu::bulk);
+        }
+        static void* malloc(descriptor& c){
+            if(c.tmp || c.type == types::cpu::bulk){
+                void* ptr = cpu::data_bulk::soft_malloc(c.extent);
+                if(ptr){ c.type = types::cpu::bulk; return ptr; }
+            }
+            c.type = types::cpu::standard;
+            return cpu::standard::malloc(c.extent);
+        }
+        static void memset(descriptor& desc, void* ptr){
+            std::memset(ptr, 0, desc.extent);
+        }
+        static void memcpy(descriptor& dst_desc, void* dst, descriptor& src_desc, void* src){
+            std::memcpy(dst, src, src_desc.extent);
+        }
     };
 
 } }

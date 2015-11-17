@@ -29,7 +29,7 @@
 #define BIND_MODEL_DEVICE
 
 namespace bind {
-    enum class device { cpu, gpu };
+    enum class device { cpu, gpu, any };
 }
 
 #endif

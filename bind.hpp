@@ -319,7 +319,7 @@ namespace bind {
 #define BIND_MODEL_DEVICE
 
 namespace bind {
-    enum class device { cpu, gpu };
+    enum class device { cpu, gpu, any };
 }
 
 #endif
@@ -784,29 +784,6 @@ namespace bind { namespace memory { namespace gpu {
 
 namespace bind { namespace memory {
 
-    class descriptor;
-
-    template<device D>
-    struct hub {
-        static bool conserves(descriptor& c, descriptor& p){
-            return (c.tmp || p.type == types::cpu::standard || c.type == types::cpu::bulk);
-        }
-        static void* malloc(descriptor& c){
-            if(c.tmp || c.type == types::cpu::bulk){
-                void* ptr = cpu::data_bulk::soft_malloc(c.extent);
-                if(ptr){ c.type = types::cpu::bulk; return ptr; }
-            }
-            c.type = types::cpu::standard;
-            return cpu::standard::malloc(c.extent);
-        }
-        static void memset(descriptor& desc, void* ptr){
-            std::memset(ptr, 0, desc.extent);
-        }
-        static void memcpy(descriptor& dst_desc, void* dst, descriptor& src_desc, void* src){
-            std::memcpy(dst, src, src_desc.extent);
-        }
-    };
-
     struct descriptor {
         template<device D> friend struct hub;
         descriptor(size_t e, types::id_type t = types::none) : extent(e), type(t), tmp(false) {}
@@ -857,6 +834,27 @@ namespace bind { namespace memory {
         bool tmp;
     };
 
+    template<device D>
+    struct hub {
+        static bool conserves(descriptor& c, descriptor& p){
+            return (c.tmp || p.type == types::cpu::standard || c.type == types::cpu::bulk);
+        }
+        static void* malloc(descriptor& c){
+            if(c.tmp || c.type == types::cpu::bulk){
+                void* ptr = cpu::data_bulk::soft_malloc(c.extent);
+                if(ptr){ c.type = types::cpu::bulk; return ptr; }
+            }
+            c.type = types::cpu::standard;
+            return cpu::standard::malloc(c.extent);
+        }
+        static void memset(descriptor& desc, void* ptr){
+            std::memset(ptr, 0, desc.extent);
+        }
+        static void memcpy(descriptor& dst_desc, void* dst, descriptor& src_desc, void* src){
+            std::memcpy(dst, src, src_desc.extent);
+        }
+    };
+
 } }
 
 #endif
@@ -898,10 +896,9 @@ namespace bind { namespace model {
 
     class revision : public memory::cpu::use_fixed_new<revision> {
     public:
-        revision(size_t extent, functor* g, locality l, rank_t owner)
-        : spec(extent), generator(g), state(l), 
-          data(NULL), users(0), owner(owner),
-          crefs(1)
+        revision(size_t extent, functor* g, locality l, device d, rank_t owner)
+        : spec(extent), generator(g), state(l), dev(d), owner(owner),
+          data(NULL), users(0), crefs(1)
         {
         }
 
@@ -946,16 +943,25 @@ namespace bind { namespace model {
             if(valid() || state == locality::remote) return;
             if(!crefs) spec.temporary(true);
         }
-        std::atomic<functor*> generator;
-        void* data;
-        rank_t owner;
-        std::atomic<int> users;
-        const locality state;
-        std::pair<size_t, functor*> assist;
+
         memory::descriptor spec;
-    private:
+        std::atomic<functor*> generator;
+        const locality state;
+        const device dev;
+        rank_t owner;
+        void* data;
+        std::atomic<int> users;
         int crefs;
+        std::pair<size_t, functor*> assist;
     };
+
+    inline bool cpu(const revision* r){
+        return (r->dev == device::cpu);
+    }
+
+    inline bool gpu(const revision* r){
+        return (r->dev == device::gpu);
+    }
 
     inline bool local(const revision* r){
         return (r->state == locality::local);
@@ -986,12 +992,14 @@ namespace bind { namespace model {
     class history : public memory::cpu::use_fixed_new<history> {
     public:
         history(size_t size) : current(NULL), extent(memory::aligned_64(size)) { }
+        template<device D>
         void init_state(rank_t owner){
-            revision* r = new revision(extent, NULL, locality::common, owner);
+            revision* r = new revision(extent, NULL, locality::common, D, owner);
             this->current = r;
         }
-        template<locality L> void add_state(functor* gen, rank_t owner){
-            revision* r = new revision(extent, gen, L, owner);
+        template<locality L, device D>
+        void add_state(functor* gen, rank_t owner){
+            revision* r = new revision(extent, gen, L, D, owner);
             this->current = r;
         }
         revision* back() const {
@@ -1701,9 +1709,10 @@ namespace bind { namespace core {
         template<typename T> void collect(T* o);
         void squeeze(revision* r) const;
 
+        template<device D>
         void touch(const history* o, rank_t owner);
         void use_revision(history* o);
-        template<locality L>
+        template<locality L, device D>
         void add_revision(history* o, functor* g, rank_t owner);
 
         bool verbose() const;
@@ -1969,7 +1978,7 @@ namespace bind { namespace core {
 
     template<locality L, device D, typename T>
     inline void controller::sync(T* o){
-        transport::hub<D,L>::sync(o);
+        transport::hub<D, L>::sync(o);
     }
 
     template<typename T> void controller::collect(T* o){
@@ -1980,18 +1989,19 @@ namespace bind { namespace core {
         this->garbage.squeeze(r);
     }
 
+    template<device D>
     inline void controller::touch(const history* o, rank_t owner){
         if(o->back() == NULL)
-            const_cast<history*>(o)->init_state(owner);
+            const_cast<history*>(o)->init_state<D>(owner);
     }
 
     inline void controller::use_revision(history* o){
         o->back()->use();
     }
 
-    template<locality L>
+    template<locality L, device D>
     void controller::add_revision(history* o, functor* g, rank_t owner){
-        o->add_state<L>(g, owner);
+        o->add_state<L, D>(g, owner);
     }
 
     inline rank_t controller::get_rank() const {
@@ -2412,7 +2422,7 @@ namespace bind {
         template<locality L, size_t Arg>
         static void apply_(T& obj, functor* m){
             auto o = obj.allocator_.desc;
-            bind::select().touch(o, bind::rank());
+            bind::select().touch<D>(o, bind::rank());
             T* var = (T*)memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy((void*)var, &obj, sizeof(T)); 
             m->arguments[Arg] = (void*)var;
             bind::select().sync<L,D>(o->current);
@@ -2421,7 +2431,7 @@ namespace bind {
             var->allocator_.before = o->current;
             if(o->current->generator != m){
                 bind::select().collect(o->current);
-                bind::select().add_revision<L>(o, m, bind::rank());
+                bind::select().add_revision<L, D>(o, m, bind::rank());
             }
             bind::select().use_revision(o);
             var->allocator_.after = obj.allocator_.after = o->current;
@@ -2429,10 +2439,10 @@ namespace bind {
         template<size_t Arg>
         static void apply_remote(T& obj){
             auto o = obj.allocator_.desc;
-            bind::select().touch(o, bind::rank());
-            bind::select().sync<locality::remote,D>(o->current);
+            bind::select().touch<D>(o, bind::rank());
+            bind::select().sync<locality::remote, D>(o->current);
             bind::select().collect(o->current);
-            bind::select().add_revision<locality::remote>(o, NULL, bind::nodes::which_()); 
+            bind::select().add_revision<locality::remote, D>(o, NULL, bind::nodes::which_()); 
         }
         template<size_t Arg>
         static void apply_local(T& obj, functor* m){
@@ -2490,7 +2500,7 @@ namespace bind {
         }
         template<locality L, size_t Arg> static void apply_(T& obj, functor* m){
             auto o = obj.allocator_.desc;
-            bind::select().touch(o, bind::rank());
+            bind::select().touch<D>(o, bind::rank());
             T* var = (T*)memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy((void*)var, &obj, sizeof(T)); m->arguments[Arg] = (void*)var;
             bind::select().sync<L,D>(o->current);
             bind::select().use_revision(o);
@@ -2498,7 +2508,7 @@ namespace bind {
         }
         template<size_t Arg> static void apply_remote(T& obj){
             auto o = obj.allocator_.desc;
-            bind::select().touch(o, bind::rank());
+            bind::select().touch<D>(o, bind::rank());
             bind::select().sync<locality::remote,D>(o->current);
         }
         template<size_t Arg> static void apply_local(T& obj, functor* m){
@@ -2523,23 +2533,23 @@ namespace bind {
         }
         template<locality L, size_t Arg> static void apply_(T& obj, functor* m){
             auto o = obj.allocator_.desc;
-            bind::select().touch(o, bind::rank());
+            bind::select().touch<D>(o, bind::rank());
             T* var = (T*)memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy((void*)var, (void*)&obj, sizeof(T)); m->arguments[Arg] = (void*)var;
             bind::select().use_revision(o);
 
             var->allocator_.before = o->current;
             if(o->current->generator != m){
                 bind::select().collect(o->current);
-                bind::select().add_revision<L>(o, m, bind::rank()); 
+                bind::select().add_revision<L, D>(o, m, bind::rank()); 
             }
             bind::select().use_revision(o);
             var->allocator_.after = obj.allocator_.after = o->current;
         }
         template<size_t Arg> static void apply_remote(T& obj){
             auto o = obj.allocator_.desc;
-            bind::select().touch(o, bind::rank());
+            bind::select().touch<D>(o, bind::rank());
             bind::select().collect(o->current);
-            bind::select().add_revision<locality::remote>(o, NULL, bind::nodes::which_()); 
+            bind::select().add_revision<locality::remote, D>(o, NULL, bind::nodes::which_()); 
         }
         template<size_t Arg> static void apply_local(T& obj, functor* m){
             apply_<locality::local, Arg>(obj, m);

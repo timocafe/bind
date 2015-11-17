@@ -34,12 +34,14 @@ namespace bind { namespace model {
     class history : public memory::cpu::use_fixed_new<history> {
     public:
         history(size_t size) : current(NULL), extent(memory::aligned_64(size)) { }
+        template<device D>
         void init_state(rank_t owner){
-            revision* r = new revision(extent, NULL, locality::common, owner);
+            revision* r = new revision(extent, NULL, locality::common, D, owner);
             this->current = r;
         }
-        template<locality L> void add_state(functor* gen, rank_t owner){
-            revision* r = new revision(extent, gen, L, owner);
+        template<locality L, device D>
+        void add_state(functor* gen, rank_t owner){
+            revision* r = new revision(extent, gen, L, D, owner);
             this->current = r;
         }
         revision* back() const {

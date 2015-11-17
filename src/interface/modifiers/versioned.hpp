@@ -63,7 +63,7 @@ namespace bind {
         template<locality L, size_t Arg>
         static void apply_(T& obj, functor* m){
             auto o = obj.allocator_.desc;
-            bind::select().touch(o, bind::rank());
+            bind::select().touch<D>(o, bind::rank());
             T* var = (T*)memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy((void*)var, &obj, sizeof(T)); 
             m->arguments[Arg] = (void*)var;
             bind::select().sync<L,D>(o->current);
@@ -72,7 +72,7 @@ namespace bind {
             var->allocator_.before = o->current;
             if(o->current->generator != m){
                 bind::select().collect(o->current);
-                bind::select().add_revision<L>(o, m, bind::rank());
+                bind::select().add_revision<L, D>(o, m, bind::rank());
             }
             bind::select().use_revision(o);
             var->allocator_.after = obj.allocator_.after = o->current;
@@ -80,10 +80,10 @@ namespace bind {
         template<size_t Arg>
         static void apply_remote(T& obj){
             auto o = obj.allocator_.desc;
-            bind::select().touch(o, bind::rank());
-            bind::select().sync<locality::remote,D>(o->current);
+            bind::select().touch<D>(o, bind::rank());
+            bind::select().sync<locality::remote, D>(o->current);
             bind::select().collect(o->current);
-            bind::select().add_revision<locality::remote>(o, NULL, bind::nodes::which_()); 
+            bind::select().add_revision<locality::remote, D>(o, NULL, bind::nodes::which_()); 
         }
         template<size_t Arg>
         static void apply_local(T& obj, functor* m){
@@ -141,7 +141,7 @@ namespace bind {
         }
         template<locality L, size_t Arg> static void apply_(T& obj, functor* m){
             auto o = obj.allocator_.desc;
-            bind::select().touch(o, bind::rank());
+            bind::select().touch<D>(o, bind::rank());
             T* var = (T*)memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy((void*)var, &obj, sizeof(T)); m->arguments[Arg] = (void*)var;
             bind::select().sync<L,D>(o->current);
             bind::select().use_revision(o);
@@ -149,7 +149,7 @@ namespace bind {
         }
         template<size_t Arg> static void apply_remote(T& obj){
             auto o = obj.allocator_.desc;
-            bind::select().touch(o, bind::rank());
+            bind::select().touch<D>(o, bind::rank());
             bind::select().sync<locality::remote,D>(o->current);
         }
         template<size_t Arg> static void apply_local(T& obj, functor* m){
@@ -174,23 +174,23 @@ namespace bind {
         }
         template<locality L, size_t Arg> static void apply_(T& obj, functor* m){
             auto o = obj.allocator_.desc;
-            bind::select().touch(o, bind::rank());
+            bind::select().touch<D>(o, bind::rank());
             T* var = (T*)memory::cpu::instr_bulk::malloc<sizeof(T)>(); memcpy((void*)var, (void*)&obj, sizeof(T)); m->arguments[Arg] = (void*)var;
             bind::select().use_revision(o);
 
             var->allocator_.before = o->current;
             if(o->current->generator != m){
                 bind::select().collect(o->current);
-                bind::select().add_revision<L>(o, m, bind::rank()); 
+                bind::select().add_revision<L, D>(o, m, bind::rank()); 
             }
             bind::select().use_revision(o);
             var->allocator_.after = obj.allocator_.after = o->current;
         }
         template<size_t Arg> static void apply_remote(T& obj){
             auto o = obj.allocator_.desc;
-            bind::select().touch(o, bind::rank());
+            bind::select().touch<D>(o, bind::rank());
             bind::select().collect(o->current);
-            bind::select().add_revision<locality::remote>(o, NULL, bind::nodes::which_()); 
+            bind::select().add_revision<locality::remote, D>(o, NULL, bind::nodes::which_()); 
         }
         template<size_t Arg> static void apply_local(T& obj, functor* m){
             apply_<locality::local, Arg>(obj, m);

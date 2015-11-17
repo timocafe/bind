@@ -51,9 +51,10 @@ namespace bind { namespace core {
         template<typename T> void collect(T* o);
         void squeeze(revision* r) const;
 
+        template<device D>
         void touch(const history* o, rank_t owner);
         void use_revision(history* o);
-        template<locality L>
+        template<locality L, device D>
         void add_revision(history* o, functor* g, rank_t owner);
 
         bool verbose() const;

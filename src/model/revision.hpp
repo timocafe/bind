@@ -32,10 +32,9 @@ namespace bind { namespace model {
 
     class revision : public memory::cpu::use_fixed_new<revision> {
     public:
-        revision(size_t extent, functor* g, locality l, rank_t owner)
-        : spec(extent), generator(g), state(l), 
-          data(NULL), users(0), owner(owner),
-          crefs(1)
+        revision(size_t extent, functor* g, locality l, device d, rank_t owner)
+        : spec(extent), generator(g), state(l), dev(d), owner(owner),
+          data(NULL), users(0), crefs(1)
         {
         }
 
@@ -80,16 +79,25 @@ namespace bind { namespace model {
             if(valid() || state == locality::remote) return;
             if(!crefs) spec.temporary(true);
         }
-        std::atomic<functor*> generator;
-        void* data;
-        rank_t owner;
-        std::atomic<int> users;
-        const locality state;
-        std::pair<size_t, functor*> assist;
+
         memory::descriptor spec;
-    private:
+        std::atomic<functor*> generator;
+        const locality state;
+        const device dev;
+        rank_t owner;
+        void* data;
+        std::atomic<int> users;
         int crefs;
+        std::pair<size_t, functor*> assist;
     };
+
+    inline bool cpu(const revision* r){
+        return (r->dev == device::cpu);
+    }
+
+    inline bool gpu(const revision* r){
+        return (r->dev == device::gpu);
+    }
 
     inline bool local(const revision* r){
         return (r->state == locality::local);
