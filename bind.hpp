@@ -1818,10 +1818,28 @@ namespace bind { namespace core {
 #define BIND_CORE_HUB_HPP
 
 namespace bind { namespace nodes {
-    inline size_t none(){
-        return select().nodes.size() == 1;
+    inline size_t size(){
+        return select().nodes.size();
+    }
+    inline std::vector<rank_t>::const_iterator begin(){
+        return select().nodes.begin();
+    }
+    inline std::vector<rank_t>::const_iterator end(){
+        return select().nodes.end();
+    }
+    inline rank_t which_(){
+        return select().get_node().which();
+    }
+    template<typename V>
+    inline rank_t which(const V& o){
+        return o.allocator_.desc->current->owner;
+    }
+    inline rank_t which(){
+        rank_t w = which_();
+        return (w == select().get_num_procs() ? select().get_rank() : w);
     }
 } }
+
 
 namespace bind { namespace transport {
 
@@ -1831,7 +1849,7 @@ namespace bind { namespace transport {
     template<class Device, locality L = locality::common>
     struct hub {
         static void sync(revision* r){
-            if(bind::nodes::none()) return; // serial
+            if(bind::nodes::size() == 1) return; // serial
             if(model::common(r)) return;
             if(model::local(r)) core::set<revision>::spawn(*r);
             else core::get<revision>::spawn(*r);
@@ -1845,7 +1863,7 @@ namespace bind { namespace transport {
             if(!model::local(r)) core::get<revision>::spawn(*r);
         }
         static void sync(any* v){
-            if(bind::nodes::none()) return;
+            if(bind::nodes::size() == 1) return;
             core::set<any>::spawn(*v);
         }
     };
@@ -1868,29 +1886,6 @@ namespace bind { namespace transport {
 
 #ifndef BIND_CORE_CONTROLLER_HPP
 #define BIND_CORE_CONTROLLER_HPP
-
-namespace bind { namespace nodes {
-    inline size_t size(){
-        return select().nodes.size();
-    }
-    inline std::vector<rank_t>::const_iterator begin(){
-        return select().nodes.begin();
-    }
-    inline std::vector<rank_t>::const_iterator end(){
-        return select().nodes.end();
-    }
-    inline rank_t which_(){
-        return select().get_node().which();
-    }
-    template<typename V>
-    inline rank_t which(const V& o){
-        return o.allocator_.desc->current->owner;
-    }
-    inline rank_t which(){
-        rank_t w = which_();
-        return (w == select().get_num_procs() ? select().get_rank() : w);
-    }
-} }
 
 namespace bind { namespace core {
 
