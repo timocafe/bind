@@ -775,6 +775,9 @@ namespace bind { namespace memory { namespace gpu {
 
 namespace bind { namespace memory {
 
+    template<class MemoryTypes>
+    struct hub;
+
     struct descriptor {
         template<class MemoryTypes> friend struct hub;
         descriptor(size_t e, types::id_type t = types::none) : extent(e), type(t), tmp(false) {}
