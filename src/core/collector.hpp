@@ -34,52 +34,35 @@ namespace bind { namespace memory {
     using model::revision;
     using model::any;
 
-    inline void collector::reserve(size_t n){
-        this->rev.reserve(n);
-        this->str.reserve(n);
-    }
-
-    inline void collector::push_back(any* o){
-        this->raw.push_back(o);
+    inline void collector::squeeze(revision* r) const {
+        if(!r->referenced() && r->locked_once()) r->spec.free(r->data);
     }
 
     inline void collector::push_back(revision* r){
         r->weaken();
         if(!r->referenced()){ // squeeze
             if(!r->locked()) r->spec.free(r->data); // artifacts or last one
-            this->rev.push_back(r);
+            this->rs.push_back(r);
         }
     }
 
     inline void collector::push_back(history* o){
         this->push_back(o->current);
-        this->str.push_back(o);
+        if(o->shadow) this->push_back(o->shadow);
+        this->hs.push_back(o);
     }
 
-    inline void collector::squeeze(revision* r) const {
-        if(!r->referenced() && r->locked_once()) r->spec.free(r->data);
+    inline void collector::push_back(any* o){
+        this->as.push_back(o);
     }
-
-    inline void collector::delete_ptr::operator()(revision* r) const {
-        r->spec.free(r->data);
-        delete r; 
-    }
-
-    inline void collector::delete_ptr::operator()(history* e) const {
-        delete e;
-    }
-
-    inline void collector::delete_ptr::operator()(any* e) const {
-        memory::cpu::standard::free(e);
-    } 
 
     inline void collector::clear(){
-        std::for_each( rev.begin(), rev.end(), delete_ptr());
-        std::for_each( str.begin(), str.end(), delete_ptr());
-        std::for_each( raw.begin(), raw.end(), delete_ptr());
-        rev.clear();
-        str.clear();
-        raw.clear();
+        for(auto r : rs){ r->spec.free(r->data); delete r; }
+        for(auto h : hs) delete h;
+        for(auto a : as) memory::cpu::standard::free(a);
+        rs.clear();
+        hs.clear();
+        as.clear();
     }
 
 } }

@@ -1616,23 +1616,15 @@ namespace bind{ namespace memory {
 
     class collector {
     public:
-        struct delete_ptr {
-            void operator()( history* element ) const;
-            void operator()( revision* element ) const;
-            void operator()( any* element ) const;
-        };
-
-        void reserve(size_t n);
-        void push_back(history* o);
-        void push_back(revision* o);
-        void push_back(any* o);
         void squeeze(revision* r) const;
+        void push_back(revision* o);
+        void push_back(history* o);
+        void push_back(any* o);
         void clear();
     private:
-        size_t reserve_limit;
-        std::vector< history* >  str;
-        std::vector< revision* > rev;
-        std::vector< any* >      raw;
+        std::vector<history*> hs;
+        std::vector<revision*> rs;
+        std::vector<any*> as;
     };
 
 } }
@@ -1649,52 +1641,35 @@ namespace bind { namespace memory {
     using model::revision;
     using model::any;
 
-    inline void collector::reserve(size_t n){
-        this->rev.reserve(n);
-        this->str.reserve(n);
-    }
-
-    inline void collector::push_back(any* o){
-        this->raw.push_back(o);
+    inline void collector::squeeze(revision* r) const {
+        if(!r->referenced() && r->locked_once()) r->spec.free(r->data);
     }
 
     inline void collector::push_back(revision* r){
         r->weaken();
         if(!r->referenced()){ // squeeze
             if(!r->locked()) r->spec.free(r->data); // artifacts or last one
-            this->rev.push_back(r);
+            this->rs.push_back(r);
         }
     }
 
     inline void collector::push_back(history* o){
         this->push_back(o->current);
-        this->str.push_back(o);
+        if(o->shadow) this->push_back(o->shadow);
+        this->hs.push_back(o);
     }
 
-    inline void collector::squeeze(revision* r) const {
-        if(!r->referenced() && r->locked_once()) r->spec.free(r->data);
+    inline void collector::push_back(any* o){
+        this->as.push_back(o);
     }
-
-    inline void collector::delete_ptr::operator()(revision* r) const {
-        r->spec.free(r->data);
-        delete r; 
-    }
-
-    inline void collector::delete_ptr::operator()(history* e) const {
-        delete e;
-    }
-
-    inline void collector::delete_ptr::operator()(any* e) const {
-        memory::cpu::standard::free(e);
-    } 
 
     inline void collector::clear(){
-        std::for_each( rev.begin(), rev.end(), delete_ptr());
-        std::for_each( str.begin(), str.end(), delete_ptr());
-        std::for_each( raw.begin(), raw.end(), delete_ptr());
-        rev.clear();
-        str.clear();
-        raw.clear();
+        for(auto r : rs){ r->spec.free(r->data); delete r; }
+        for(auto h : hs) delete h;
+        for(auto a : as) memory::cpu::standard::free(a);
+        rs.clear();
+        hs.clear();
+        as.clear();
     }
 
 } }
@@ -1807,6 +1782,111 @@ namespace bind {
     inline core::controller& select(){ return core::controller::weak_instance<void>::w; }
 }
 
+namespace bind { namespace nodes {
+    inline size_t size(){
+        return select().nodes.size();
+    }
+    inline std::vector<rank_t>::const_iterator begin(){
+        return select().nodes.begin();
+    }
+    inline std::vector<rank_t>::const_iterator end(){
+        return select().nodes.end();
+    }
+    inline rank_t which_(){
+        return select().get_node().which();
+    }
+    template<typename V>
+    inline rank_t which(const V& o){
+        return o.allocator_.desc->current->owner;
+    }
+    inline rank_t which(){
+        rank_t w = which_();
+        return (w == select().get_num_procs() ? select().get_rank() : w);
+    }
+} }
+
+#endif
+#ifdef CUDART_VERSION
+
+#ifndef BIND_TRANSPORT_CUDA_TRANSFER_H
+#define BIND_TRANSPORT_CUDA_TRANSFER_H
+
+namespace bind { namespace transport { namespace cuda {
+    using model::functor;
+    using model::revision;
+
+    template<device From, device To>
+    struct transfer : public functor, public memory::cpu::use_bulk_new<transfer<From, To> > {
+	static void spawn(revision* r, revision*& s);
+	transfer(revision& r, revision& s);
+	virtual void invoke() override;
+	virtual bool ready() override;
+    private:
+	revision& r;
+	revision& s;
+    };
+
+} } }
+
+#endif
+
+#ifndef BIND_TRANSPORT_CUDA_TRANSFER_HPP
+#define BIND_TRANSPORT_CUDA_TRANSFER_HPP
+
+namespace bind { namespace transport { namespace cuda {
+
+    namespace detail {
+        template<device From, device To>
+        struct transfer_impl {};
+        
+        template<>
+        struct transfer_impl<device::cpu, device::gpu> {
+            using memory_type = memory::gpu::standard;
+            static void invoke(void* dst, void* src, size_t sz){
+                cudaMemcpy(dst, src, sz, cudaMemcpyHostToDevice);
+            }
+        };
+        
+        template<>
+        struct transfer_impl<device::gpu, device::cpu> {
+            using memory_type = memory::cpu::standard;
+            static void invoke(void* dst, void* src, size_t sz){
+                cudaMemcpy(dst, src, sz, cudaMemcpyDeviceToHost);
+            }
+        };
+    }
+
+    template<device From, device To>
+    void transfer<From, To>::spawn(revision* r, revision*& s){
+        s = new revision(r->spec.extent, NULL, r->state, To, r->owner);
+        s->generator = new transfer(*r, *s);
+    }
+
+    template<device From, device To>
+    transfer<From, To>::transfer(revision& r, revision& s) : r(r), s(s) {
+        r.use(); s.use();
+        s.embed(s.spec.hard_malloc<typename detail::transfer_impl<From, To>::memory_type>());
+        if(r.generator != NULL) (r.generator.load())->queue(this);
+        else bind::select().queue(this);
+    }
+
+    template<device From, device To>
+    void transfer<From, To>::invoke(){
+        detail::transfer_impl<From, To>::invoke(s.data, r.data, r.spec.extent);
+
+        bind::select().squeeze(&r); r.release();
+        bind::select().squeeze(&s); s.release();
+        s.complete();
+    }
+
+    template<device From, device To>
+    bool transfer<From, To>::ready(){
+        return (r.generator == NULL);
+    }
+
+} } }
+
+#endif
 #endif
 
 #ifndef BIND_CORE_GET_H
@@ -1849,6 +1929,63 @@ namespace bind { namespace core {
 #endif
 
 
+#ifndef BIND_CORE_GET_HPP
+#define BIND_CORE_GET_HPP
+
+namespace bind { namespace core {
+
+    // {{{ any
+
+    inline void get<any>::spawn(any& t){
+        bind::select().queue(new get(t));
+    }
+    inline get<any>::get(any& ptr) : t(ptr) {
+        handle = bind::select().get_channel().bcast(t, bind::nodes::which_());
+        t.generator = this;
+    }
+    inline bool get<any>::ready(){
+        return handle->test();
+    }
+    inline void get<any>::invoke(){
+        t.complete();
+    }
+
+    // }}}
+    // {{{ revision
+
+    inline void get<revision>::spawn(revision& r){
+        get*& transfer = (get*&)r.assist.second;
+        if(bind::select().update(r)) transfer = new get(r);
+        *transfer += bind::nodes::which_();
+    }
+    inline get<revision>::get(revision& r) : t(r) {
+        handle = bind::select().get_channel().get(t);
+        t.invalidate();
+    }
+    inline void get<revision>::operator += (rank_t rank){
+        handle->append(rank);
+        if(handle->involved() && !t.valid()){
+            t.use();
+            t.generator = this;
+            t.embed(t.spec.hard_malloc<memory::cpu::comm_bulk>()); 
+            bind::select().queue(this);
+        }
+    }
+    inline bool get<revision>::ready(){
+        return handle->test();
+    }
+    inline void get<revision>::invoke(){
+        bind::select().squeeze(&t);
+        t.release();
+        t.complete();
+    }
+
+    // }}}
+
+} }
+
+#endif
+
 #ifndef BIND_CORE_SET_H
 #define BIND_CORE_SET_H
 
@@ -1887,56 +2024,58 @@ namespace bind { namespace core {
 } }
 
 #endif
-#ifdef CUDART_VERSION
 
-#ifndef BIND_TRANSPORT_CUDA_TRANSFER_H
-#define BIND_TRANSPORT_CUDA_TRANSFER_H
+#ifndef BIND_CORE_SET_HPP
+#define BIND_CORE_SET_HPP
 
-namespace bind { namespace transport { namespace cuda {
-    using model::functor;
-    using model::revision;
+namespace bind { namespace core {
 
-    template<device From, device To>
-    struct transfer : public functor, public memory::cpu::use_bulk_new<transfer<From, To> > {
-	static void spawn(revision* r, revision*& s);
-	transfer(revision& r, revision& s);
-	virtual void invoke() override;
-	virtual bool ready() override;
-    private:
-	revision& r;
-	revision& s;
-    };
+    // {{{ any
 
-} } }
+    inline void set<any>::spawn(any& t){
+        (t.generator.load())->queue(new set(t));
+    }
+    inline set<any>::set(any& t) : t(t) {
+        handle = bind::select().get_channel().bcast(t, bind::nodes::which_());
+    }
+    inline bool set<any>::ready(){
+        return (t.generator != NULL ? false : handle->test());
+    }
+    inline void set<any>::invoke(){}
 
-#endif
+    // }}}
+    // {{{ revision
+
+    inline void set<revision>::spawn(revision& r){
+        set*& transfer = (set*&)r.assist.second;
+        if(bind::select().update(r)) transfer = new set(r);
+        *transfer += bind::nodes::which_();
+    }
+    inline set<revision>::set(revision& r) : t(r) {
+        t.use();
+        handle = bind::select().get_channel().set(t);
+        if(t.generator != NULL) (t.generator.load())->queue(this);
+        else bind::select().queue(this);
+    }
+    inline void set<revision>::operator += (rank_t rank){
+        handle->append(rank);
+    }
+    inline bool set<revision>::ready(){
+        return (t.generator != NULL ? false : handle->test());
+    }
+    inline void set<revision>::invoke(){
+        bind::select().squeeze(&t);
+        t.release(); 
+    }
+
+    // }}}
+
+} }
+
 #endif
 
 #ifndef BIND_CORE_HUB_HPP
 #define BIND_CORE_HUB_HPP
-
-namespace bind { namespace nodes {
-    inline size_t size(){
-        return select().nodes.size();
-    }
-    inline std::vector<rank_t>::const_iterator begin(){
-        return select().nodes.begin();
-    }
-    inline std::vector<rank_t>::const_iterator end(){
-        return select().nodes.end();
-    }
-    inline rank_t which_(){
-        return select().get_node().which();
-    }
-    template<typename V>
-    inline rank_t which(const V& o){
-        return o.allocator_.desc->current->owner;
-    }
-    inline rank_t which(){
-        rank_t w = which_();
-        return (w == select().get_num_procs() ? select().get_rank() : w);
-    }
-} }
 
 namespace bind { namespace transport {
 
@@ -2133,172 +2272,6 @@ namespace bind { namespace core {
 
 } }
 
-#endif
-
-#ifndef BIND_CORE_GET_HPP
-#define BIND_CORE_GET_HPP
-
-namespace bind { namespace core {
-
-    // {{{ any
-
-    inline void get<any>::spawn(any& t){
-        bind::select().queue(new get(t));
-    }
-    inline get<any>::get(any& ptr) : t(ptr) {
-        handle = bind::select().get_channel().bcast(t, bind::nodes::which_());
-        t.generator = this;
-    }
-    inline bool get<any>::ready(){
-        return handle->test();
-    }
-    inline void get<any>::invoke(){
-        t.complete();
-    }
-
-    // }}}
-    // {{{ revision
-
-    inline void get<revision>::spawn(revision& r){
-        get*& transfer = (get*&)r.assist.second;
-        if(bind::select().update(r)) transfer = new get(r);
-        *transfer += bind::nodes::which_();
-    }
-    inline get<revision>::get(revision& r) : t(r) {
-        handle = bind::select().get_channel().get(t);
-        t.invalidate();
-    }
-    inline void get<revision>::operator += (rank_t rank){
-        handle->append(rank);
-        if(handle->involved() && !t.valid()){
-            t.use();
-            t.generator = this;
-            t.embed(t.spec.hard_malloc<memory::cpu::comm_bulk>()); 
-            bind::select().queue(this);
-        }
-    }
-    inline bool get<revision>::ready(){
-        return handle->test();
-    }
-    inline void get<revision>::invoke(){
-        bind::select().squeeze(&t);
-        t.release();
-        t.complete();
-    }
-
-    // }}}
-
-} }
-
-#endif
-
-#ifndef BIND_CORE_SET_HPP
-#define BIND_CORE_SET_HPP
-
-namespace bind { namespace core {
-
-    // {{{ any
-
-    inline void set<any>::spawn(any& t){
-        (t.generator.load())->queue(new set(t));
-    }
-    inline set<any>::set(any& t) : t(t) {
-        handle = bind::select().get_channel().bcast(t, bind::nodes::which_());
-    }
-    inline bool set<any>::ready(){
-        return (t.generator != NULL ? false : handle->test());
-    }
-    inline void set<any>::invoke(){}
-
-    // }}}
-    // {{{ revision
-
-    inline void set<revision>::spawn(revision& r){
-        set*& transfer = (set*&)r.assist.second;
-        if(bind::select().update(r)) transfer = new set(r);
-        *transfer += bind::nodes::which_();
-    }
-    inline set<revision>::set(revision& r) : t(r) {
-        t.use();
-        handle = bind::select().get_channel().set(t);
-        if(t.generator != NULL) (t.generator.load())->queue(this);
-        else bind::select().queue(this);
-    }
-    inline void set<revision>::operator += (rank_t rank){
-        handle->append(rank);
-    }
-    inline bool set<revision>::ready(){
-        return (t.generator != NULL ? false : handle->test());
-    }
-    inline void set<revision>::invoke(){
-        bind::select().squeeze(&t);
-        t.release(); 
-    }
-
-    // }}}
-
-} }
-
-#endif
-#ifdef CUDART_VERSION
-
-#ifndef BIND_TRANSPORT_CUDA_TRANSFER_HPP
-#define BIND_TRANSPORT_CUDA_TRANSFER_HPP
-
-namespace bind { namespace transport { namespace cuda {
-
-    namespace detail {
-        template<device From, device To>
-        struct transfer_impl {};
-        
-        template<>
-        struct transfer_impl<device::cpu, device::gpu> {
-            using memory_type = memory::gpu::standard;
-            static void invoke(void* dst, void* src, size_t sz){
-                cudaMemcpy(dst, src, sz, cudaMemcpyHostToDevice);
-            }
-        };
-        
-        template<>
-        struct transfer_impl<device::gpu, device::cpu> {
-            using memory_type = memory::cpu::standard;
-            static void invoke(void* dst, void* src, size_t sz){
-                cudaMemcpy(dst, src, sz, cudaMemcpyDeviceToHost);
-            }
-        };
-    }
-
-    template<device From, device To>
-    void transfer<From, To>::spawn(revision* r, revision*& s){
-        s = new revision(r->spec.extent, NULL, r->state, To, r->owner);
-        s->generator = new transfer(*r, *s);
-    }
-
-    template<device From, device To>
-    transfer<From, To>::transfer(revision& r, revision& s) : r(r), s(s) {
-        r.use(); s.use();
-        s.embed(s.spec.hard_malloc<typename detail::transfer_impl<From, To>::memory_type>());
-        if(r.generator != NULL) (r.generator.load())->queue(this);
-        else bind::select().queue(this);
-    }
-
-    template<device From, device To>
-    void transfer<From, To>::invoke(){
-        detail::transfer_impl<From, To>::invoke(s.data, r.data, r.spec.extent);
-
-        bind::select().squeeze(&r); r.release();
-        bind::select().squeeze(&s); s.release();
-        s.complete();
-    }
-
-    template<device From, device To>
-    bool transfer<From, To>::ready(){
-        return (r.generator == NULL);
-    }
-
-} } }
-
-#endif
 #endif
 
 #ifndef BIND_CORE_NODE_HPP

@@ -95,4 +95,27 @@ namespace bind {
     inline core::controller& select(){ return core::controller::weak_instance<void>::w; }
 }
 
+namespace bind { namespace nodes {
+    inline size_t size(){
+        return select().nodes.size();
+    }
+    inline std::vector<rank_t>::const_iterator begin(){
+        return select().nodes.begin();
+    }
+    inline std::vector<rank_t>::const_iterator end(){
+        return select().nodes.end();
+    }
+    inline rank_t which_(){
+        return select().get_node().which();
+    }
+    template<typename V>
+    inline rank_t which(const V& o){
+        return o.allocator_.desc->current->owner;
+    }
+    inline rank_t which(){
+        rank_t w = which_();
+        return (w == select().get_num_procs() ? select().get_rank() : w);
+    }
+} }
+
 #endif

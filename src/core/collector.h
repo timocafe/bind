@@ -36,23 +36,15 @@ namespace bind{ namespace memory {
 
     class collector {
     public:
-        struct delete_ptr {
-            void operator()( history* element ) const;
-            void operator()( revision* element ) const;
-            void operator()( any* element ) const;
-        };
-
-        void reserve(size_t n);
-        void push_back(history* o);
-        void push_back(revision* o);
-        void push_back(any* o);
         void squeeze(revision* r) const;
+        void push_back(revision* o);
+        void push_back(history* o);
+        void push_back(any* o);
         void clear();
     private:
-        size_t reserve_limit;
-        std::vector< history* >  str;
-        std::vector< revision* > rev;
-        std::vector< any* >      raw;
+        std::vector<history*> hs;
+        std::vector<revision*> rs;
+        std::vector<any*> as;
     };
 
 } }
