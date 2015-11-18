@@ -1531,11 +1531,10 @@ namespace bind { namespace transport { namespace mpi {
 
 #endif
 #else
+#define BIND_CHANNEL_NAME nop
 
 #ifndef BIND_TRANSPORT_NOP
 #define BIND_TRANSPORT_NOP
-
-#define BIND_CHANNEL_NAME nop
 
 namespace bind { namespace transport { namespace nop {
 

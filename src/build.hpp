@@ -121,6 +121,7 @@
 #include "transport/mpi/channel.hpp"
 #include "transport/mpi/collective.hpp"
 #else
+#define BIND_CHANNEL_NAME nop
 #include "transport/nop/channel.hpp"
 #endif
 #ifdef CUDART_VERSION

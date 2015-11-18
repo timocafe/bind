@@ -28,8 +28,6 @@
 #ifndef BIND_TRANSPORT_NOP
 #define BIND_TRANSPORT_NOP
 
-#define BIND_CHANNEL_NAME nop
-
 namespace bind { namespace transport { namespace nop {
 
     template<class T> struct collective {
