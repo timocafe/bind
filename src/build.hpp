@@ -80,7 +80,6 @@
 #include "utils/mutex.hpp"
 #include "utils/rank_t.hpp"
 // }}}
-#include "model/device.hpp"
 // {{{ memory package
 #include "memory/types.h"
 #include "memory/detail/factory.hpp"
@@ -103,6 +102,7 @@
 #include "memory/hub.hpp"
 // }}}
 // {{{ model package
+#include "model/device.hpp"
 #include "model/locality.hpp"
 #include "model/functor.hpp"
 #include "model/revision.hpp"

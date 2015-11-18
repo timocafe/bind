@@ -30,6 +30,16 @@
 
 namespace bind {
     enum class device { cpu, gpu, any };
+
+    template<device D>
+    struct associated_memory_types {
+        using set = memory::types::cpu;
+    };
+
+    template<>
+    struct associated_memory_types<device::gpu> {
+        using set = memory::types::gpu;
+    };
 }
 
 #endif

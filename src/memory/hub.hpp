@@ -30,7 +30,7 @@
 
 namespace bind { namespace memory {
 
-    template<device D>
+    template<class MemoryTypes>
     struct hub {
         static bool conserves(descriptor& c, descriptor& p){
             return (c.tmp || p.type == types::cpu::standard || c.type == types::cpu::bulk);
@@ -53,7 +53,7 @@ namespace bind { namespace memory {
 
     #ifdef CUDART_VERSION
     template<>
-    struct hub<device::cpu> : public hub<device::any> {
+    struct hub<types::cpu> : public hub<void> {
         static bool is_sibling(descriptor& c){
             return c.type != types::gpu::standard;
         }
@@ -62,8 +62,9 @@ namespace bind { namespace memory {
             return (c.tmp || p.type == types::cpu::standard || c.type == types::cpu::bulk);
         }
     };
+
     template<>
-    struct hub<device::gpu> {
+    struct hub<types::gpu> {
         static bool is_sibling(descriptor& c){
             return c.type == types::gpu::standard;
         }

@@ -111,10 +111,10 @@ namespace bind {
             revision& c = *o.allocator_.after; if(c.valid()) return;
             revision& p = *o.allocator_.before;
             if(!p.valid()){
-                c.embed(c.spec.calloc<D>());
-            }else if(!p.locked_once() || p.referenced() || !c.spec.conserves<D>(p.spec)){
-                c.embed(c.spec.malloc<D>());
-                c.spec.memcpy<D>(c.data, p.data, p.spec);
+                c.embed(c.spec.calloc<typename associated_memory_types<D>::set>());
+            }else if(!p.locked_once() || p.referenced() || !c.spec.conserves<typename associated_memory_types<D>::set>(p.spec)){
+                c.embed(c.spec.malloc<typename associated_memory_types<D>::set>());
+                c.spec.memcpy<typename associated_memory_types<D>::set>(c.data, p.data, p.spec);
             }else
                 c.reuse(p);
         }
@@ -138,7 +138,7 @@ namespace bind {
         }
         static void load_(T& o){
             revision& c = *o.allocator_.before;
-            if(!c.valid()) c.embed(c.spec.calloc<D>());
+            if(!c.valid()) c.embed(c.spec.calloc<typename associated_memory_types<D>::set>());
         }
         template<locality L, size_t Arg> static void apply_(T& obj, functor* m){
             auto o = obj.allocator_.desc;
@@ -169,8 +169,8 @@ namespace bind {
         static void load_(T& o){
             revision& c = *o.allocator_.after; if(c.valid()) return; // can it occur?
             revision& p = *o.allocator_.before;
-            if(!p.valid() || !p.locked_once() || p.referenced() || !c.spec.conserves<D>(p.spec)){
-                c.embed(c.spec.malloc<D>());
+            if(!p.valid() || !p.locked_once() || p.referenced() || !c.spec.conserves<typename associated_memory_types<D>::set>(p.spec)){
+                c.embed(c.spec.malloc<typename associated_memory_types<D>::set>());
             }else
                 c.reuse(p);
         }

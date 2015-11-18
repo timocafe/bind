@@ -31,7 +31,7 @@
 namespace bind { namespace memory {
 
     struct descriptor {
-        template<device D> friend struct hub;
+        template<class MemoryTypes> friend struct hub;
         descriptor(size_t e, types::id_type t = types::none) : extent(e), type(t), tmp(false) {}
 
         void free(void* ptr){
@@ -51,23 +51,23 @@ namespace bind { namespace memory {
             type = Memory::type;
             return Memory::malloc(extent);
         }
-        template<device D>
+        template<class MemoryTypes>
         void* malloc(){
-            return hub<D>::malloc(*this);
+            return hub<MemoryTypes>::malloc(*this);
         }
-        template<device D>
+        template<class MemoryTypes>
         void* calloc(){
-            void* m = hub<D>::malloc(*this);
-            hub<D>::memset(*this, m);
+            void* m = hub<MemoryTypes>::malloc(*this);
+            hub<MemoryTypes>::memset(*this, m);
             return m;
         }
-        template<device D>
+        template<class MemoryTypes>
         void memcpy(void* dst, void* src, descriptor& src_desc){
-            hub<D>::memcpy(*this, dst, src_desc, src);
+            hub<MemoryTypes>::memcpy(*this, dst, src_desc, src);
         }
-        template<device D>
+        template<class MemoryTypes>
         bool conserves(descriptor& p){
-            return hub<D>::conserves(*this, p);
+            return hub<MemoryTypes>::conserves(*this, p);
         }
         void reuse(descriptor& d){
             type = d.type;

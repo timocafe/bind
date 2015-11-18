@@ -314,15 +314,6 @@ namespace bind {
 
 #endif
 // }}}
-
-#ifndef BIND_MODEL_DEVICE
-#define BIND_MODEL_DEVICE
-
-namespace bind {
-    enum class device { cpu, gpu, any };
-}
-
-#endif
 // {{{ memory package
 
 #ifndef BIND_MEMORY_TYPES
@@ -785,7 +776,7 @@ namespace bind { namespace memory { namespace gpu {
 namespace bind { namespace memory {
 
     struct descriptor {
-        template<device D> friend struct hub;
+        template<class MemoryTypes> friend struct hub;
         descriptor(size_t e, types::id_type t = types::none) : extent(e), type(t), tmp(false) {}
 
         void free(void* ptr){
@@ -805,23 +796,23 @@ namespace bind { namespace memory {
             type = Memory::type;
             return Memory::malloc(extent);
         }
-        template<device D>
+        template<class MemoryTypes>
         void* malloc(){
-            return hub<D>::malloc(*this);
+            return hub<MemoryTypes>::malloc(*this);
         }
-        template<device D>
+        template<class MemoryTypes>
         void* calloc(){
-            void* m = hub<D>::malloc(*this);
-            hub<D>::memset(*this, m);
+            void* m = hub<MemoryTypes>::malloc(*this);
+            hub<MemoryTypes>::memset(*this, m);
             return m;
         }
-        template<device D>
+        template<class MemoryTypes>
         void memcpy(void* dst, void* src, descriptor& src_desc){
-            hub<D>::memcpy(*this, dst, src_desc, src);
+            hub<MemoryTypes>::memcpy(*this, dst, src_desc, src);
         }
-        template<device D>
+        template<class MemoryTypes>
         bool conserves(descriptor& p){
-            return hub<D>::conserves(*this, p);
+            return hub<MemoryTypes>::conserves(*this, p);
         }
         void reuse(descriptor& d){
             type = d.type;
@@ -846,7 +837,7 @@ namespace bind { namespace memory {
 
 namespace bind { namespace memory {
 
-    template<device D>
+    template<class MemoryTypes>
     struct hub {
         static bool conserves(descriptor& c, descriptor& p){
             return (c.tmp || p.type == types::cpu::standard || c.type == types::cpu::bulk);
@@ -869,7 +860,7 @@ namespace bind { namespace memory {
 
     #ifdef CUDART_VERSION
     template<>
-    struct hub<device::cpu> : public hub<device::any> {
+    struct hub<types::cpu> : public hub<void> {
         static bool is_sibling(descriptor& c){
             return c.type != types::gpu::standard;
         }
@@ -878,8 +869,9 @@ namespace bind { namespace memory {
             return (c.tmp || p.type == types::cpu::standard || c.type == types::cpu::bulk);
         }
     };
+
     template<>
-    struct hub<device::gpu> {
+    struct hub<types::gpu> {
         static bool is_sibling(descriptor& c){
             return c.type == types::gpu::standard;
         }
@@ -903,6 +895,25 @@ namespace bind { namespace memory {
 #endif
 // }}}
 // {{{ model package
+
+#ifndef BIND_MODEL_DEVICE
+#define BIND_MODEL_DEVICE
+
+namespace bind {
+    enum class device { cpu, gpu, any };
+
+    template<device D>
+    struct associated_memory_types {
+        using set = memory::types::cpu;
+    };
+
+    template<>
+    struct associated_memory_types<device::gpu> {
+        using set = memory::types::gpu;
+    };
+}
+
+#endif
 
 #ifndef BIND_MODEL_LOCALITY
 #define BIND_MODEL_LOCALITY
@@ -2631,10 +2642,10 @@ namespace bind {
             revision& c = *o.allocator_.after; if(c.valid()) return;
             revision& p = *o.allocator_.before;
             if(!p.valid()){
-                c.embed(c.spec.calloc<D>());
-            }else if(!p.locked_once() || p.referenced() || !c.spec.conserves<D>(p.spec)){
-                c.embed(c.spec.malloc<D>());
-                c.spec.memcpy<D>(c.data, p.data, p.spec);
+                c.embed(c.spec.calloc<typename associated_memory_types<D>::set>());
+            }else if(!p.locked_once() || p.referenced() || !c.spec.conserves<typename associated_memory_types<D>::set>(p.spec)){
+                c.embed(c.spec.malloc<typename associated_memory_types<D>::set>());
+                c.spec.memcpy<typename associated_memory_types<D>::set>(c.data, p.data, p.spec);
             }else
                 c.reuse(p);
         }
@@ -2658,7 +2669,7 @@ namespace bind {
         }
         static void load_(T& o){
             revision& c = *o.allocator_.before;
-            if(!c.valid()) c.embed(c.spec.calloc<D>());
+            if(!c.valid()) c.embed(c.spec.calloc<typename associated_memory_types<D>::set>());
         }
         template<locality L, size_t Arg> static void apply_(T& obj, functor* m){
             auto o = obj.allocator_.desc;
@@ -2689,8 +2700,8 @@ namespace bind {
         static void load_(T& o){
             revision& c = *o.allocator_.after; if(c.valid()) return; // can it occur?
             revision& p = *o.allocator_.before;
-            if(!p.valid() || !p.locked_once() || p.referenced() || !c.spec.conserves<D>(p.spec)){
-                c.embed(c.spec.malloc<D>());
+            if(!p.valid() || !p.locked_once() || p.referenced() || !c.spec.conserves<typename associated_memory_types<D>::set>(p.spec)){
+                c.embed(c.spec.malloc<typename associated_memory_types<D>::set>());
             }else
                 c.reuse(p);
         }
