@@ -38,7 +38,7 @@ namespace bind {
     protected:
         typedef T element_type;
        ~smart_ptr(){
-           if(impl) bind::destroy(impl); 
+           if(impl) bind::collect(impl); 
         }
         smart_ptr(element_type val){
             impl = new (memory::cpu::standard::calloc<sizeof_any<T>()>()) any(val);

@@ -36,7 +36,7 @@ namespace bind {
         typedef model::history bind_type;
 
         snapshot& operator=(const snapshot&) = delete;
-        snapshot(){ }
+        snapshot(){ } // should be deleted
         snapshot(size_t size){
             desc = new bind_type(size);
         }
@@ -47,8 +47,8 @@ namespace bind {
             r->protect();
         }
        ~snapshot(){
-            if(desc->weak()) delete desc;
-            else destroy(desc);
+            if(!desc->weak()) bind::collect(desc->current, desc->shadow);
+            delete desc;
         }
         void* data() volatile {
             return after->data;

@@ -1610,7 +1610,6 @@ namespace bind { namespace transport { namespace cuda {
 
 namespace bind{ namespace memory {
 
-    using model::history;
     using model::revision;
     using model::any;
 
@@ -1618,11 +1617,9 @@ namespace bind{ namespace memory {
     public:
         void squeeze(revision* r) const;
         void push_back(revision* o);
-        void push_back(history* o);
         void push_back(any* o);
         void clear();
     private:
-        std::vector<history*> hs;
         std::vector<revision*> rs;
         std::vector<any*> as;
     };
@@ -1637,10 +1634,6 @@ namespace bind{ namespace memory {
 
 namespace bind { namespace memory {
 
-    using model::history;
-    using model::revision;
-    using model::any;
-
     inline void collector::squeeze(revision* r) const {
         if(!r->referenced() && r->locked_once()) r->spec.free(r->data);
     }
@@ -1653,22 +1646,14 @@ namespace bind { namespace memory {
         }
     }
 
-    inline void collector::push_back(history* o){
-        this->push_back(o->current);
-        if(o->shadow) this->push_back(o->shadow);
-        this->hs.push_back(o);
-    }
-
     inline void collector::push_back(any* o){
         this->as.push_back(o);
     }
 
     inline void collector::clear(){
         for(auto r : rs){ r->spec.free(r->data); delete r; }
-        for(auto h : hs) delete h;
         for(auto a : as) memory::cpu::standard::free(a);
         rs.clear();
-        hs.clear();
         as.clear();
     }
 
@@ -2344,8 +2329,12 @@ namespace bind {
     }
 
     template<typename T>
-    inline void destroy(T* o){ 
+    inline void collect(T* o){
         bind::select().collect(o); 
+    }
+
+    inline void collect(model::revision* r, model::revision*& s){
+        bind::select().collect(r, s);
     }
 
     template<typename V>
@@ -2776,7 +2765,7 @@ namespace bind {
         typedef model::history bind_type;
 
         snapshot& operator=(const snapshot&) = delete;
-        snapshot(){ }
+        snapshot(){ } // should be deleted
         snapshot(size_t size){
             desc = new bind_type(size);
         }
@@ -2787,8 +2776,8 @@ namespace bind {
             r->protect();
         }
        ~snapshot(){
-            if(desc->weak()) delete desc;
-            else destroy(desc);
+            if(!desc->weak()) bind::collect(desc->current, desc->shadow);
+            delete desc;
         }
         void* data() volatile {
             return after->data;
@@ -3022,7 +3011,7 @@ namespace bind {
     protected:
         typedef T element_type;
        ~smart_ptr(){
-           if(impl) bind::destroy(impl); 
+           if(impl) bind::collect(impl); 
         }
         smart_ptr(element_type val){
             impl = new (memory::cpu::standard::calloc<sizeof_any<T>()>()) any(val);

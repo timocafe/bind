@@ -47,8 +47,12 @@ namespace bind {
     }
 
     template<typename T>
-    inline void destroy(T* o){ 
+    inline void collect(T* o){
         bind::select().collect(o); 
+    }
+
+    inline void collect(model::revision* r, model::revision*& s){
+        bind::select().collect(r, s);
     }
 
     template<typename V>

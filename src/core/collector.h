@@ -30,7 +30,6 @@
 
 namespace bind{ namespace memory {
 
-    using model::history;
     using model::revision;
     using model::any;
 
@@ -38,11 +37,9 @@ namespace bind{ namespace memory {
     public:
         void squeeze(revision* r) const;
         void push_back(revision* o);
-        void push_back(history* o);
         void push_back(any* o);
         void clear();
     private:
-        std::vector<history*> hs;
         std::vector<revision*> rs;
         std::vector<any*> as;
     };

@@ -30,10 +30,6 @@
 
 namespace bind { namespace memory {
 
-    using model::history;
-    using model::revision;
-    using model::any;
-
     inline void collector::squeeze(revision* r) const {
         if(!r->referenced() && r->locked_once()) r->spec.free(r->data);
     }
@@ -46,22 +42,14 @@ namespace bind { namespace memory {
         }
     }
 
-    inline void collector::push_back(history* o){
-        this->push_back(o->current);
-        if(o->shadow) this->push_back(o->shadow);
-        this->hs.push_back(o);
-    }
-
     inline void collector::push_back(any* o){
         this->as.push_back(o);
     }
 
     inline void collector::clear(){
         for(auto r : rs){ r->spec.free(r->data); delete r; }
-        for(auto h : hs) delete h;
         for(auto a : as) memory::cpu::standard::free(a);
         rs.clear();
-        hs.clear();
         as.clear();
     }
 
