@@ -37,7 +37,10 @@ namespace bind { namespace model {
           data(NULL), users(0), crefs(1)
         {
         }
-
+        template<device D>
+        revision* clone(){
+            return new revision(spec.extent, NULL, state, D, owner);
+        }
         void embed(void* ptr){
             data = ptr;
         }

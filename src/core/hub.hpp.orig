@@ -80,7 +80,7 @@ namespace bind { namespace transport {
     template<device D, locality L>
     struct hub<revision, D, L> {
         static void sync(revision* r, revision*){
-            hub_mpi<L>::sync(r);
+            hub_mpi<L>(r);
         }
     };
     // }}}
@@ -92,8 +92,8 @@ namespace bind { namespace transport {
         static void sync(revision*& r, revision*& s){
             if(model::gpu(r)){
                 if(!s){
-                    s = r->clone<device::cpu>(); if(!model::remote(r))
-                    cuda::transfer<device::gpu, device::cpu>::spawn(*r, *s);
+                    cuda::transfer<device::gpu, device::cpu>::clone(r, s); if(!model::remote(r))
+                    cuda::transfer<device::gpu, device::cpu>::issue(r, s);
                 }
                 std::swap(r, s);
             }
@@ -105,8 +105,8 @@ namespace bind { namespace transport {
         static void sync(revision*& r, revision*& s){
             if(model::gpu(r)){
                 if(!s){
-                    s = r->clone<device::cpu>(); if(model::local(r))
-                    cuda::transfer<device::gpu, device::cpu>::spawn(*r, *s);
+                    cuda::transfer<device::gpu, device::cpu>::clone(r, s); if(model::local(r))
+                    cuda::transfer<device::gpu, device::cpu>::issue(r, s);
                 }
                 std::swap(r, s);
             }
@@ -121,15 +121,15 @@ namespace bind { namespace transport {
             if(model::cpu(r)){
                 hub_mpi<locality::common>::sync(r);
                 if(!s){
-                    s = r->clone<device::gpu>();
-                    cuda::transfer<device::cpu, device::gpu>::spawn(*r, *s);
+                    cuda::transfer<device::cpu, device::gpu>::clone(r, s);
+                    cuda::transfer<device::cpu, device::gpu>::issue(r, s);
                 }
                 std::swap(r, s);
             }else{
                 if(model::common(r)) return;
                 if(!s){
-                    s = r->clone<device::cpu>();        if(model::local(r))  cuda::transfer<device::gpu, device::cpu>::spawn(*r, *s);
-                    hub_mpi<locality::common>::sync(s); if(model::remote(r)) cuda::transfer<device::cpu, device::gpu>::spawn(*s, *r);
+                    cuda::transfer<device::gpu, device::cpu>::clone(r, s); if(model::local(r))  cuda::transfer<device::gpu, device::cpu>::issue(r, s);
+                    hub_mpi<locality::common>::sync(s);                    if(model::remote(r)) cuda::transfer<device::cpu, device::gpu>::issue(s, r);
                 }else
                     hub_mpi<locality::common>::sync(s); // legacy refresh
             }
@@ -141,15 +141,15 @@ namespace bind { namespace transport {
             if(model::cpu(r)){
                 hub_mpi<locality::local>::sync(r);
                 if(!s){
-                    s = r->clone<device::gpu>();
-                    cuda::transfer<device::cpu, device::gpu>::spawn(*r, *s);
+                    cuda::transfer<device::cpu, device::gpu>::clone(r, s);
+                    cuda::transfer<device::cpu, device::gpu>::issue(r, s);
                 }
                 std::swap(r, s);
             }else{
                 if(!model::remote(r)) return;
                 if(!s){
-                    s = r->clone<device::cpu>(); hub_mpi<locality::local>::sync(s);
-                    cuda::transfer<device::cpu, device::gpu>::spawn(*s, *r);
+                    cuda::transfer<device::gpu, device::cpu>::clone(r, s); hub_mpi<locality::local>::sync(s);
+                    cuda::transfer<device::cpu, device::gpu>::issue(s, r);
                 }else
                     hub_mpi<locality::local>::sync(s); // legacy refresh
             }

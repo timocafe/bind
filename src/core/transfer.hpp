@@ -52,9 +52,8 @@ namespace bind { namespace transport { namespace cuda {
     }
 
     template<device From, device To>
-    void transfer<From, To>::spawn(revision* r, revision*& s){
-        s = new revision(r->spec.extent, NULL, r->state, To, r->owner);
-        s->generator = new transfer(*r, *s);
+    void transfer<From, To>::spawn(revision& r, revision& s){
+        s.generator = new transfer(r, s);
     }
 
     template<device From, device To>

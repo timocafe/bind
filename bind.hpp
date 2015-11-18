@@ -955,7 +955,10 @@ namespace bind { namespace model {
           data(NULL), users(0), crefs(1)
         {
         }
-
+        template<device D>
+        revision* clone(){
+            return new revision(spec.extent, NULL, state, D, owner);
+        }
         void embed(void* ptr){
             data = ptr;
         }
@@ -1802,7 +1805,7 @@ namespace bind { namespace transport { namespace cuda {
 
     template<device From, device To>
     struct transfer : public functor, public memory::cpu::use_bulk_new<transfer<From, To> > {
-	static void spawn(revision* r, revision*& s);
+	static void spawn(revision& r, revision& s);
 	transfer(revision& r, revision& s);
 	virtual void invoke() override;
 	virtual bool ready() override;
@@ -1842,9 +1845,8 @@ namespace bind { namespace transport { namespace cuda {
     }
 
     template<device From, device To>
-    void transfer<From, To>::spawn(revision* r, revision*& s){
-        s = new revision(r->spec.extent, NULL, r->state, To, r->owner);
-        s->generator = new transfer(*r, *s);
+    void transfer<From, To>::spawn(revision& r, revision& s){
+        s.generator = new transfer(r, s);
     }
 
     template<device From, device To>
@@ -2063,66 +2065,140 @@ namespace bind { namespace core {
 #define BIND_CORE_HUB_HPP
 
 namespace bind { namespace transport {
-
     using model::revision;
     using model::any;
 
-    template<device D, locality L = locality::common>
-    struct hub {
-        static void sync(revision*& r, revision*& s){
+    template<typename T, device D, locality L> struct hub;
+    template<locality L> class hub_mpi;
+
+    // {{{ hub for model::any
+    template<device D>
+    struct hub<any, D, locality::local> {
+        static void sync(any* v){
+            if(bind::nodes::size() == 1) return;
+            core::set<any>::spawn(*v);
+        }
+    };
+    template<device D>
+    struct hub<any, D, locality::remote> {
+        static void sync(any* v){
+            core::get<any>::spawn(*v);
+        }
+    };
+    // }}}
+    // {{{ mpi-only hub
+    template<>
+    struct hub_mpi<locality::common> {
+        static void sync(revision* r){
             if(bind::nodes::size() == 1) return; // serial
             if(model::common(r)) return;
             if(model::local(r)) core::set<revision>::spawn(*r);
             else core::get<revision>::spawn(*r);
         }
     };
-
-    template<device D>
-    struct hub<D, locality::local> {
-        static void sync(revision*& r, revision*& s){
-            if(model::common(r)) return;
-            if(!model::local(r)) core::get<revision>::spawn(*r);
-        }
-        static void sync(any* v){
-            if(bind::nodes::size() == 1) return;
-            core::set<any>::spawn(*v);
+    template<>
+    struct hub_mpi<locality::local> {
+        static void sync(revision* r){
+            if(model::remote(r)) core::get<revision>::spawn(*r);
         }
     };
-
-    template<device D>
-    struct hub<D, locality::remote> {
-        static void sync(revision*& r, revision*& s){
+    template<>
+    struct hub_mpi<locality::remote> {
+        static void sync(revision* r){
             if(r->owner == bind::nodes::which_() || model::common(r)) return;
             if(model::local(r)) core::set<revision>::spawn(*r);
             else core::get<revision>::spawn(*r); // assist
         }
-        static void sync(any* v){
-            core::get<any>::spawn(*v);
+    };
+    // }}}
+    #ifndef CUDART_VERSION
+    // {{{ default hub for model::revision
+    template<device D, locality L>
+    struct hub<revision, D, L> {
+        static void sync(revision* r, revision*){
+            hub_mpi<L>::sync(r);
         }
     };
-
-    #ifdef CUDART_VERSION
-    // if(r->owner != bind::nodes::which_() && model::local(r)) I will transfer
+    // }}}
+    #else
+    // {{{ device-aware hub for model::revision
+    // {{{ cpu
     template<locality L>
-    struct hub<device::cpu, L> : public hub<device::any, L> {
+    struct hub<revision, device::cpu, L> {
         static void sync(revision*& r, revision*& s){
             if(model::gpu(r)){
-                if(!s) cuda::transfer<device::gpu, device::cpu>::spawn(r, s); 
+                if(!s){
+                    s = r->clone<device::cpu>(); if(!model::remote(r))
+                    cuda::transfer<device::gpu, device::cpu>::spawn(*r, *s);
+                }
                 std::swap(r, s);
             }
-            hub<device::any, L>::sync(r, s);
+            hub_mpi<L>::sync(r);
         }
     };
-
-    template<locality L>
-    struct hub<device::gpu, L> : public hub<device::any, L> {
+    template<>
+    struct hub<revision, device::cpu, locality::remote> {
         static void sync(revision*& r, revision*& s){
-            if(model::cpu(r) && L != locality::remote){
-                if(!s) cuda::transfer<device::cpu, device::gpu>::spawn(r, s);
+            if(model::gpu(r)){
+                if(!s){
+                    s = r->clone<device::cpu>(); if(model::local(r))
+                    cuda::transfer<device::gpu, device::cpu>::spawn(*r, *s);
+                }
                 std::swap(r, s);
+            }
+            hub_mpi<locality::remote>::sync(r);
+        }
+    };
+    // }}}
+    // {{{ gpu
+    template<>
+    struct hub<revision, device::gpu, locality::common> {
+        static void sync(revision*& r, revision*& s){
+            if(model::cpu(r)){
+                hub_mpi<locality::common>::sync(r);
+                if(!s){
+                    s = r->clone<device::gpu>();
+                    cuda::transfer<device::cpu, device::gpu>::spawn(*r, *s);
+                }
+                std::swap(r, s);
+            }else{
+                if(model::common(r)) return;
+                if(!s){
+                    s = r->clone<device::cpu>();        if(model::local(r))  cuda::transfer<device::gpu, device::cpu>::spawn(*r, *s);
+                    hub_mpi<locality::common>::sync(s); if(model::remote(r)) cuda::transfer<device::cpu, device::gpu>::spawn(*s, *r);
+                }else
+                    hub_mpi<locality::common>::sync(s); // legacy refresh
             }
         }
     };
+    template<>
+    struct hub<revision, device::gpu, locality::local> {
+        static void sync(revision*& r, revision*& s){
+            if(model::cpu(r)){
+                hub_mpi<locality::local>::sync(r);
+                if(!s){
+                    s = r->clone<device::gpu>();
+                    cuda::transfer<device::cpu, device::gpu>::spawn(*r, *s);
+                }
+                std::swap(r, s);
+            }else{
+                if(!model::remote(r)) return;
+                if(!s){
+                    s = r->clone<device::cpu>(); hub_mpi<locality::local>::sync(s);
+                    cuda::transfer<device::cpu, device::gpu>::spawn(*s, *r);
+                }else
+                    hub_mpi<locality::local>::sync(s); // legacy refresh
+            }
+        }
+    };
+    template<>
+    struct hub<revision, device::gpu, locality::remote> {
+        static void sync(revision*& r, revision*& s){
+            hub<revision, device::cpu, locality::remote>::sync(r, s);
+        }
+    };
+    // }}}
+    // }}}
     #endif
 } }
 
@@ -2204,7 +2280,7 @@ namespace bind { namespace core {
 
     template<locality L, device D, typename T>
     inline void controller::sync(T* o){
-        transport::hub<D, L>::sync(o);
+        transport::hub<T, D, L>::sync(o);
     }
 
     template<typename T> void controller::collect(T* o){
@@ -2213,7 +2289,7 @@ namespace bind { namespace core {
 
     template<locality L, device D>
     inline void controller::sync(revision*& c, revision*& s){
-        transport::hub<D, L>::sync(c, s);
+        transport::hub<revision, D, L>::sync(c, s);
     }
 
     void controller::collect(revision* c, revision*& s){

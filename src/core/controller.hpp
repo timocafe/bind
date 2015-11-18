@@ -101,7 +101,7 @@ namespace bind { namespace core {
 
     template<locality L, device D, typename T>
     inline void controller::sync(T* o){
-        transport::hub<D, L>::sync(o);
+        transport::hub<T, D, L>::sync(o);
     }
 
     template<typename T> void controller::collect(T* o){
@@ -110,7 +110,7 @@ namespace bind { namespace core {
 
     template<locality L, device D>
     inline void controller::sync(revision*& c, revision*& s){
-        transport::hub<D, L>::sync(c, s);
+        transport::hub<revision, D, L>::sync(c, s);
     }
 
     void controller::collect(revision* c, revision*& s){

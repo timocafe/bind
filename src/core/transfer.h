@@ -34,7 +34,7 @@ namespace bind { namespace transport { namespace cuda {
 
     template<device From, device To>
     struct transfer : public functor, public memory::cpu::use_bulk_new<transfer<From, To> > {
-	static void spawn(revision* r, revision*& s);
+	static void spawn(revision& r, revision& s);
 	transfer(revision& r, revision& s);
 	virtual void invoke() override;
 	virtual bool ready() override;
