@@ -129,7 +129,6 @@
 #endif
 // }}}
 // {{{ core package (requires :model :transport)
-#include "core/collector.h"
 #include "core/collector.hpp"
 #include "core/node.h"
 #include "core/controller.h"

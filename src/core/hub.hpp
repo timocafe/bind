@@ -25,8 +25,8 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef BIND_CORE_HUB_HPP
-#define BIND_CORE_HUB_HPP
+#ifndef BIND_CORE_HUB
+#define BIND_CORE_HUB
 
 namespace bind { namespace transport {
     using model::revision;

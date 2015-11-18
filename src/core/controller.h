@@ -76,7 +76,7 @@ namespace bind { namespace core {
         std::vector< functor* > stack_s;
         std::vector< functor* >* chains;
         std::vector< functor* >* mirror;
-        memory::collector garbage;
+        collector garbage;
         utils::funneled_io io_guard;
         node_each* each;
         node* which;

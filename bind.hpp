@@ -1567,8 +1567,8 @@ namespace bind { namespace transport { namespace nop {
 #endif
 #ifdef CUDART_VERSION
 
-#ifndef BIND_TRANSPORT_CUDA_CHANNEL_HPP
-#define BIND_TRANSPORT_CUDA_CHANNEL_HPP
+#ifndef BIND_TRANSPORT_CUDA_CHANNEL
+#define BIND_TRANSPORT_CUDA_CHANNEL
 
 #define NSTREAMS 16
 
@@ -1608,57 +1608,39 @@ namespace bind { namespace transport { namespace cuda {
 // }}}
 // {{{ core package (requires :model :transport)
 
-#ifndef BIND_CORE_COLLECTOR_H
-#define BIND_CORE_COLLECTOR_H
+#ifndef BIND_CORE_COLLECTOR
+#define BIND_CORE_COLLECTOR
 
-namespace bind{ namespace memory {
+namespace bind{ namespace core {
 
     using model::revision;
     using model::any;
 
     class collector {
     public:
-        void squeeze(revision* r) const;
-        void push_back(revision* o);
-        void push_back(any* o);
-        void clear();
+        void squeeze(revision* r) const {
+            if(!r->referenced() && r->locked_once()) r->spec.free(r->data);
+        }
+        void push_back(revision* r){
+            r->weaken();
+            if(!r->referenced()){ // squeeze
+                if(!r->locked()) r->spec.free(r->data); // artifacts or last one
+                this->rs.push_back(r);
+            }
+        }
+        void push_back(any* o){
+            this->as.push_back(o);
+        }
+        void clear(){
+            for(auto r : rs){ r->spec.free(r->data); delete r; }
+            for(auto a : as) memory::cpu::standard::free(a);
+            rs.clear();
+            as.clear();
+        }
     private:
         std::vector<revision*> rs;
         std::vector<any*> as;
     };
-
-} }
-
-#endif
-
-
-#ifndef BIND_CORE_COLLECTOR_HPP
-#define BIND_CORE_COLLECTOR_HPP
-
-namespace bind { namespace memory {
-
-    inline void collector::squeeze(revision* r) const {
-        if(!r->referenced() && r->locked_once()) r->spec.free(r->data);
-    }
-
-    inline void collector::push_back(revision* r){
-        r->weaken();
-        if(!r->referenced()){ // squeeze
-            if(!r->locked()) r->spec.free(r->data); // artifacts or last one
-            this->rs.push_back(r);
-        }
-    }
-
-    inline void collector::push_back(any* o){
-        this->as.push_back(o);
-    }
-
-    inline void collector::clear(){
-        for(auto r : rs){ r->spec.free(r->data); delete r; }
-        for(auto a : as) memory::cpu::standard::free(a);
-        rs.clear();
-        as.clear();
-    }
 
 } }
 
@@ -1751,7 +1733,7 @@ namespace bind { namespace core {
         std::vector< functor* > stack_s;
         std::vector< functor* >* chains;
         std::vector< functor* >* mirror;
-        memory::collector garbage;
+        collector garbage;
         utils::funneled_io io_guard;
         node_each* each;
         node* which;
@@ -2061,8 +2043,8 @@ namespace bind { namespace core {
 
 #endif
 
-#ifndef BIND_CORE_HUB_HPP
-#define BIND_CORE_HUB_HPP
+#ifndef BIND_CORE_HUB
+#define BIND_CORE_HUB
 
 namespace bind { namespace transport {
     using model::revision;
