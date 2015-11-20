@@ -227,8 +227,8 @@ namespace bind { namespace utils {
 
 #endif
 
-#ifndef BIND_UTILS_MUTEX
-#define BIND_UTILS_MUTEX
+#ifndef BIND_UTILS_GUARD
+#define BIND_UTILS_GUARD
 
 namespace bind { 
 
@@ -238,54 +238,6 @@ namespace bind {
         bool operator()(){ if(!once){ once = true; return true; } return false; }
     private:
         bool once;
-    };
-
-    template <typename M>
-    class guard {
-    private:
-        M& mtx;
-        guard(const guard &);
-        void operator= (const guard &);
-    public:
-        explicit guard(M& nmtx) : mtx(nmtx){ mtx.lock(); }
-        ~guard(){ mtx.unlock(); }
-    };
-
-    class mutex {
-    private:
-        pthread_mutex_t m;
-    public:
-        mutex(mutex const&) = delete;
-        mutex& operator= (mutex const&) = delete;
-
-        mutex(){
-            int const res = pthread_mutex_init(&m,NULL);
-            assert(res == 0);
-        }
-       ~mutex(){
-            int ret;
-            do{ ret = pthread_mutex_destroy(&m);
-            } while(ret == EINTR);
-        }
-        void lock(){
-            int res;
-            do{ res = pthread_mutex_lock(&m);
-            }while (res == EINTR);
-            assert(res == 0);
-        }
-        void unlock(){
-            int res;
-            do{ res = pthread_mutex_unlock(&m);
-            } while(res == EINTR);
-            assert(res == 0);
-        }
-        bool try_lock(){
-            int res;
-            do{ res = pthread_mutex_trylock(&m);
-            } while(res == EINTR);
-            if(res == EBUSY) return false;
-            return !res;
-        }
     };
 }
 
@@ -411,55 +363,6 @@ namespace bind { namespace memory {
         void** buffer;
     };
 
-    template<size_t S>
-    class factory {
-    public:
-        typedef bind::mutex mutex;
-        typedef bind::guard<mutex> guard;
-    private:
-        factory(const factory&) = delete;
-        factory& operator=(const factory&) = delete;
-        factory(){
-            this->buffers.push_back(std::malloc(S));
-            this->buffer = &this->buffers[0];
-        }
-    public:
-        static factory& instance(){
-            static factory singleton; return singleton;
-        }
-        static void* provide(){
-            factory& s = instance();
-            guard g(s.mtx);
-            void* chunk;
-
-            chunk = *s.buffer;
-            if(*s.buffer == s.buffers.back()){
-                s.buffers.push_back(std::malloc(S));
-                s.buffer = &s.buffers.back();
-            }else
-                s.buffer++;
-
-            return chunk;
-        }
-        static void deallocate(){
-            factory& s = instance();
-            for(int i = 1; i < s.buffers.size(); i++) std::free(s.buffers[i]);
-            s.buffers.resize(1);
-        }
-        static void reset(){
-            factory& s = instance();
-            s.buffer = &s.buffers[0];
-        }
-        static size_t size(){
-            factory& s = instance();
-            return (s.buffer - &s.buffers[0]);
-        }
-    private:
-        mutex mtx;
-        std::vector<void*> buffers;
-        void** buffer;
-    };
-
 } }
 
 #endif
@@ -518,21 +421,6 @@ namespace bind { namespace memory {
         Factory pool;
     };
 
-    template<size_t S, class Factory>
-    class region : public serial_region<S,Factory> {
-    public:
-        typedef bind::mutex mutex;
-        typedef bind::guard<mutex> guard;
-        typedef serial_region<S,Factory> base;
-
-        void* malloc(size_t sz){
-            guard g(this->mtx);
-            return base::malloc(sz);
-        }
-    private:
-        mutex mtx;
-    };
-
 } }
 
 #endif
@@ -542,13 +430,7 @@ namespace bind { namespace memory {
 #define BIND_MEMORY_CPU_BULK
 
 #ifndef BIND_INSTR_BULK_CHUNK
-#define BIND_INSTR_BULK_CHUNK     16777216 // 16 MB
-#endif
-#ifndef BIND_DATA_BULK_CHUNK
-#define BIND_DATA_BULK_CHUNK      67108864 // 64 MB
-#endif
-#ifndef BIND_COMM_BULK_CHUNK
-#define BIND_COMM_BULK_CHUNK      67108864 // 64 MB
+#define BIND_INSTR_BULK_CHUNK 16777216 // 16 MB
 #endif
 
 namespace bind { namespace memory { namespace cpu {
@@ -563,75 +445,6 @@ namespace bind { namespace memory { namespace cpu {
 
 } } }
 
-#endif
-
-#ifndef BIND_MEMORY_CPU_DATA_BULK
-#define BIND_MEMORY_CPU_DATA_BULK
-
-#define DATA_BULK_LIMIT 10
-
-namespace bind { namespace memory { namespace cpu {
-
-    class data_bulk : public bulk {
-        data_bulk(){
-            this->soft_limit = DATA_BULK_LIMIT * ((double)getRSSLimit() / BIND_DATA_BULK_CHUNK / 100);
-        }
-    public:
-        static data_bulk& instance(){
-            static data_bulk singleton; return singleton;
-        }
-        static void* soft_malloc(size_t s){
-            if(instance().soft_limit < factory<BIND_DATA_BULK_CHUNK>::size() || s > BIND_DATA_BULK_CHUNK) return NULL;
-            return instance().memory.malloc(s);
-        }
-
-        static void drop(){
-            instance().memory.reset();
-            if(instance().soft_limit < factory<BIND_DATA_BULK_CHUNK>::size())
-                factory<BIND_DATA_BULK_CHUNK>::deallocate();
-            factory<BIND_DATA_BULK_CHUNK>::reset();
-        }
-    private:
-        region<BIND_DATA_BULK_CHUNK, factory<BIND_DATA_BULK_CHUNK> > memory;
-        size_t soft_limit;
-    };
-
-} } }
-
-#undef DATA_BULK_LIMIT
-#endif
-
-#ifndef BIND_MEMORY_CPU_COMM_BULK
-#define BIND_MEMORY_CPU_COMM_BULK
-
-#define COMM_BULK_LIMIT 20
-
-namespace bind { namespace memory { namespace cpu {
-
-    class comm_bulk : public bulk {
-        comm_bulk(){
-            this->soft_limit = COMM_BULK_LIMIT * ((double)getRSSLimit() / BIND_COMM_BULK_CHUNK / 100);
-        }
-    public:
-        static comm_bulk& instance(){
-            static comm_bulk singleton; return singleton;
-        }
-        template<size_t S> static void* malloc()        { return instance().memory.malloc(S); }
-                           static void* malloc(size_t s){ return instance().memory.malloc(s); }
-        static void drop(){
-            instance().memory.reset();
-            if(instance().soft_limit < factory<BIND_COMM_BULK_CHUNK>::size())
-                factory<BIND_COMM_BULK_CHUNK>::deallocate();
-            factory<BIND_COMM_BULK_CHUNK>::reset();
-        }
-    private:
-        size_t soft_limit;
-        region<BIND_COMM_BULK_CHUNK, factory<BIND_COMM_BULK_CHUNK> > memory;
-    };
-
-} } }
-
-#undef COMM_BULK_LIMIT
 #endif
 
 #ifndef BIND_MEMORY_CPU_INSTR_BULK
@@ -780,7 +593,7 @@ namespace bind { namespace memory {
 
     struct descriptor {
         template<class MemoryTypes> friend struct hub;
-        descriptor(size_t e, types::id_type t = types::none) : extent(e), type(t), tmp(false) {}
+        descriptor(size_t e, types::id_type t = types::none) : extent(e), type(t) {}
 
         void free(void* ptr){
             if(!ptr) return;
@@ -821,14 +634,10 @@ namespace bind { namespace memory {
             type = d.type;
             d.type = types::none;
         }
-        void temporary(bool t){
-            tmp = t;
-        }
     public:
         const size_t extent;
     private:
         types::id_type type;
-        bool tmp;
     };
 
 } }
@@ -843,13 +652,9 @@ namespace bind { namespace memory {
     template<class MemoryTypes>
     struct hub {
         static bool conserves(descriptor& c, descriptor& p){
-            return (c.tmp || p.type == types::cpu::standard || c.type == types::cpu::bulk);
+            return true;
         }
         static void* malloc(descriptor& c){
-            if(c.tmp || c.type == types::cpu::bulk){
-                void* ptr = cpu::data_bulk::soft_malloc(c.extent);
-                if(ptr){ c.type = types::cpu::bulk; return ptr; }
-            }
             c.type = types::cpu::standard;
             return cpu::standard::malloc(c.extent);
         }
@@ -868,8 +673,7 @@ namespace bind { namespace memory {
             return c.type != types::gpu::standard;
         }
         static bool conserves(descriptor& c, descriptor& p){
-            if(!is_sibling(p)) return false;
-            return (c.tmp || p.type == types::cpu::standard || c.type == types::cpu::bulk);
+            return is_sibling(p);
         }
     };
 
@@ -995,13 +799,9 @@ namespace bind { namespace model {
         }
         void protect(){
             crefs++;
-            if(valid() || state == locality::remote) return;
-            if(crefs == 1) spec.temporary(false);
         }
         void weaken(){
             crefs--;
-            if(valid() || state == locality::remote) return;
-            if(!crefs) spec.temporary(true);
         }
 
         memory::descriptor spec;
@@ -1622,7 +1422,7 @@ namespace bind{ namespace core {
     class collector {
     public:
         void squeeze(revision* r) const {
-            if(!r->referenced() && r->locked_once()) r->spec.free(r->data);
+            if((!r->referenced() || model::remote(r)) && r->locked_once()) r->spec.free(r->data);
         }
         void push_back(revision* r){
             r->weaken();
@@ -1939,7 +1739,7 @@ namespace bind { namespace core {
         if(handle->involved() && !t.valid()){
             t.use();
             t.generator = this;
-            t.embed(t.spec.hard_malloc<memory::cpu::comm_bulk>()); 
+            t.embed(t.spec.hard_malloc<memory::cpu::standard>()); 
             bind::select().queue(this);
         }
     }
@@ -2221,8 +2021,6 @@ namespace bind { namespace core {
         this->flush();
         this->clear();
         memory::cpu::instr_bulk::drop();
-        memory::cpu::data_bulk::drop();
-        memory::cpu::comm_bulk::drop();
     }
 
     inline node& controller::get_node(){

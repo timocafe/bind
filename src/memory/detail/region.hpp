@@ -79,21 +79,6 @@ namespace bind { namespace memory {
         Factory pool;
     };
 
-    template<size_t S, class Factory>
-    class region : public serial_region<S,Factory> {
-    public:
-        typedef bind::mutex mutex;
-        typedef bind::guard<mutex> guard;
-        typedef serial_region<S,Factory> base;
-
-        void* malloc(size_t sz){
-            guard g(this->mtx);
-            return base::malloc(sz);
-        }
-    private:
-        mutex mtx;
-    };
-
 } }
 
 #endif

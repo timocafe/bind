@@ -74,13 +74,9 @@ namespace bind { namespace model {
         }
         void protect(){
             crefs++;
-            if(valid() || state == locality::remote) return;
-            if(crefs == 1) spec.temporary(false);
         }
         void weaken(){
             crefs--;
-            if(valid() || state == locality::remote) return;
-            if(!crefs) spec.temporary(true);
         }
 
         memory::descriptor spec;

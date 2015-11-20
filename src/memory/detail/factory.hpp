@@ -61,55 +61,6 @@ namespace bind { namespace memory {
         void** buffer;
     };
 
-    template<size_t S>
-    class factory {
-    public:
-        typedef bind::mutex mutex;
-        typedef bind::guard<mutex> guard;
-    private:
-        factory(const factory&) = delete;
-        factory& operator=(const factory&) = delete;
-        factory(){
-            this->buffers.push_back(std::malloc(S));
-            this->buffer = &this->buffers[0];
-        }
-    public:
-        static factory& instance(){
-            static factory singleton; return singleton;
-        }
-        static void* provide(){
-            factory& s = instance();
-            guard g(s.mtx);
-            void* chunk;
-
-            chunk = *s.buffer;
-            if(*s.buffer == s.buffers.back()){
-                s.buffers.push_back(std::malloc(S));
-                s.buffer = &s.buffers.back();
-            }else
-                s.buffer++;
-
-            return chunk;
-        }
-        static void deallocate(){
-            factory& s = instance();
-            for(int i = 1; i < s.buffers.size(); i++) std::free(s.buffers[i]);
-            s.buffers.resize(1);
-        }
-        static void reset(){
-            factory& s = instance();
-            s.buffer = &s.buffers[0];
-        }
-        static size_t size(){
-            factory& s = instance();
-            return (s.buffer - &s.buffers[0]);
-        }
-    private:
-        mutex mtx;
-        std::vector<void*> buffers;
-        void** buffer;
-    };
-
 } }
 
 #endif

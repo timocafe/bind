@@ -35,7 +35,7 @@ namespace bind { namespace memory {
 
     struct descriptor {
         template<class MemoryTypes> friend struct hub;
-        descriptor(size_t e, types::id_type t = types::none) : extent(e), type(t), tmp(false) {}
+        descriptor(size_t e, types::id_type t = types::none) : extent(e), type(t) {}
 
         void free(void* ptr){
             if(!ptr) return;
@@ -76,14 +76,10 @@ namespace bind { namespace memory {
             type = d.type;
             d.type = types::none;
         }
-        void temporary(bool t){
-            tmp = t;
-        }
     public:
         const size_t extent;
     private:
         types::id_type type;
-        bool tmp;
     };
 
 } }

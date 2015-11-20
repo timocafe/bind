@@ -25,8 +25,8 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef BIND_UTILS_MUTEX
-#define BIND_UTILS_MUTEX
+#ifndef BIND_UTILS_GUARD
+#define BIND_UTILS_GUARD
 
 namespace bind { 
 
@@ -36,54 +36,6 @@ namespace bind {
         bool operator()(){ if(!once){ once = true; return true; } return false; }
     private:
         bool once;
-    };
-
-    template <typename M>
-    class guard {
-    private:
-        M& mtx;
-        guard(const guard &);
-        void operator= (const guard &);
-    public:
-        explicit guard(M& nmtx) : mtx(nmtx){ mtx.lock(); }
-        ~guard(){ mtx.unlock(); }
-    };
-
-    class mutex {
-    private:
-        pthread_mutex_t m;
-    public:
-        mutex(mutex const&) = delete;
-        mutex& operator= (mutex const&) = delete;
-
-        mutex(){
-            int const res = pthread_mutex_init(&m,NULL);
-            assert(res == 0);
-        }
-       ~mutex(){
-            int ret;
-            do{ ret = pthread_mutex_destroy(&m);
-            } while(ret == EINTR);
-        }
-        void lock(){
-            int res;
-            do{ res = pthread_mutex_lock(&m);
-            }while (res == EINTR);
-            assert(res == 0);
-        }
-        void unlock(){
-            int res;
-            do{ res = pthread_mutex_unlock(&m);
-            } while(res == EINTR);
-            assert(res == 0);
-        }
-        bool try_lock(){
-            int res;
-            do{ res = pthread_mutex_trylock(&m);
-            } while(res == EINTR);
-            if(res == EBUSY) return false;
-            return !res;
-        }
     };
 }
 

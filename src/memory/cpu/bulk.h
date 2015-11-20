@@ -29,13 +29,7 @@
 #define BIND_MEMORY_CPU_BULK
 
 #ifndef BIND_INSTR_BULK_CHUNK
-#define BIND_INSTR_BULK_CHUNK     16777216 // 16 MB
-#endif
-#ifndef BIND_DATA_BULK_CHUNK
-#define BIND_DATA_BULK_CHUNK      67108864 // 64 MB
-#endif
-#ifndef BIND_COMM_BULK_CHUNK
-#define BIND_COMM_BULK_CHUNK      67108864 // 64 MB
+#define BIND_INSTR_BULK_CHUNK 16777216 // 16 MB
 #endif
 
 namespace bind { namespace memory { namespace cpu {

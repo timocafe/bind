@@ -36,7 +36,7 @@ namespace bind{ namespace core {
     class collector {
     public:
         void squeeze(revision* r) const {
-            if(!r->referenced() && r->locked_once()) r->spec.free(r->data);
+            if((!r->referenced() || model::remote(r)) && r->locked_once()) r->spec.free(r->data);
         }
         void push_back(revision* r){
             r->weaken();

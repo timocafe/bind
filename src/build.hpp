@@ -77,7 +77,7 @@
 #include "utils/rss.hpp"
 #include "utils/index_sequence.hpp"
 #include "utils/io.hpp"
-#include "utils/mutex.hpp"
+#include "utils/guard.hpp"
 #include "utils/rank_t.hpp"
 // }}}
 // {{{ memory package
@@ -86,8 +86,6 @@
 #include "memory/detail/region.hpp"
     // {{{ memory::cpu package
     #include "memory/cpu/bulk.h"
-    #include "memory/cpu/data_bulk.hpp"
-    #include "memory/cpu/comm_bulk.hpp"
     #include "memory/cpu/instr_bulk.hpp"
     #include "memory/cpu/standard.hpp"
     #include "memory/cpu/new.hpp"

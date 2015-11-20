@@ -63,7 +63,7 @@ namespace bind { namespace core {
         if(handle->involved() && !t.valid()){
             t.use();
             t.generator = this;
-            t.embed(t.spec.hard_malloc<memory::cpu::comm_bulk>()); 
+            t.embed(t.spec.hard_malloc<memory::cpu::standard>()); 
             bind::select().queue(this);
         }
     }

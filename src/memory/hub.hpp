@@ -33,13 +33,9 @@ namespace bind { namespace memory {
     template<class MemoryTypes>
     struct hub {
         static bool conserves(descriptor& c, descriptor& p){
-            return (c.tmp || p.type == types::cpu::standard || c.type == types::cpu::bulk);
+            return true;
         }
         static void* malloc(descriptor& c){
-            if(c.tmp || c.type == types::cpu::bulk){
-                void* ptr = cpu::data_bulk::soft_malloc(c.extent);
-                if(ptr){ c.type = types::cpu::bulk; return ptr; }
-            }
             c.type = types::cpu::standard;
             return cpu::standard::malloc(c.extent);
         }
@@ -58,8 +54,7 @@ namespace bind { namespace memory {
             return c.type != types::gpu::standard;
         }
         static bool conserves(descriptor& c, descriptor& p){
-            if(!is_sibling(p)) return false;
-            return (c.tmp || p.type == types::cpu::standard || c.type == types::cpu::bulk);
+            return is_sibling(p);
         }
     };
 

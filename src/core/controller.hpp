@@ -57,8 +57,6 @@ namespace bind { namespace core {
         this->flush();
         this->clear();
         memory::cpu::instr_bulk::drop();
-        memory::cpu::data_bulk::drop();
-        memory::cpu::comm_bulk::drop();
     }
 
     inline node& controller::get_node(){
