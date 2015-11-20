@@ -74,7 +74,6 @@
 #include <cilk/cilk_api.h>
 // }}}
 // {{{ utils package
-#include "utils/rss.hpp"
 #include "utils/index_sequence.hpp"
 #include "utils/io.hpp"
 #include "utils/guard.hpp"
