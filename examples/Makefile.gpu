@@ -1,0 +1,18 @@
+# Makefile for gpu/node examples
+
+CXX = mpiicpc
+FLAGS = -O3 -std=c++11 -mt_mpi
+SM = sm_37
+EXAMPLES = array_gpu
+
+.DEFAULT: all
+.PHONY: all clean
+all: $(EXAMPLES)
+
+%: %.cpp
+	nvcc -DCUDA_C -x cu -arch=${SM} -I. -dc $@.cpp -o $@_cu.o
+	nvcc -ccbin ${CXX} -Xcompiler "${FLAGS}" -arch=${SM} $@.cpp $@_cu.o -o $@
+	rm $@_cu.o
+
+clean:
+	-rm -f $(EXAMPLES)

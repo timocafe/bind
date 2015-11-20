@@ -1,6 +1,7 @@
-# Makefile (icc)
+# Makefile for cpu single-node examples
 
-FLAGS?= -std=c++11 -O3
+CXX = icpc
+FLAGS = -O3 -std=c++11
 EXAMPLES = array shared_ptr reduce diffusion
 
 .DEFAULT: all
