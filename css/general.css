@@ -136,7 +136,7 @@ div#motto a {
     text-decoration: none;
 }
 div#motto p {
-    display: block;
+    display: inline-block;
     width: intrinsic;
     text-align: left;
     color: white;
