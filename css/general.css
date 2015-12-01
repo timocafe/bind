@@ -93,10 +93,27 @@ div#bind {
     transform: translateX(-50%);
     font-size: 34px;
     font-family: 'Open Sans', sans-serif;
-    font-weight: 300;
+    font-weight: 400;
+    border: 3px solid white;
+    border-radius: 2px;
+    padding-left: 25px;
+    padding-right: 25px;
     color: white;
 }
-div.title, div.title-part {
+div.keyword {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 34px;
+    font-family: 'Open Sans', sans-serif;
+    font-weight: 400;
+    border: 3px solid white;
+    border-radius: 2px;
+    padding-left: 25px;
+    padding-right: 25px;
+    color: white;
+}
+div.title {
     font-size: 34px;
     font-family: 'Open Sans', sans-serif;
     font-weight: 300;
@@ -104,23 +121,29 @@ div.title, div.title-part {
     opacity: 1;
     margin-top: 120px;
 }
-div.title-part {
-    margin-top: -30px;
-    margin-bottom: 45px;
-    margin-left: -2px;
-}
 div#motto {
     font-family: 'Open Sans';
+    font-weight: 200;
     display: block;
-    font-size: 16px;
+    font-size: 20px;
     margin-top: 20px;
     line-height: 150%;
     text-align: center;
 }
+div#motto a {
+    color: rgb(255,0,153);
+    text-decoration: none;
+}
 div#more {
-    display: inline-block;
-    text-decoration: underline;
+    display: block;
     cursor: pointer;
+    position: absolute;
+    left: 50%;
+    bottom: 3%;
+    transform: translateX(-50%);
+    font-size: 20px;
+    font-family: 'Open Sans', sans-serif;
+    color: #555;
 }
 img.revert {
     position: absolute;
@@ -134,9 +157,10 @@ img.revert-bottom {
     bottom: -50%;
 }
 a#ethz {
+    display: none;
     position: absolute;
-    left: 35px;
-    bottom: 25px;
+    right: 35px;
+    top: 25px;
 }
 a#ethz img {
     height: 12px;
@@ -209,6 +233,11 @@ div.how {
     display: none;
     position: relative;
     width: 635px;
+    display: block;
+    position: relative; 
+    width: auto;
+    margin: auto;
+    top: -30px;
 }
 img#prev {
     position: absolute;
@@ -225,13 +254,6 @@ img#next {
     margin-top: -13px;
     width: 70px;
     cursor: pointer;
-}
-div.how#part0 {
-    display: block;
-    position: relative; 
-    width: auto;
-    margin: auto;
-    top: -30px;
 }
 
 img.perf_detail {

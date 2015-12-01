@@ -40,9 +40,8 @@ $(document).ready(function(){
         adjustScreen();
     });
 
-    if(!mobile) $(document).on("scroll", function(){
-        var position = Math.min($(this).scrollTop(), parseInt(keys_height));
-        $("div#cover").css("top", Math.min(-position,0)+"px");
+    $(document).on("click", "div#more", function(){
+        $('html, body').animate({scrollTop: $("section#intro").height()});
     }); 
 
     $("img.sponsor").mouseenter(function(){ $(this).css("-webkit-filter", "grayscale(.0)");  });
