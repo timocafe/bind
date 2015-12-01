@@ -4,6 +4,7 @@
 <title>Bind: GPU+CPU on many nodes? Easy.</title>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" /> 
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="viewport" content="width=device-width, initial-scale=.8, maximum-scale=.8">
 <link href="https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,700italic,400,700,300" rel="stylesheet" type="text/css">
 <link href="css/general.css"  rel="stylesheet" type="text/css"/>
 <link media="handheld, only screen and (max-width: 480px), only screen and (max-device-width: 854px)" href="css/mobile.css" rel="stylesheet" type="text/css"/>
@@ -46,7 +47,7 @@
         <div class="title">
             <div id="motto">
             Bind execution scope to selected node.<br>
-            { bind::node first(0); throw_coin(c); }
+            <center><p>{ bind::node first(0); throw_coin(c); }</p></center>
             </div>
         </div>
     </div>
@@ -58,8 +59,8 @@
     <div class="how">
         <div class="title">
             <div id="motto">
-            Implicitely transfer args and bind the call to node's CPU.<br>
-            bind::cpu(sort, a.begin(), a.end());
+            Implicitely transfer args and bind the call to node's CPU cores.<p>
+            <center><p>bind::cpu(sort, a.begin(), a.end());</p></center>
             </div>
         </div>
     </div>
@@ -72,7 +73,7 @@
         <div class="title">
             <div id="motto">
             Implicitely transfer args and bind the call to node's CUDA device.<br>
-            <center><p style="display: block; width: intrinsic; text-align: left; color: white; font: inherit;">
+            <center><p>
             bind::gpu([factor](bind::array&lt;float&gt;& a){<br>
                 launch_scale_kernel(a.data(), factor);<br>
             }, a);</p></center>

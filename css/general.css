@@ -10,6 +10,7 @@ html, body {
     display: block;
     overflow-x: hidden;
     background-color: rgb(17,17,17);
+    -webkit-text-size-adjust: 100%;
 }
 body {
     display: table;
@@ -133,6 +134,13 @@ div#motto {
 div#motto a {
     color: rgb(255,0,153);
     text-decoration: none;
+}
+div#motto p {
+    display: block;
+    width: intrinsic;
+    text-align: left;
+    color: white;
+    font: inherit;
 }
 div#more {
     display: block;
