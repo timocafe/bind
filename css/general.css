@@ -87,21 +87,7 @@ div.cell-center {
     width: 900px; 
     margin: 0 auto;
 }
-div#bind {
-    position: absolute;
-    left: 50%;
-    top: 30%;
-    transform: translateX(-50%);
-    font-size: 34px;
-    font-family: 'Open Sans', sans-serif;
-    font-weight: 400;
-    border: 3px solid white;
-    border-radius: 2px;
-    padding-left: 25px;
-    padding-right: 25px;
-    color: white;
-}
-div.keyword {
+div#bind, div.keyword {
     position: absolute;
     left: 50%;
     transform: translateX(-50%);
@@ -113,6 +99,7 @@ div.keyword {
     padding-left: 25px;
     padding-right: 25px;
     color: white;
+    margin-top: 30px;
 }
 div.title {
     font-size: 34px;
@@ -132,7 +119,7 @@ div#motto {
     text-align: center;
 }
 div#motto a {
-    color: rgb(255,0,153);
+    color: rgb(39,255,170);
     text-decoration: none;
 }
 div#motto p {
@@ -245,7 +232,7 @@ div.how {
     position: relative; 
     width: auto;
     margin: auto;
-    top: -30px;
+    top: 0px;
 }
 img#prev {
     position: absolute;
