@@ -2,7 +2,7 @@
 
 CXX = mpiicpc
 FLAGS = -O3 -std=c++11 -mt_mpi -DBIND_REQUIRE_MPI
-EXAMPLES = diffusion.node
+EXAMPLES = diffusion.node max_rank.node
 
 .DEFAULT: all
 .PHONY: all clean
