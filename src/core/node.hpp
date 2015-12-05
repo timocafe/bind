@@ -30,6 +30,24 @@
 
 namespace bind {
 
+    // {{{ lambda interface shortcut
+
+    template <class L, class... Args> void cpu(L l, Args&& ... args);
+    template <class L, class... Args> void gpu(L l, Args&& ... args);
+
+    template <class... L, class R, class... Args> void cpu(R(*l)(L...), Args&& ... args);
+    template <class... L, class R, class... Args> void gpu(R(*l)(L...), Args&& ... args);
+
+    template<class... Args>
+    void node::cpu(Args&& ... args) const {
+        bind::cpu(std::forward<Args>(args)...);
+    }
+    template<class... Args>
+    void node::gpu(Args&& ... args) const {
+        bind::gpu(std::forward<Args>(args)...);
+    }
+
+    // }}}
     // {{{ primary node-class
 
     inline node::~node(){

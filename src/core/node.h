@@ -46,6 +46,8 @@ namespace bind {
         bool local()  const;
         bool common() const;
         rank_t which()  const;
+        template <class... Args> void cpu(Args&& ... args) const;
+        template <class... Args> void gpu(Args&& ... args) const;
         friend class core::controller;
     protected:
         rank_t rank;

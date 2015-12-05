@@ -5,8 +5,7 @@ int main(){
     bind::shared_ptr<int> max_rank = 0;
 
     std::for_each(bind::nodes::begin(), bind::nodes::end(), [&](int i){
-        bind::node n(i);
-        bind::cpu([](bind::shared_ptr<int>& max){
+        bind::node(i).cpu([](bind::shared_ptr<int>& max){
             *max = std::max(*max, bind::rank());
         }, max_rank);
     });

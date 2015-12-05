@@ -22,10 +22,7 @@ int main(){
 
         bind::cpu(std::sort<array<int>::iterator>, a.begin(), a.end());
     }
-    {
-        bind::node middle(bind::nodes::begin()+1);
-        bind::cpu(reverse<int>, a);
-    }
+        bind::node(bind::nodes::begin()+1).cpu(reverse<int>, a);
     {
         bind::node first(bind::nodes::begin());
         bind::cpu([](array<int>::const_iterator& first, array<int>::const_iterator& last){
