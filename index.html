@@ -37,7 +37,7 @@
     <div id="more">What keywords?</div>
     <div class="how">
         <div class="title">
-            <div id="motto">
+            <div class="message">
             Prototype multi-node CPU/GPU applications fast.<br>
             <center><p>One <a href="https://raw.githubusercontent.com/akosenkov/bind/master/bind.hpp" download="bind.hpp">header</a>, three keywords.</p></center>
             </div>
@@ -50,9 +50,9 @@
     <div class="keyword">node</div>
     <div class="how">
         <div class="title">
-            <div id="motto">
+            <div class="message">
             Bind execution scope to selected node.<br>
-            <center><p>{ bind::node first(0); throw_coin(c); }</p></center>
+            <center><p class="code">{ bind::node first(0); throw_coin(c); }</p></center>
             </div>
         </div>
     </div>
@@ -63,9 +63,9 @@
     <div class="keyword">cpu</div>
     <div class="how">
         <div class="title">
-            <div id="motto">
-            Implicitely transfer args and bind the call to node's CPU cores.<p>
-            <center><p>bind::cpu(sort, a.begin(), a.end());</p></center>
+            <div class="message">
+            Implicitely transfer args and bind the call to node's CPU cores.
+            <center><p class="code">bind::cpu(sort, a.begin(), a.end());</p></center>
             </div>
         </div>
     </div>
@@ -76,12 +76,23 @@
     <div class="keyword">gpu</div>
     <div class="how">
         <div class="title">
-            <div id="motto">
+            <div class="message">
             Implicitely transfer args and bind the call to node's CUDA device.<br>
-            <center><p>
+            <center><p class="code">
             bind::gpu([factor](bind::array&lt;float&gt;& a){<br>
                 launch_scale_kernel(a.data(), factor);<br>
             }, a);</p></center>
+            </div>
+        </div>
+    </div>
+</div>
+</section>
+<section id="footer">
+<div class="cell">
+    <div class="how">
+        <div class="title">
+            <div class="message">
+            Check working examples on <a href="https://github.com/akosenkov/bind/tree/master/examples">GitHub</a>
             </div>
         </div>
     </div>

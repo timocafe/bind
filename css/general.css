@@ -30,11 +30,6 @@ div {
     font-weight: 300;
     font-size: 13px;
 }
-
-li {
-    font-size: 14px;
-    padding-top: 10px;
-}
 p {
     font-size: 17px;
     font-family: Helvetica,Arial,sans-serif;
@@ -45,29 +40,10 @@ p {
     -ms-text-size-adjust:100%;
     text-size-adjust:100%
 }
-h2 {
-    font-size: 16px;
-    font-family: Helvetica,Arial,sans-serif;
-    font-weight: 300;
-    margin-top: 0px;
-}
 section {
     display: table-row;
 }
-div.body {
-    display: block;
-    margin: 0 auto;
-    width: 900px;
-    margin-top: 0px;
-    margin-bottom: 0px;
-}
-div.margin {
-    display: table-cell;
-    position: relative;
-    vertical-align: top; 
-}
-
-section.content {
+section.content, section#footer {
     display: table-row;
     width: 60%;
     max-width: 900px;
@@ -82,10 +58,6 @@ section#intro {
 div.cell {
     display: table-cell; 
     vertical-align: middle;
-}
-div.cell-center {
-    width: 900px; 
-    margin: 0 auto;
 }
 div#bind, div.keyword {
     position: absolute;
@@ -109,7 +81,7 @@ div.title {
     opacity: 1;
     margin-top: 120px;
 }
-div#motto {
+div.message {
     font-family: 'Open Sans';
     font-weight: 200;
     display: block;
@@ -118,13 +90,13 @@ div#motto {
     line-height: 150%;
     text-align: center;
 }
-div#motto a {
+div.message a {
     color: rgb(39,255,170);
     text-decoration: none;
 }
-div#motto p {
+div.message p {
     display: inline-block;
-    width: intrinsic;
+    width: max-content;
     text-align: left;
     color: white;
     font: inherit;
@@ -140,17 +112,6 @@ div#more {
     font-family: 'Open Sans', sans-serif;
     color: #555;
 }
-img.revert {
-    position: absolute;
-    width: 34px;
-    height: 26px;
-    cursor: pointer;
-    left: 40px !important;
-    margin-left: 30px !important;
-}
-img.revert-bottom {
-    bottom: -50%;
-}
 a#ethz {
     display: none;
     position: absolute;
@@ -160,38 +121,29 @@ a#ethz {
 a#ethz img {
     height: 12px;
 }
+div.how {
+    display: none;
+    position: relative;
+    width: 635px;
+    display: block;
+    position: relative; 
+    width: auto;
+    margin: auto;
+    top: 0px;
+}
+section#footer {
+    height: 300px;
+    background-color: white;
+}
+section#footer div.message {
+    color: black; margin: 0;
+}
+section#footer div.title {
+    margin: 0;
+}
+
 span.highlight {
     color: rgb(0,207,255);
-}
-pre.example {
-    padding: 0px;
-    padding-bottom: 20px; 
-    margin: 0px; 
-    width: 625px;
-    font-size: 13px;
-    overflow-x: scroll;
-}
-code {
-    font-family: FiraMono;
-    line-height: 100%;
-    -webkit-text-size-adjust: none;
-}
-div#external {
-    position: absolute;
-    bottom: -50%;
-    margin-bottom: 55px;
-    left: 50%;
-    margin-left: -320px;
-}
-div#external div {
-    display: block;
-    margin-top: 0px;
-    height: 26px;
-    font-size: 14px;
-    font-family: 'Open Sans';
-    font-weight: 300;
-    cursor: pointer;
-    color: white;
 }
 span.blue {
     color: rgb(0,207,255);
@@ -210,100 +162,4 @@ span.green {
 }
 span.black {
     color: #999;
-}
-pre {
-    padding: 30px;
-    margin-bottom: -41px;
-    padding-bottom: 80px;
-    padding-top: 0px;
-}
-pre.make {
-    display: none;
-    line-height: 130%;
-}
-pre.make#impi {
-    display: block;
-}
-div.how {
-    display: none;
-    position: relative;
-    width: 635px;
-    display: block;
-    position: relative; 
-    width: auto;
-    margin: auto;
-    top: 0px;
-}
-img#prev {
-    position: absolute;
-    left: 70px; margin-left: -20px;
-    margin-top: -13px;
-    width: 70px;
-    opacity: 0;
-    cursor: pointer;
-    transition: opacity 500ms;
-}
-img#next {
-    position: absolute;
-    right: 70px; margin-right: -20px;
-    margin-top: -13px;
-    width: 70px;
-    cursor: pointer;
-}
-
-img.perf_detail {
-    display: none;
-    position: absolute;
-    top: 50%; margin-top: -175px;
-    left: 50%; margin-left: -215px;
-    background-color: white;
-    padding: 15px;
-    border-radius: 10px;
-    box-shadow: 1px 1px 10px #CCC;
-    z-index: 1;
-}
-div.perf {
-    display: block;
-    cursor: pointer;
-    float: right;
-    margin-top: 6px;
-    padding: 10px;
-    font-size: 12px;
-    background-color: #999;
-    outline: none;
-    color: white;
-    border: 0px;
-    border-radius: 5px;
-    position: relative;
-    z-index: 1;
-}
-div.hidden {
-    display: none;
-}
-div.another {
-    display: inline-block;
-    text-decoration: underline;
-    cursor: pointer;
-    position: absolute;
-    bottom: -30px;
-    right: 7px;
-    color: #666;
-    z-index: 2;
-}
-div#make-options {
-    position: absolute;
-    left: 70px;
-    top: 100%;
-    margin-top: -116px;
-}
-div#make-options div {
-    display: block;
-    font-size: 12px;
-    margin-top: 17px;
-    color: #DDDDDD;
-    height: 23px;
-    cursor: pointer;
-}
-div#make-options div:first-child {
-    color: #666;
 }
