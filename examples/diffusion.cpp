@@ -255,6 +255,12 @@ public:
             bottom = new border<T>(1,n);
             left   = new border<T>(m-2,1);
         }
+       ~frame(){
+            delete top;
+            delete right;
+            delete bottom;
+            delete left;
+        }
         border<T>* top;
         border<T>* right;
         border<T>* bottom;
@@ -322,6 +328,7 @@ public:
         return resv;
     }
     stencil(size_t m, size_t n) : bind::block<T>(m-2, n-2) { f = new frame(m, n); }
+   ~stencil(){ delete f; }
     frame* f;
 };
 
@@ -389,6 +396,10 @@ class Diffusion2D {
                 bind::node select(bind::nodes::begin()+get_rank(i,j));
                 get(i,j).partial_init(value, i*IB*dr+rmin, j*IB*dr+rmin, dr, bound);
             }
+        }
+       ~Diffusion2D(){
+            for(stencil_t* s : grid) delete s;
+            for(stencil_t* s : grid_mirror) delete s;
         }
 
         int get_rank(int i, int j){
