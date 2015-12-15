@@ -56,6 +56,7 @@ namespace bind { namespace transport { namespace mpi {
             static mount m; 
             return m; 
         }
+       ~channel();
         channel();
         size_t dim() const;
         static void barrier();

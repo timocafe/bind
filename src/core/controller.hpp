@@ -56,7 +56,6 @@ namespace bind { namespace core {
     inline void controller::sync(){
         this->flush();
         this->clear();
-        memory::cpu::instr_bulk::drop();
     }
 
     inline node& controller::get_node(){
@@ -82,6 +81,7 @@ namespace bind { namespace core {
 
     inline void controller::clear(){
         this->garbage.clear();
+        memory::cpu::instr_bulk::drop();
     }
 
     inline bool controller::queue(functor* f){

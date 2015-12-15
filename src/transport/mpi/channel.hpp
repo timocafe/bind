@@ -56,7 +56,12 @@ namespace bind { namespace transport { namespace mpi {
     }
 
     inline channel::mount::~mount(){
+        for(binary_tree<rank_t>* t : trees) delete t;
         MPI_Finalize();
+    }
+    
+    inline channel::~channel(){
+        delete this->world;
     }
 
     inline channel::channel(){
