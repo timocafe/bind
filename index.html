@@ -4,7 +4,7 @@
 <title>Bind: GPU+CPU on many nodes? Easy.</title>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" /> 
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="viewport" content="width=device-width, initial-scale=.8, maximum-scale=.8">
+<meta name="viewport" content="width=device-width, initial-scale=.75, maximum-scale=.75">
 
 <link rel="icon" type="image/png" href="/favicon-32x32.png" sizes="32x32">
 <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96">
@@ -60,12 +60,12 @@
 </section>
 <section class="content" style="background-color: rgb(50,93,97);">
 <div class="cell">
-    <div class="keyword">cpu</div>
+    <div class="keyword" id="cpu">cpu</div>
     <div class="how">
         <div class="title">
             <div class="message">
-            Implicitely transfer args and bind the call to node's CPU cores.
-            <center><p class="code">bind::cpu(sort, a.begin(), a.end());</p></center>
+            Implicitely transfer args and bind the call to node's CPU cores.
+            <center><p class="code">bind::node(0).cpu(sort, a.begin(), a.end());</p></center>
             </div>
         </div>
     </div>
@@ -73,14 +73,14 @@
 </section>
 <section class="content" style="background-color: rgb(39,205,120);">
 <div class="cell">
-    <div class="keyword">gpu</div>
+    <div class="keyword" id="gpu">gpu</div>
     <div class="how">
         <div class="title">
             <div class="message">
-            Implicitely transfer args and bind the call to node's CUDA device.<br>
+            Implicitely transfer args and bind the call to node's CUDA device.<br>
             <center><p class="code">
-            bind::gpu([factor](bind::array&lt;float&gt;& a){<br>
-                launch_scale_kernel(a.data(), factor);<br>
+            bind::node(1).gpu([](bind::array&lt;float&gt;& a){<br>
+                launch_scale_kernel(a.data(), 0.1);<br>
             }, a);</p></center>
             </div>
         </div>
