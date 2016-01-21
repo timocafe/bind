@@ -2,6 +2,7 @@
 #include "utils/timer.hpp"
 #define __a_ceil(x) (((double)x-(int)x) == 0 ? (int)x : (int)x+1)
 #define IB 256
+#define DEFAULT_N 7
 
 inline size_t __a_mod(size_t size, size_t tile){
     size_t m = size % tile;
@@ -465,7 +466,7 @@ int main(int argc, char* argv[]){
     double D = 1;
     double rmax = 1;
     double rmin = -1;
-    size_t N = 1 << std::stoul(argv[1]);
+    size_t N = 1 << (argc > 1 ? std::stoul(argv[1]) : DEFAULT_N);
     std::cout << "Parallel: " << bind::num_procs() << " procs x "
                               << bind::num_threads() << " threads\n"; 
     std::cout << "Domain: " << N << "\n";
