@@ -5,7 +5,7 @@
 
 CXX = mpicxx
 FLAGS = -O3 -std=c++11 -fcilkplus -DBIND_REQUIRE_MPI
-EXAMPLES = diffusion.node max_rank.node
+EXAMPLES = diffusion.node max_rank.node mapreduce.node
 
 .DEFAULT: all
 .PHONY: all clean

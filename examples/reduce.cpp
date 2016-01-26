@@ -1,7 +1,6 @@
 #include "utils/bind.hpp"
 
 int main(){
-    const int N = 100;
     std::vector<bind::shared_ptr<int> > a = {1, 2, 3, 4, 6, 7, 8, 9};
 
     for(int stride = 1; stride < a.size(); stride *= 2){
