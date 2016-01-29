@@ -51,6 +51,7 @@ class KVPairs {
 public:
     using key_type = Key;
     using value_type = Value;
+    using kvp_type = std::pair<key_type, value_type>;
     using size_type = int;
     using rank_type = int;
     template<typename F> using OtherKVPairs = KVPairs<typename function_traits<F>::key_type, typename function_traits<F>::value_type>;
@@ -65,12 +66,14 @@ public:
     template<typename F>
     auto map(F map_fn) -> OtherKVPairs<F> {
         typename OtherKVPairs<F>::container_type other_map;
+        std::vector< std::vector< typename OtherKVPairs<F>::kvp_type > > kv_pairs_vector(map_.size()); int v = 0;
 
-        for(auto& pairs : map_)
-          if(pairs.first.second == bind::rank()){
-              auto kv_pairs = map_fn(pairs.first.first, pairs.second);
-              for(auto p : kv_pairs) other_map[{ p.first, bind::rank() }].push_back( p.second ); // group by key
-          }
+        for(auto& pairs : map_) if(pairs.first.second == bind::rank())
+            kv_pairs_vector[v++] = cilk_spawn map_fn(pairs.first.first, pairs.second);
+        cilk_sync;
+        for(auto& kv_pairs : kv_pairs_vector){
+            for(auto& p : kv_pairs) other_map[{ p.first, bind::rank() }].push_back( p.second ); // group by key
+        }
         return other_map;
     }
 
