@@ -69,16 +69,9 @@ public:
     }
 
     template<typename F>
-    KVPairs& reduce(F reduce_fn){
+    auto reduce(F reduce_fn) -> OtherKVPairs<F> {
         this->shuffle();
-
-        for(auto& pairs : map_){
-            bind::node(pairs.first.second).cpu([reduce_fn](key_type key, std::vector<value_type>* values){
-                *values = reduce_fn(key, *values);
-            }, (key_type)pairs.first.first, &pairs.second);
-        }
-        bind::sync();
-        return *this;
+        return map(reduce_fn);
     }
 
     // {{{ shuffle
@@ -184,10 +177,10 @@ int main(){
         .combine([](char key, std::vector<int>& values) -> std::vector< std::pair<char,int> > {
             return { { key, std::accumulate(values.begin(), values.end(), 0) } };
         })
-        .reduce([](char key, std::vector<int>& values) -> std::vector<int> {
-            std::vector< int > res = { std::accumulate(values.begin(), values.end(), 0) };
-            std::cerr << "Reduce key <" << key << ">: " << res[0] << "\n";
-            return res;
+        .reduce([](char key, std::vector<int>& values) -> std::vector< std::pair<char,int> > {
+            int res = std::accumulate(values.begin(), values.end(), 0);
+            std::cerr << "Reduce key <" << key << ">: " << res << "\n";
+            return { { key, res } };
         });
 
     return 0;
