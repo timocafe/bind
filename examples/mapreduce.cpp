@@ -49,6 +49,10 @@ public:
     template<typename F> using OtherKVPairs = KVPairs<typename function_traits<F>::key_type, typename function_traits<F>::value_type>;
     using container_type = std::unordered_map<std::pair<Key, rank_type>, std::vector<Value> >;
 
+    KVPairs(std::unordered_map<Key, std::vector<Value> >& map){
+        for(auto& p : map) map_[{ p.first, bind::rank() }] = p.second;
+    }
+
     KVPairs(container_type& map) : map_(map) { }
 
     template<typename F>
@@ -156,18 +160,14 @@ int main(){
     for(int i = 0; i < std::min(strings.size(), (size_t)bind::num_procs()); i++)
         std::cout << strings[i] << "\n";
 
-    // Initializing the input key/value map. Can be global or private to the running process.
-    // The key adjoins to its owner, i.e. { <key>, <node rank> }. Hence in the case of a local
-    // per-process map one would use process rank, i.e. { <key>, bind::rank() }
+    // Initializing node's local input key/values map.
+    std::unordered_map<int, std::vector<std::string> > local_map = { //{ <key>,        { <values> }}
+                                                                       { bind::rank(), { strings[bind::rank()] }},
+                                                                   };
+    // Counting the letters in the global test input.
+    // Reduce step contains implicit "shuffle" that transfers the data between the nodes.
 
-    KVPairs<int, std::string>::container_type test_map = { //{{ key, node }, { values }}
-                                                             {{ 0,   0 },    { strings[0] }},
-                                                             {{ 1,   1 },    { strings[1] }}
-                                                         };
-    // Counting the letters in the test input.
-    // Reduce step contains implicit "shuffle" that transfers the data between nodes.
-
-    KVPairs<int, std::string>(test_map)
+    KVPairs<int, std::string>(local_map)
         .map([](int key, std::vector<std::string>& values) -> std::vector< std::pair<char,int> > {
             std::vector< std::pair<char, int> > kv_pairs;
             for(auto str : values) for(auto e : str)
