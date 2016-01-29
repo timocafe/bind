@@ -11,10 +11,17 @@ namespace std {
     };
 }
 
-namespace detail {
+namespace bind {
     template<typename T>
     void local_read_in(bind::array<T>& array, std::vector<T>* local_ptr){
         for(int k = 0; k < local_ptr->size(); k++) array[k] = (*local_ptr)[k];
+    }
+
+    template<typename T>
+    bind::array<T> make_array(std::vector<T>& local_vector, int global_size, int rank){
+        bind::array<T> result(global_size);
+        bind::node(rank).cpu(local_read_in<T>, result, &local_vector);
+        return result;
     }
 }
 
@@ -93,13 +100,9 @@ private:
         
         // Creating global all_k_counts using the sizes
         std::vector< bind::array<std::pair<key_type, size_type> > > all_k_counts; all_k_counts.reserve(bind::num_procs());
-        for(auto size : k_counts_sizes) all_k_counts.push_back( bind::array<std::pair<key_type, rank_type> >(*size) );
-        
-        // Filling in the global all_k_counts
         std::for_each(bind::nodes::begin(), bind::nodes::end(), [&](rank_type i){
-            bind::node(i).cpu(detail::local_read_in<std::pair<key_type, size_type> >, all_k_counts[i], &local_k_counts);
+            all_k_counts.push_back( bind::make_array(local_k_counts, *k_counts_sizes[i], i) );
         });
-        
         // Node #0                  Node #1                 Node #p
         // K1  K2   ...   Kn        K1  K2   ...   Kn       K1  K2   ...   Kn
         // c1  c2         cn        c1  c2         cn       c1  c2         cn
@@ -130,8 +133,7 @@ private:
         
             bind::array<int> serial_order(1);
             for(auto& part : row.second.second){
-                bind::array<value_type> local_values(part.second);
-                bind::node(part.first).cpu(detail::local_read_in<value_type>, local_values, &map_[{ key, part.first }]);
+                bind::array<value_type> local_values = bind::make_array(map_[{ key, part.first }], part.second, part.first);
         
                 bind::node(r).cpu([](std::vector<value_type>* global, const bind::array<value_type>& local, bind::array<int>&){
                     for(auto value : local) global->push_back(value); // append this part to node #r
