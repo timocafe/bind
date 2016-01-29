@@ -3067,6 +3067,12 @@ namespace bind {
         iterator end() volatile {
             return iterator(const_cast<array&>(*this), size());
         }
+        const_iterator begin() const volatile {
+            return cbegin();
+        }
+        const_iterator end() const volatile {
+            return cend();
+        }
         const_iterator cbegin() const volatile {
             return const_iterator(const_cast<const array&>(*this), 0);
         }

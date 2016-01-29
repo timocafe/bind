@@ -110,10 +110,10 @@ private:
         bind::array<int> order(1); // enforcing deterministic order of kcs_map
         std::for_each(bind::nodes::begin(), bind::nodes::end(), [&, this](rank_type i){
             bind::cpu([](const bind::array<std::pair<key_type, size_type> >& counts, rank_type r, decltype(kcs_map)* map, bind::array<int>& ){
-                for(int k = 0; k < counts.size(); k++){
-                    auto& row = (*map)[counts[k].first];
-                    row.second.push_back({ r, counts[k].second });
-                    row.first += counts[k].second; // total size
+                for(auto count : counts){
+                    auto& row = (*map)[count.first];
+                    row.second.push_back({ r, count.second });
+                    row.first += count.second; // total size
                 }
             }, all_k_counts[i], i, &kcs_map, order);
         });
@@ -132,7 +132,7 @@ private:
                 bind::node(part.first).cpu(detail::local_read_in<value_type>, local_values, &map_[{ key, part.first }]);
         
                 bind::node(r).cpu([](std::vector<value_type>* global, const bind::array<value_type>& local, bind::array<int>&){
-                    for(int i = 0; i < local.size(); i++) global->push_back( local[i] ); // append this part to node #r
+                    for(auto value : local) global->push_back(value); // append this part to node #r
                 }, &global_values_lists.back().second, local_values, serial_order);
             }
             ++r %= bind::num_procs(); // round-robin
