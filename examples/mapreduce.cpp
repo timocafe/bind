@@ -1,5 +1,6 @@
 #include "utils/bind.hpp"
 #include <unordered_map>
+#include <mutex>
 
 // {{{ helper traits
 namespace std {
@@ -134,13 +135,13 @@ private:
             auto key = row.first;
             global_values_lists.push_back({ {key, r}, {} });
         
-            bind::array<int> serial_order(1);
             for(auto& part : row.second.second){
                 bind::array<value_type> local_values = bind::make_array(map_[{ key, part.first }], part.second, part.first);
         
-                bind::node(r).cpu([](std::vector<value_type>* global, const bind::array<value_type>& local, bind::array<int>&){
+                bind::node(r).cpu([](std::vector<value_type>* global, const bind::array<value_type>& local){
+                    static std::mutex m; std::lock_guard<std::mutex> lock(m);
                     for(auto value : local) global->push_back(value); // append this part to node #r
-                }, &global_values_lists.back().second, local_values, serial_order);
+                }, &global_values_lists.back().second, local_values);
             }
             ++r %= bind::num_procs(); // round-robin
         }
