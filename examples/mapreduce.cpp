@@ -64,6 +64,11 @@ public:
     }
 
     template<typename F>
+    auto combine(F combine_fn) -> OtherKVPairs<F> {
+        return map(combine_fn);
+    }
+
+    template<typename F>
     KVPairs& reduce(F reduce_fn){
         this->shuffle();
 
@@ -175,6 +180,9 @@ int main(){
             for(auto str : values) for(auto e : str)
             kv_pairs.push_back({ e, 1 });
             return kv_pairs;
+        })
+        .combine([](char key, std::vector<int>& values) -> std::vector< std::pair<char,int> > {
+            return { { key, std::accumulate(values.begin(), values.end(), 0) } };
         })
         .reduce([](char key, std::vector<int>& values) -> std::vector<int> {
             std::vector< int > res = { std::accumulate(values.begin(), values.end(), 0) };
