@@ -58,6 +58,11 @@ public:
     template<typename F> using OtherKVPairs = KVPairs<typename function_traits<F>::key_type, typename function_traits<F>::value_type>;
     using container_type = std::unordered_map<std::pair<Key, rank_type>, std::vector<Value> >;
 
+    operator std::unordered_map<Key, std::vector<Value> > (){
+        std::unordered_map<Key, std::vector<Value> > res;
+        for(auto& p : map_) res[p.first.first] = p.second;
+        return res;
+    }
     KVPairs(std::unordered_map<Key, std::vector<Value> >& map){
         for(auto& p : map) map_[{ p.first, bind::rank() }] = p.second;
     }
@@ -116,15 +121,15 @@ private:
                            std::pair<size_type, std::vector< std::pair<rank_type, size_type> > >
                           > kcs_map;
 
-        bind::array<int> order(1); // enforcing deterministic order of kcs_map
+        bind::array<int> order_guard(1); // enforcing deterministic order of kcs_map
         std::for_each(bind::nodes::begin(), bind::nodes::end(), [&, this](rank_type i){
-            bind::cpu([](const bind::array<std::pair<key_type, size_type> >& counts, rank_type r, decltype(kcs_map)* map, bind::array<int>& ){
+            bind::cpu([](bind::array<int>&, const bind::array<std::pair<key_type, size_type> >& counts, rank_type r, decltype(kcs_map)* map){
                 for(auto count : counts){
                     auto& row = (*map)[count.first];
                     row.second.push_back({ r, count.second });
                     row.first += count.second; // total size
                 }
-            }, all_k_counts[i], i, &kcs_map, order);
+            }, order_guard, all_k_counts[i], i, &kcs_map);
         });
         bind::sync();
         
@@ -173,7 +178,8 @@ int main(){
     // Counting the letters in the global test input.
     // Reduce step contains implicit "shuffle" that transfers the data between the nodes.
 
-    KVPairs<int, std::string>(local_map)
+    std::unordered_map<char, std::vector<int> > res =
+        KVPairs<int, std::string>(local_map)
         .map([](int key, std::vector<std::string>& values) -> std::vector< std::pair<char,int> > {
             std::vector< std::pair<char, int> > kv_pairs;
             for(auto str : values) for(auto e : str)
@@ -184,10 +190,10 @@ int main(){
             return { { key, std::accumulate(values.begin(), values.end(), 0) } };
         })
         .reduce([](char key, std::vector<int>& values) -> std::vector< std::pair<char,int> > {
-            int res = std::accumulate(values.begin(), values.end(), 0);
-            std::cerr << "Reduce key <" << key << ">: " << res << "\n";
-            return { { key, res } };
+            return { { key, std::accumulate(values.begin(), values.end(), 0) } };
         });
 
+    // Printing local results
+    for(auto e : res) std::cerr << "Reduce key <" << e.first << ">: " << e.second[0] << "\n";
     return 0;
 }
