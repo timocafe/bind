@@ -162,14 +162,17 @@ private:
 };
 
 
-int main(){
+/*******************************************************
+ *                                                     *
+ *       Example of counting letters in strings        *
+ *                                                     *
+ *******************************************************/
+
+void example_count_letters(){
     std::vector< std::string > strings = { "Thus the KVPairs framework transforms a list of (key, value) pairs into a list of values.",
                                            "This behavior is different from the typical functional programming map and reduce combination,",
                                            "which accepts a list of arbitrary values and returns one single value",
                                            "that combines all the values returned by map." };
-
-    for(int i = 0; i < std::min(strings.size(), (size_t)bind::num_procs()); i++)
-        std::cout << strings[i] << "\n";
 
     // Initializing node's local input key/values map.
     std::unordered_map<int, std::vector<std::string> > local_map = { //{ <key>,        { <values> }}
@@ -195,5 +198,57 @@ int main(){
 
     // Printing local results
     for(auto e : res) std::cerr << "Reduce key <" << e.first << ">: " << e.second[0] << "\n";
+
+}
+
+
+/*******************************************************
+ *                                                     *
+ *              Example of sorting numbers             *
+ *                                                     *
+ *******************************************************/
+
+void example_sort_numbers(){
+    using bucket_type = int;
+    using value_type = int;
+    using array_type = std::vector<value_type>;
+    std::vector< array_type > numbers = { { 0, 2, 1, 24, 13, 6, 12 },
+                                          { 1, 3, 2, 25, 14, 7, 13 } };
+
+    std::unordered_map<int, std::vector<array_type> > local_map = {
+                                                                      { bind::rank(), { numbers[ bind::rank() ] }},
+                                                                  };
+
+    std::unordered_map<bucket_type, std::vector<value_type> > res =
+        KVPairs<int, array_type>(local_map)
+        .map([](int key, std::vector< array_type >& values) -> std::vector< std::pair<bucket_type,value_type> > {
+            std::vector< std::pair<int, value_type> > kv_pairs;
+            for(auto str : values) for(auto e : str){
+                bucket_type bucket = e < 10; // * only two buckets *
+                kv_pairs.push_back({ bucket, e });
+            }
+            return kv_pairs;
+        })
+        .reduce([](bucket_type key, std::vector<value_type>& values) -> std::vector< std::pair<bucket_type,value_type> > {
+            std::sort(values.begin(), values.end());
+            std::vector< std::pair<int,value_type> > res;
+            for(auto v : values) res.push_back({ key, v });
+            return res;
+        });
+
+    for(auto e : res){
+        std::cerr << "Reduce key <" << e.first << ">: ";
+        for(auto v : e.second) std::cerr << v << " ";
+    }
+    std::cerr << "\n";
+}
+
+
+int main(){
+    if(bind::num_procs() == 2){
+        example_sort_numbers();
+        example_count_letters();
+    }else
+        std::cout << "This example can use only two processes\n";
     return 0;
 }
