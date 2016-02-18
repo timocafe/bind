@@ -176,7 +176,7 @@ void example_count_letters(){
 
     // Initializing node's local input key/values map.
     std::unordered_map<int, std::vector<std::string> > local_map = { //{ <key>,        { <values> }}
-                                                                       { bind::rank(), { strings[bind::rank()] }},
+                                                                       { bind::rank(), { strings[bind::rank()] }}
                                                                    };
     // Counting the letters in the global test input.
     // Reduce step contains implicit "shuffle" that transfers the data between the nodes.
@@ -216,7 +216,7 @@ void example_sort_numbers(){
                                           { 1, 3, 2, 25, 14, 7, 13 } };
 
     std::unordered_map<int, std::vector<array_type> > local_map = {
-                                                                      { bind::rank(), { numbers[ bind::rank() ] }},
+                                                                      { bind::rank(), { numbers[ bind::rank() ] }}
                                                                   };
 
     std::unordered_map<bucket_type, std::vector<value_type> > res =
