@@ -3,7 +3,7 @@
 
 CXX = g++
 FLAGS = -O3 -std=c++11 -fcilkplus
-EXAMPLES = array shared_ptr reduce diffusion
+EXAMPLES = array diffusion reduce shared_ptr
 
 .DEFAULT: all
 .PHONY: all clean
