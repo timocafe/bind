@@ -2724,35 +2724,60 @@ namespace bind {
 
 namespace bind {
 
+    template<device D, bool Capture, typename F, typename... T>
+    struct lambda_kernel : public kernel<D, lambda_kernel<D, Capture, F, T...> > {
+        typedef void(*ftype)(T..., F*);
+        static void fw(T... args, F* func){ (*func)(args...); delete func; }
+        static constexpr ftype c = &fw;
+
+        template<typename L, typename... Args>
+        static void dispatch(L& func, Args&& ... values){
+            kernel<D, lambda_kernel<D, Capture, F, T...> >::spawn(std::forward<Args>(values)..., new F(func));
+        }
+    };
+
     template<device D, typename F, typename... T>
-    struct lambda_kernel : public kernel<D, lambda_kernel<D, F, T...> > {
+    struct lambda_kernel<D, false, F, T...> : public kernel<D, lambda_kernel<D, false, F, T...> > {
         typedef void(*ftype)(T..., F&);
         static void fw(T... args, F& func){ func(args...); }
         static constexpr ftype c = &fw;
+
+        template<typename L, typename... Args>
+        static void dispatch(L& func, Args&& ... values){
+            kernel<D, lambda_kernel<D, false, F, T...> >::spawn(std::forward<Args>(values)..., static_cast<F>(func));
+        }
     };
 
     template <typename Function>
-    struct function_traits : public function_traits<decltype(&Function::operator())> {};
+    struct function_traits : public function_traits<decltype(&Function::operator())> {
+        static constexpr bool capture = !std::is_assignable<
+             typename function_traits<decltype(&Function::operator())>::signature*&,
+             Function
+        >::value;
+
+        template<device D>
+        using kernel_type = typename function_traits<decltype(&Function::operator())>::template kernel_type<D, capture>;
+
+        template<device D, typename... Args>
+        static void dispatch(Function& func, Args&& ... values){
+            kernel_type<D>::template dispatch<Function>(func, std::forward<Args>(values)...);
+        }
+    };
 
     template <typename ClassType, typename ReturnType, typename... Args>
     struct function_traits<ReturnType(ClassType::*)(Args...) const> {
-        typedef ReturnType (*pointer)(Args...);
-        typedef const std::function<ReturnType(Args...)> function;
-        template<device D>
-        using kernel_type = lambda_kernel<D, const std::function<ReturnType(Args...)>, Args... >;
+        using signature = ReturnType(Args...);
+        using function = const std::function<signature>;
+        template<device D, bool Capture>
+        using kernel_type = lambda_kernel<D, Capture, function, Args... >;
     };
-
-    template <typename Function>
-    typename function_traits<Function>::function to_function(Function& lambda){
-        return static_cast<typename function_traits<Function>::function>(lambda);
-    }
 
     template <device D, class L>
     struct overload_lambda : L {
         overload_lambda(L l) : L(l) {}
         template <typename... T>
         void operator()(T&& ... values){
-            function_traits<L>::template kernel_type<D>::spawn(std::forward<T>(values)... , to_function(*(L*)this));
+            function_traits<L>::template dispatch<D>(*(L*)this, std::forward<T>(values)...);
         }
     };
 
@@ -2768,7 +2793,7 @@ namespace bind {
 
     template <class... L, class R, class... Args>
     void cpu(R(*l)(L...), Args&& ... args){
-        bind::cpu(std::function<R(L...)>(l), std::forward<Args>(args)...);
+        lambda_kernel<device::cpu, false, decltype(l), Args... >::template dispatch<decltype(l)>(l, std::forward<Args>(args)...);
     }
 
     template <class L, class... Args>
@@ -2778,7 +2803,7 @@ namespace bind {
 
     template <class... L, class R, class... Args>
     void gpu(R(*l)(L...), Args&& ... args){
-        bind::gpu(std::function<R(L...)>(l), std::forward<Args>(args)...);
+        lambda_kernel<device::gpu, false, decltype(l), Args... >::template dispatch<decltype(l)>(l, std::forward<Args>(args)...);
     }
 }
 
