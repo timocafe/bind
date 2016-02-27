@@ -2793,7 +2793,7 @@ namespace bind {
 
     template <class... L, class R, class... Args>
     void cpu(R(*l)(L...), Args&& ... args){
-        lambda_kernel<device::cpu, false, decltype(l), Args... >::template dispatch<decltype(l)>(l, std::forward<Args>(args)...);
+        bind::cpu(std::function<R(L...)>(l), std::forward<Args>(args)...);
     }
 
     template <class L, class... Args>
@@ -2803,7 +2803,7 @@ namespace bind {
 
     template <class... L, class R, class... Args>
     void gpu(R(*l)(L...), Args&& ... args){
-        lambda_kernel<device::gpu, false, decltype(l), Args... >::template dispatch<decltype(l)>(l, std::forward<Args>(args)...);
+        bind::gpu(std::function<R(L...)>(l), std::forward<Args>(args)...);
     }
 }
 
