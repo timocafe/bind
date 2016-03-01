@@ -1,34 +1,32 @@
 #include "utils/bind.hpp"
-
-template<typename T>
-using array = bind::array<T>;
-
-template<typename T>
-void reverse(array<T>& arr){
-    int start = 0;
-    int end = arr.size();
-    while((start != end) && (start != --end)){
-        std::swap(arr[start],arr[end]); start++;
-    }
-}
+template<typename T> using array = bind::array<T>;
 
 int main(){
-    array<int> a(100);
-    {
-        bind::node last(bind::nodes::begin()+2);
-        bind::cpu([](array<int>::iterator first, array<int>::iterator last){
-            while(first != last) *first++ = last-first;
-        }, a.begin(), a.end());
+    if(bind::num_procs() != 2){
+        std::cout << "This example can use only two processes\n";
+        return 0;
+    }
 
-        bind::cpu(std::sort<array<int>::iterator>, a.begin(), a.end());
-    }
-        bind::node(bind::nodes::begin()+1).cpu(reverse<int>, a);
+    array<int> A(100);
     {
-        bind::node first(bind::nodes::begin());
-        bind::cpu([](array<int>::const_iterator& first, array<int>::const_iterator& last){
-            while(first != last) std::cout << *first++ << " ";
-        }, a.cbegin(), a.cend());
+        // Marking where scope-subsequent operations will be executed.
+        // Without node's declaration the ops are executed everywhere.
+        bind::node last(1);
+        // Generating and sorting A on the selected node
+        // Note: the actual memory is allocated only upon the first touch
+        bind::cpu(std::generate<array<int>::iterator, decltype(std::rand)>, A.begin(), A.end(), &std::rand);
+        bind::cpu(std::sort<array<int>::iterator>, A.begin(), A.end());
     }
+
+    // Reversing this array on the other node
+    bind::node(0).cpu(std::reverse<array<int>::iterator>, A.begin(), A.end());
+        
+    // Printing the resulting array on the first node
+    bind::node(0).cpu([](array<int>::const_iterator& first, array<int>::const_iterator& last){
+        while(first != last) std::cout << *first++ << " "; // std::cout is enabled only on the first node
+    }, A.cbegin(), A.cend());
+
+    // Waiting for the operations completion
     bind::sync();
     return 0;
 }
