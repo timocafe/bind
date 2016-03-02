@@ -2,49 +2,52 @@
 #include <cuda_runtime.h>
 
 __global__ void inc_kernel(int* x){
-    x[threadIdx.x] += threadIdx.x+2;
+    x[threadIdx.x] += threadIdx.x;
 }
 
-void launch_inc_kernel(int* x){
-    inc_kernel <<< 1, 16 >>> ( x ); 
+void launch_inc_kernel(int* x, int length){
+    inc_kernel <<< 1, length >>> ( x ); 
 }
 
 #else
-#include <mpi.h>
-#include <cuda_runtime.h>
 #include "utils/bind.hpp"
-#define N 100
-
-void launch_inc_kernel(int* x);
-
-template<typename T>
-using array = bind::array<T>;
+template<typename T> using array = bind::array<T>;
+void launch_inc_kernel(int* x, int length);
 
 int main(){
-    array<int> a(N);
-    std::cout << "Parallel: " << bind::num_procs() << " procs x "
-                              << bind::num_threads() << " threads\n";
-
-    bind::cpu([](array<int>::iterator first, array<int>::iterator last){
-        while(first != last) *first++ = last-first;
-    }, a.begin(), a.end());
-
-    bind::cpu(std::sort<array<int>::iterator>, a.begin(), a.end());
-
-    {   bind::node first(0);
-
-        bind::gpu([](array<int>::iterator first, array<int>::iterator last){
-            launch_inc_kernel(&*first);
-        }, a.begin(), a.end());
+    if(bind::num_procs() != 2){
+        std::cout << "This example can use only two processes\n";
+        return 0;
     }
 
-    {   bind::node second(1);
+    array<int> A(128);
 
-        bind::gpu([](array<int>::iterator first, array<int>::iterator last){
-            launch_inc_kernel(&*first);
-        }, a.begin(), a.end());
-    }
+    // Generating A on both nodes (no node declaration was present)
+    bind::cpu(std::iota<array<int>::iterator, int>, A.begin(), A.end(), 0);
 
+    // Printing A on the first node (no transfer occurs since A is common at the moment)
+    bind::node(0).cpu([](array<int>::const_iterator& first, array<int>::const_iterator& last){
+        while(first != last) std::cout << *first++ << " ";
+        std::cout << "\n";
+    }, A.cbegin(), A.cend());
+
+    // Transfering A to the first node's GPU and incrementing values
+    bind::node(0).gpu([](array<int>::iterator first, array<int>::iterator last){
+        launch_inc_kernel(&*first, last-first);
+    }, A.begin(), A.end());
+
+    // Transfering A from the first node's GPU to the second node's GPU and incrementing it there
+    bind::node(1).gpu([](array<int>::iterator first, array<int>::iterator last){
+        launch_inc_kernel(&*first, last-first);
+    }, A.begin(), A.end());
+
+    // Transfering A back to first node's CPU and printing
+    bind::node(0).cpu([](array<int>::const_iterator& first, array<int>::const_iterator& last){
+        while(first != last) std::cout << *first++ << " ";
+        std::cout << "\n";
+    }, A.cbegin(), A.cend());
+
+    // Waiting for the operations completion
     bind::sync();
     return 0;
 }
