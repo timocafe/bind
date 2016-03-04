@@ -2040,9 +2040,6 @@ namespace bind {
     template <class L, class... Args> void cpu(L l, Args&& ... args);
     template <class L, class... Args> void gpu(L l, Args&& ... args);
 
-    template <class... L, class R, class... Args> void cpu(R(*l)(L...), Args&& ... args);
-    template <class... L, class R, class... Args> void gpu(R(*l)(L...), Args&& ... args);
-
     template<class... Args>
     void node::cpu(Args&& ... args) const {
         bind::cpu(std::forward<Args>(args)...);
@@ -2773,37 +2770,37 @@ namespace bind {
     };
 
     template <device D, class L>
-    struct overload_lambda : L {
-        overload_lambda(L l) : L(l) {}
+    struct decorator : L {
+        decorator(L l) : L(l) {}
         template <typename... T>
         void operator()(T&& ... values){
             function_traits<L>::template dispatch<D>(*(L*)this, std::forward<T>(values)...);
         }
     };
 
+    template <device D, class... L, class R>
+    struct decorator<D, R(*)(L...)> {
+        decorator( R(*fp)(L...) ) : fp_(fp) {}
+        template <typename... T>
+        void operator()(T&& ... values){
+            lambda_kernel<D, false, decltype(fp_), L... >::template dispatch<decltype(fp_)>(fp_, std::forward<T>(values)...);
+        }
+        R(*fp_)(L...);
+    };
+
     template <device D, class L>
-    overload_lambda<D, L> lambda(L l){
-        return overload_lambda<D, L>(l);
+    decorator<D, L> decorate(L l){
+        return decorator<D, L>(l);
     }
 
     template <class L, class... Args>
     void cpu(L l, Args&& ... args){
-        lambda<device::cpu>(l)(std::forward<Args>(args)...);
-    }
-
-    template <class... L, class R, class... Args>
-    void cpu(R(*l)(L...), Args&& ... args){
-        lambda_kernel<device::cpu, false, decltype(l), L... >::template dispatch<decltype(l)>(l, std::forward<Args>(args)...);
+        decorate<device::cpu>(l)(std::forward<Args>(args)...);
     }
 
     template <class L, class... Args>
     void gpu(L l, Args&& ... args){
-        lambda<device::gpu>(l)(std::forward<Args>(args)...);
-    }
-
-    template <class... L, class R, class... Args>
-    void gpu(R(*l)(L...), Args&& ... args){
-        lambda_kernel<device::gpu, false, decltype(l), L... >::template dispatch<decltype(l)>(l, std::forward<Args>(args)...);
+        decorate<device::gpu>(l)(std::forward<Args>(args)...);
     }
 }
 

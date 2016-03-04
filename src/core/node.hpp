@@ -35,9 +35,6 @@ namespace bind {
     template <class L, class... Args> void cpu(L l, Args&& ... args);
     template <class L, class... Args> void gpu(L l, Args&& ... args);
 
-    template <class... L, class R, class... Args> void cpu(R(*l)(L...), Args&& ... args);
-    template <class... L, class R, class... Args> void gpu(R(*l)(L...), Args&& ... args);
-
     template<class... Args>
     void node::cpu(Args&& ... args) const {
         bind::cpu(std::forward<Args>(args)...);
