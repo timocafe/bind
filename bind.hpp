@@ -2788,7 +2788,7 @@ namespace bind {
         R(*fp_)(L...);
     };
 
-    template <device D, class L>
+    template <device D = device::cpu, class L>
     decorator<D, L> decorate(L l){
         return decorator<D, L>(l);
     }
