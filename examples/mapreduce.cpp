@@ -208,23 +208,26 @@ void example_count_letters(){
  *                                                     *
  *******************************************************/
 
+#define BINS 8
+#define LOG_BINS 3
+#define TOTAL_NUMBERS 8192*8192
+
 void example_sort_numbers(){
     using bucket_type = int;
     using value_type = int;
     using array_type = std::vector<value_type>;
-    std::vector< array_type > numbers = { { 0, 2, 1, 24, 13, 6, 12 },
-                                          { 1, 3, 2, 25, 14, 7, 13 } };
 
-    std::unordered_map<int, std::vector<array_type> > local_map = {
-                                                                      { bind::rank(), { numbers[ bind::rank() ] }}
-                                                                  };
+    std::srand(std::time(0)+bind::rank());
+    array_type numbers(TOTAL_NUMBERS / bind::num_procs());
+    std::generate(numbers.begin(), numbers.end(), std::rand);
+    std::unordered_map<int, std::vector<array_type> > local_map = { {bind::rank(), { numbers }} };
 
     std::unordered_map<bucket_type, std::vector<value_type> > res =
         KVPairs<int, array_type>(local_map)
         .map([](int key, std::vector< array_type >& values) -> std::vector< std::pair<bucket_type,value_type> > {
             std::vector< std::pair<int, value_type> > kv_pairs;
             for(auto str : values) for(auto e : str){
-                bucket_type bucket = e < 10; // * only two buckets *
+                bucket_type bucket = e >> (31 - LOG_BINS);
                 kv_pairs.push_back({ bucket, e });
             }
             return kv_pairs;
@@ -237,8 +240,7 @@ void example_sort_numbers(){
         });
 
     for(auto e : res){
-        std::cerr << "Reduce key <" << e.first << ">: ";
-        for(auto v : e.second) std::cerr << v << " ";
+        std::cerr << "Reduce key <" << e.first << ">: " << e.second.size() << "\n";
     }
     std::cerr << "\n";
 }
