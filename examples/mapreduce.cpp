@@ -72,14 +72,22 @@ public:
     template<typename F>
     auto map(F map_fn) -> OtherKVPairs<F> {
         typename OtherKVPairs<F>::container_type other_map;
-        std::vector< std::vector< typename OtherKVPairs<F>::kvp_type > > kv_pairs_vector(map_.size()); int v = 0;
+        std::vector< typename OtherKVPairs<F>::container_type > group_maps(bind::num_threads());
 
         for(auto& pairs : map_) if(pairs.first.second == bind::rank())
-            kv_pairs_vector[v++] = cilk_spawn map_fn(pairs.first.first, pairs.second);
+            cilk_spawn [&](){
+                auto res = map_fn(pairs.first.first, pairs.second);
+                auto& thread_map = group_maps[__cilkrts_get_worker_number()];
+                for(auto& p : res) thread_map[{ p.first, bind::rank() }].push_back( p.second ); // group locally by key
+            }();
         cilk_sync;
-        for(auto& kv_pairs : kv_pairs_vector){
-            for(auto& p : kv_pairs) other_map[{ p.first, bind::rank() }].push_back( p.second ); // group by key
+
+        for(auto& m : group_maps)
+        for(auto& it : m){
+            auto& v = other_map[it.first];
+            v.insert(v.end(), it.second.begin(), it.second.end());
         }
+
         return other_map;
     }
 
@@ -218,9 +226,15 @@ void example_sort_numbers(){
     using array_type = std::vector<value_type>;
 
     std::srand(std::time(0)+bind::rank());
-    array_type numbers(TOTAL_NUMBERS / bind::num_procs());
-    std::generate(numbers.begin(), numbers.end(), std::rand);
-    std::unordered_map<int, std::vector<array_type> > local_map = { {bind::rank(), { numbers }} };
+    std::unordered_map<int, std::vector<array_type> > local_map;
+
+    int plen = TOTAL_NUMBERS / (bind::num_procs()*bind::num_threads());
+    auto input_generator = [plen](){
+        array_type v(plen); std::generate(v.begin(), v.end(), std::rand);
+        return v;
+    };
+    for(int i = 0; i < bind::num_threads(); i++)
+        local_map.insert({ i, { input_generator() } });
 
     std::unordered_map<bucket_type, std::vector<value_type> > res =
         KVPairs<int, array_type>(local_map)
