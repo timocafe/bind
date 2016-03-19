@@ -71,7 +71,6 @@ public:
 
     template<typename F>
     auto map(F map_fn) -> OtherKVPairs<F> {
-        typename OtherKVPairs<F>::container_type other_map;
         std::vector< typename OtherKVPairs<F>::container_type > group_maps(bind::num_threads());
 
         for(auto& pairs : map_) if(pairs.first.second == bind::rank())
@@ -81,6 +80,9 @@ public:
                 for(auto& p : res) thread_map[{ p.first, bind::rank() }].push_back( p.second ); // group locally by key
             }();
         cilk_sync;
+
+        if(group_maps.size() == 1) return group_maps[0];
+        typename OtherKVPairs<F>::container_type other_map;
 
         for(auto& m : group_maps)
         for(auto& it : m){
