@@ -32,3 +32,6 @@ div#make-options {
 img.revert-bottom, div#external {
     bottom: -100%;
 }
+span.optional {
+    display: none;
+}

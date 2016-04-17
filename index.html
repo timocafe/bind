@@ -38,8 +38,8 @@
     <div class="how">
         <div class="title">
             <div class="message" style="color: black;">
-            A partitioned global workflow parallel programming model<br>
-            <center><p class="highlight" style="font-weight: 400;">/* Sequential code &mdash; parallel execution */</p></center>
+            Partitioned global workflow <span class="optional">parallel</span> programming model. <br>
+            <center><p class="highlight" style="font-weight: 400;">Sequential code &mdash; parallel execution.</p></center>
             </div>
         </div>
     </div>
@@ -51,7 +51,7 @@
     <div class="how">
         <div class="title">
             <div class="message">
-            Parallelism is extracted using decorators that allow a &ldquo;transactional DAG&rdquo; collection.
+            Parallelism is extracted using decorators that allow a &ldquo;transactional DAG&rdquo; collection.
             <center><p class="code">bind::decorate&lt;&gt;(sort, a.begin(), a.end());</p></center>
             </div>
         </div>
@@ -64,7 +64,7 @@
     <div class="how">
         <div class="title">
             <div class="message">
-            Scope guards place calls onto remote nodes. All transfers are implicit.<br>
+            Scope guards place calls onto remote nodes. All transfers are implicit.<br>
             <center><p class="code">{ bind::node first(0); throw_coin(c); }</p></center>
             </div>
         </div>
