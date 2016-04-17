@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head> 
-<title>Bind: GPU+CPU on many nodes? Easy.</title>
+<title>Bind: it's already parallel</title>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" /> 
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="viewport" content="width=device-width, initial-scale=.75, maximum-scale=.75">
@@ -31,57 +31,41 @@
 <body>
 <a href="http://www.ethz.ch/en.html" target="_blank" id="ethz"><img src="https://www.ethz.ch/img/header/eth_logo.png"></a>
 
-<section class="content" id="intro">
+<section class="content" id="intro" style="background-color: white;">
 <div class="cell">
-    <div id="bind">bind</div>
-    <div id="more">What keywords?</div>
+    <div id="bind" style="color: black; border-color: black;">bind</div>
+    <div id="more">How?</div>
     <div class="how">
         <div class="title">
-            <div class="message">
-            Prototype multi-node CPU/GPU applications fast.<br>
-            <center><p>One <a href="https://raw.githubusercontent.com/akosenkov/bind/master/bind.hpp" download="bind.hpp">header</a>, three keywords.</p></center>
+            <div class="message" style="color: black;">
+            A partitioned global workflow parallel programming model<br>
+            <center><p class="highlight" style="font-weight: 400;">/* Sequential code &mdash; parallel execution */</p></center>
             </div>
         </div>
     </div>
 </div>
 </section>
-<section class="content" style="background-color: rgb(255,200,100);">
+<section class="content" style="background-color: rgb(135,75,170)">
 <div class="cell">
-    <div class="keyword">node</div>
+    <div class="keyword" id="cpu" style="border:0;">Decorators</div>
     <div class="how">
         <div class="title">
             <div class="message">
-            Bind execution scope to selected node.<br>
+            Parallelism is extracted using decorators that allow a &ldquo;transactional DAG&rdquo; collection.
+            <center><p class="code">bind::decorate&lt;&gt;(sort, a.begin(), a.end());</p></center>
+            </div>
+        </div>
+    </div>
+</div>
+</section>
+<section class="content" style="background-color: rgb(50,173,177);">
+<div class="cell">
+    <div class="keyword" style="border:0;">Partitioning</div>
+    <div class="how">
+        <div class="title">
+            <div class="message">
+            Scope guards place calls onto remote nodes. All transfers are implicit.<br>
             <center><p class="code">{ bind::node first(0); throw_coin(c); }</p></center>
-            </div>
-        </div>
-    </div>
-</div>
-</section>
-<section class="content" style="background-color: rgb(50,93,97);">
-<div class="cell">
-    <div class="keyword" id="cpu">cpu</div>
-    <div class="how">
-        <div class="title">
-            <div class="message">
-            Implicitely transfer args and bind the call to node's CPU cores.
-            <center><p class="code">bind::node(0).cpu(sort, a.begin(), a.end());</p></center>
-            </div>
-        </div>
-    </div>
-</div>
-</section>
-<section class="content" style="background-color: rgb(39,205,120);">
-<div class="cell">
-    <div class="keyword" id="gpu">gpu</div>
-    <div class="how">
-        <div class="title">
-            <div class="message">
-            Implicitely transfer args and bind the call to node's CUDA device.<br>
-            <center><p class="code">
-            bind::node(1).gpu([](bind::array&lt;float&gt;& a){<br>
-                launch_scale_kernel(a.data(), 0.1);<br>
-            }, a);</p></center>
             </div>
         </div>
     </div>
@@ -92,7 +76,7 @@
     <div class="how">
         <div class="title">
             <div class="message">
-            Check working examples on <a href="https://github.com/akosenkov/bind/tree/master/examples">GitHub</a>
+            Check working examples on <a href="https://github.com/akosenkov/bind/tree/master/examples">GitHub<img src="github.png" style="vertical-align: middle; margin-left: 13px; height: 32px; margin-top: -8px;"></a>
             </div>
         </div>
     </div>

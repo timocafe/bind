@@ -105,7 +105,7 @@ div.message {
     text-align: center;
 }
 div.message a {
-    color: rgb(39,255,170);
+    color: rgb(39,205,170);
     text-decoration: none;
 }
 div.message p {
@@ -156,8 +156,8 @@ section#footer div.title {
     margin: 0;
 }
 
-span.highlight {
-    color: rgb(0,207,255);
+p.highlight {
+    color: rgb(59,200,220) !important;
 }
 span.blue {
     color: rgb(0,207,255);
