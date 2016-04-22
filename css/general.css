@@ -87,7 +87,7 @@ div.title {
     font-weight: 300;
     color: white;
     opacity: 1;
-    margin-top: 80px;
+    margin-top: 50px;
 }
 div.message {
     font-family: FiraMono;
@@ -103,40 +103,6 @@ p.highlight {
     font-size: 12px;
     font-weight: 400 !important;
     margin-top: -30px;
-}
-div#more {
-    display: block;
-    cursor: pointer;
-    position: absolute;
-    left: 50%;
-    bottom: 3%;
-    transform: translateX(-50%);
-    font-size: 20px;
-    font-family: 'Open Sans', sans-serif;
-    color: #555;
-}
-a#ethz {
-    display: block;
-    position: absolute;
-    right: 30px;
-    bottom: 30px;
-    z-index: 1;
-}
-a#github img {
-    vertical-align: middle;
-    margin-left: 13px;
-    height: 32px;
-    margin-top: -8px;
-}
-div.how {
-    display: none;
-    position: relative;
-    width: 635px;
-    display: block;
-    position: relative; 
-    width: auto;
-    margin: auto;
-    top: 0px;
 }
 section#footer {
     position: absolute; bottom: 0px;
