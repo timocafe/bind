@@ -4,7 +4,6 @@ var mobile = true;
 function adjustScreen(){
     var height = $(window).height();
     $("section#intro").css({height: height});
-    $("section#footer").css({height: height/3});
     keys_height = parseInt(($(window).height())/2);
     $("section.content:not(:first)").css({height: keys_height*2});
     if(mobile){

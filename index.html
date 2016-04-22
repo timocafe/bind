@@ -29,57 +29,24 @@
 </head> 
 
 <body>
-<a href="http://www.ethz.ch/en.html" target="_blank" id="ethz"><img src="eth.png"></a>
 <section class="content" id="intro">
 <div class="cell">
     <div id="bind">bind</div>
-    <div id="more">How?</div>
-    <div class="how">
-        <div class="title">
-            <div class="message">
-            Partitioned global workflow <span class="optional">parallel</span> programming model. <br>
-            <center><p class="highlight">Sequential code &mdash; parallel execution.</p></center>
-            </div>
-        </div>
+    <div id="description">
+    Partitioned global workflow<br> parallel programming model
     </div>
-</div>
-</section>
-<section class="content" style="background-color: rgb(135,75,170)">
-<div class="cell">
-    <div class="keyword" id="cpu">Decorators</div>
     <div class="how">
         <div class="title">
             <div class="message">
-            Parallelism is extracted using decorators that allow a &ldquo;transactional DAG&rdquo; collection.
-            <center><p class="code">bind::decorate&lt;&gt;(sort, a.begin(), a.end());</p></center>
-            </div>
-        </div>
-    </div>
-</div>
-</section>
-<section class="content" style="background-color: rgb(50,173,177);">
-<div class="cell">
-    <div class="keyword">Partitioning</div>
-    <div class="how">
-        <div class="title">
-            <div class="message">
-            Scope guards place calls onto remote nodes. All transfers are implicit.<br>
-            <center><p class="code">{ bind::node first(0); throw_coin(c); }</p></center>
+            &lt;/&gt; + <span style="font-family: Open Sans; font-size: 80px;">@</span> -&gt; ||
             </div>
         </div>
     </div>
 </div>
 </section>
 <section id="footer">
-<div class="cell">
-    <div class="how">
-        <div class="title">
-            <div class="message">
-            Check working examples on <a id="github" href="https://github.com/akosenkov/bind/tree/master/examples">GitHub<img src="github.png"></a>
-            </div>
-        </div>
-    </div>
-</div>
+    <!--div class="link">Read the <a id="github" href="https://github.com/akosenkov/bind/tree/master/examples">whitepaper</a></div-->
+    <div class="link">Check <a id="github" href="https://github.com/akosenkov/bind/tree/master/examples">examples</a> on GitHub</div>
 </section>
 
 </body> 
