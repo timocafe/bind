@@ -74,10 +74,4 @@
   #define BIND_SMP_DISABLE
 #endif
 
-namespace bind {
-    inline int num_threads(){
-        static int n = BIND_NUM_THREADS; return n;
-    }
-}
-
 #endif

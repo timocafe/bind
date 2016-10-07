@@ -39,7 +39,7 @@ namespace bind {
     }
 
     inline int num_threads(){
-        static int n = __cilkrts_get_nworkers(); return n;
+        static int n = BIND_NUM_THREADS; return n;
     }
 
     inline rank_t rank(){
@@ -48,7 +48,7 @@ namespace bind {
 
     template<typename T>
     inline void collect(T* o){
-        bind::select().collect(o); 
+        bind::select().collect(o);
     }
 
     inline void collect(model::revision* r, model::revision*& s){
@@ -61,7 +61,7 @@ namespace bind {
     }
 
     template<typename V>
-    inline size_t extent(V& obj){ 
+    inline size_t extent(V& obj){
         return obj.allocator_.desc->extent;
     }
 
