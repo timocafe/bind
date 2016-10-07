@@ -30,7 +30,7 @@
 
 namespace bind { namespace core {
 
-    inline controller::~controller(){ 
+    inline controller::~controller(){
         if(!chains->empty()) printf("Bind:: exiting with operations still in queue!\n");
         this->clear();
         delete this->each;
@@ -63,10 +63,11 @@ namespace bind { namespace core {
     }
 
     inline void controller::flush(){
+        BIND_SMP_ENABLE
         while(!chains->empty()){
             for(auto task : *chains){
                 if(task->ready()){
-                    cilk_spawn task->invoke();
+                    BIND_THREAD task->invoke();
                     for(auto d : task->deps) d->ready();
                     mirror->insert(mirror->end(), task->deps.begin(), task->deps.end());
                 }else mirror->push_back(task);
@@ -74,7 +75,7 @@ namespace bind { namespace core {
             chains->clear();
             std::swap(chains,mirror);
         }
-        cilk_sync;
+        BIND_SMP_DISABLE
         clock++;
         channel.barrier();
     }

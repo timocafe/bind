@@ -33,7 +33,7 @@ namespace bind { namespace transport { namespace cuda {
     namespace detail {
         template<device From, device To>
         struct transfer_impl {};
-        
+
         template<>
         struct transfer_impl<device::cpu, device::gpu> {
             using memory_type = memory::gpu::standard;
@@ -41,7 +41,7 @@ namespace bind { namespace transport { namespace cuda {
                 cudaMemcpy(dst, src, sz, cudaMemcpyHostToDevice);
             }
         };
-        
+
         template<>
         struct transfer_impl<device::gpu, device::cpu> {
             using memory_type = memory::cpu::standard;

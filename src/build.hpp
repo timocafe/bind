@@ -70,14 +70,13 @@
 #include <tuple>
 #include <sys/mman.h>
 #include <chrono>
-#include <cilk/cilk.h>
-#include <cilk/cilk_api.h>
 // }}}
 // {{{ utils package
 #include "utils/index_sequence.hpp"
 #include "utils/io.hpp"
 #include "utils/guard.hpp"
 #include "utils/rank_t.hpp"
+#include "utils/threading.hpp"
 // }}}
 // {{{ memory package
 #include "memory/types.h"

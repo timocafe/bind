@@ -37,7 +37,7 @@ namespace bind {
         template<typename F> struct fail_if_true<true, F> { };
         typedef typename fail_if_true<modifier<D, T>::type::ReferenceOnly, T>::type type; // T can be passed only by reference
     };
- 
+
     template<device D, typename T>
     struct check_if_not_reference<D, T&> {
         typedef T type;
@@ -45,7 +45,7 @@ namespace bind {
 
     template <device D, typename T>
     using checked_remove_reference = typename std::remove_reference<
-                                         typename check_if_not_reference< D, T >::type 
+                                         typename check_if_not_reference< D, T >::type
                                      >::type;
 
     template<device D, int N> void expand_modify_remote(){}

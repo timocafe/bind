@@ -70,8 +70,6 @@
 #include <tuple>
 #include <sys/mman.h>
 #include <chrono>
-#include <cilk/cilk.h>
-#include <cilk/cilk_api.h>
 // }}}
 // {{{ utils package
 #ifndef BIND_UTILS_INDEX_SEQUENCE
@@ -166,6 +164,63 @@ namespace bind {
     #else
     typedef int rank_t;
     #endif
+}
+
+#endif
+
+#ifndef BIND_UTILS_THREADING
+#define BIND_UTILS_THREADING
+
+#define CILK    1
+#define OPENMP  2
+
+// default: select threading if icc/gcc
+#if !defined(BIND_THREADING)
+#if defined __INTEL_COMPILER
+#define BIND_THREADING CILK
+#elif defined __GNUC__
+#define BIND_THREADING OPENMP
+#endif
+#endif
+
+#if BIND_THREADING == CILK
+  #include <cilk/cilk.h>
+  #include <cilk/cilk_api.h>
+  #define BIND_CILK
+  #define BIND_THREADING_TAGLINE "using cilk"
+  #define BIND_NUM_THREADS __cilkrts_get_nworkers()
+  #define BIND_THREAD_ID __cilkrts_get_worker_number()
+  #define BIND_THREAD cilk_spawn
+  #define BIND_SMP_ENABLE
+  #define BIND_SMP_DISABLE cilk_sync;
+  #define BIND_PARALLEL_FOR(...) cilk_for(__VA_ARGS__)
+#elif BIND_THREADING == OPENMP
+  #include <omp.h>
+  #define BIND_OMP
+  #define BIND_THREADING_TAGLINE "using openmp"
+  #define BIND_THREAD_ID omp_get_thread_num()
+  #define BIND_PRAGMA(a) _Pragma( #a )
+  #define BIND_THREAD BIND_PRAGMA(omp task untied)
+  #define BIND_PARALLEL_FOR(...) BIND_PRAGMA(omp parallel for schedule(dynamic, 1)) for(__VA_ARGS__)
+  #define BIND_SMP_ENABLE BIND_PRAGMA(omp parallel) { BIND_PRAGMA(omp single nowait)
+  #define BIND_SMP_DISABLE }
+  #define BIND_NUM_THREADS [&]()->int{ int n; BIND_SMP_ENABLE \
+                              { n = omp_get_num_threads(); } \
+                              BIND_SMP_DISABLE return n; }()
+#else
+  #define BIND_PARALLEL_FOR(...) for(__VA_ARGS__)
+  #define BIND_THREADING_TAGLINE "no threading"
+  #define BIND_NUM_THREADS 1
+  #define BIND_THREAD_ID   0
+  #define BIND_THREAD
+  #define BIND_SMP_ENABLE
+  #define BIND_SMP_DISABLE
+#endif
+
+namespace bind {
+    inline int num_threads(){
+        static int n = BIND_NUM_THREADS; return n;
+    }
 }
 
 #endif
@@ -1523,7 +1578,7 @@ namespace bind { namespace transport { namespace cuda {
     namespace detail {
         template<device From, device To>
         struct transfer_impl {};
-        
+
         template<>
         struct transfer_impl<device::cpu, device::gpu> {
             using memory_type = memory::gpu::standard;
@@ -1531,7 +1586,7 @@ namespace bind { namespace transport { namespace cuda {
                 cudaMemcpy(dst, src, sz, cudaMemcpyHostToDevice);
             }
         };
-        
+
         template<>
         struct transfer_impl<device::gpu, device::cpu> {
             using memory_type = memory::cpu::standard;
@@ -1906,7 +1961,7 @@ namespace bind { namespace transport {
 
 namespace bind { namespace core {
 
-    inline controller::~controller(){ 
+    inline controller::~controller(){
         if(!chains->empty()) printf("Bind:: exiting with operations still in queue!\n");
         this->clear();
         delete this->each;
@@ -1939,10 +1994,11 @@ namespace bind { namespace core {
     }
 
     inline void controller::flush(){
+        BIND_SMP_ENABLE
         while(!chains->empty()){
             for(auto task : *chains){
                 if(task->ready()){
-                    cilk_spawn task->invoke();
+                    BIND_THREAD task->invoke();
                     for(auto d : task->deps) d->ready();
                     mirror->insert(mirror->end(), task->deps.begin(), task->deps.end());
                 }else mirror->push_back(task);
@@ -1950,7 +2006,7 @@ namespace bind { namespace core {
             chains->clear();
             std::swap(chains,mirror);
         }
-        cilk_sync;
+        BIND_SMP_DISABLE
         clock++;
         channel.barrier();
     }
@@ -2588,7 +2644,7 @@ namespace bind {
         template<typename F> struct fail_if_true<true, F> { };
         typedef typename fail_if_true<modifier<D, T>::type::ReferenceOnly, T>::type type; // T can be passed only by reference
     };
- 
+
     template<device D, typename T>
     struct check_if_not_reference<D, T&> {
         typedef T type;
@@ -2596,7 +2652,7 @@ namespace bind {
 
     template <device D, typename T>
     using checked_remove_reference = typename std::remove_reference<
-                                         typename check_if_not_reference< D, T >::type 
+                                         typename check_if_not_reference< D, T >::type
                                      >::type;
 
     template<device D, int N> void expand_modify_remote(){}
